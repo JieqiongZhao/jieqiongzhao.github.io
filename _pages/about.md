@@ -14,5 +14,5 @@ I am a Ph.D. candidate in the School of Electrical and Computer Engineering at P
 Email: zhao413 AT purdue DOT edu <br>
 Contact: 500 Central Drive, Potter Engineering Center, West Lafayette, IN 47906 <br>
 
-You can also download my resume [here](https://jieqiong.github.io/files/Resume_Jieqiong_Zhao.pdf).
+You can also download my resume [here](/files/Resume_Jieqiong_Zhao.pdf).
 
