@@ -1,6 +1,6 @@
 ---
 permalink: /
-# title: "Jieqiong's personal websites"
+title: "About Me"
 excerpt: "About me"
 author_profile: true
 redirect_from: 
@@ -12,7 +12,7 @@ I am a Ph.D. candidate in the School of Electrical and Computer Engineering at P
 
 <br>
 Email: zhao413 AT purdue DOT edu <br>
-Contact: 500 Central Drive, Potter Engineering Center, West Lafayette, IN 47906 <br>
+Contact: Potter Engineering Center Room 127, 500 Central Drive,  West Lafayette, IN 47907 <br>
 
-You can also download my resume [here](/files/Resume_Jieqiong_Zhao.pdf).
+You can also download my [Curriculum Vitae](/files/CV_Jieqiong_Zhao.pdf).
 
