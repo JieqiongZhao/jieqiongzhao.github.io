@@ -1,11 +1,12 @@
 ---
-permalink: /
+# permalink: /
 title: "About Me"
 excerpt: "About me"
 author_profile: true
-redirect_from: 
-  - /about/
-  - /about.html
+# redirect_from: 
+#   - /about/
+#   - /about.html
+permalink: /about/
 ---
 <!-- {: .text-justify} -->
 I am a Ph.D. candidate in the School of Electrical and Computer Engineering at Purdue University. I work with my advisor [Prof. David Ebert](https://engineering.purdue.edu/~ebertd) at [Purdue/DHS Visual Analytics Center of Excellence](https://www.purdue.edu/discoverypark/vaccine/). My primary research interests lie in visual analytics, information visualization, human-computer interaction, and applied artificial intelligence and machine learning. My recent reserach work focuses on designing visual analytics systems to assist domain experts to handle real world problems. Previously, I received a master degree in computer science in 2013 from Tufts University. During my master study, I worked with [Prof. Remco Chang](https://www.cs.tufts.edu/~remco/) to understand the searching behavior based on interaction event logs.

@@ -43,7 +43,7 @@ $(document).ready(function () {
         
         var publicationsList = d3.select("#publicationsList")
             .style("float", "left")
-            .style("width", "100%");
+            // .style("width", "100%");
             // .style("padding-left", "30px");
 
         // meta data
@@ -217,14 +217,12 @@ function showPublication (publicationsContent, paper, i) {
 
      if ("award" in paper) {
         var award = pubInfo.append("div").style("float", "right").style("height", "auto");
-        award.append("span").html("<b>" + paper["award"].toUpperCase() + "</b>").style("font-size", "14px").style("margin-right", "3px");
+        award.append("span").html("<b>" + paper["award"].toUpperCase() + "</b>").style("font-size", "12px").style("margin-right", "3px");
         // award.append("img").attr("src", "/assets/images/badge.png").style("height", "25px").style("margin-right", "3px");
     }
-
     //
     // if (paper.bibtex != "") {
     //     pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.bibtex + '">(bibtex)</a> ').style("font-size", "12px");
     // }
-
 }
 
