@@ -1,26 +1,26 @@
 [
     {
-      "title": "Ubiquitous Analytics: Interacting with Big Data Anywhere, Anytime",
-      "abstract": "This project envisions leveraging ecosystems of digital devices, including large high-resolution displays, tabletop displays, handheld devices, and augmented reality displays, to support collaborative sensemaking during crisis situations. The research challenges for this include designing universal interfaces that combine multiple devices, developing flexible visual representations that can seamlessly migrate between devices, building ecosystems of devices while supporting computational and storage requirements, and enabling analysts efficiently work together.",
-      "publications": ["CHI 2018", "IV Journal 2017", "GI 2017", "IEEE VAST 2016", "IEEE TVCG 2015", "ACM ITS 2014", "IEEE CG&A 2014"],
-      "name": "ubilytics"
+      "title": "Visual Analytics for Automated Sorghum Phenotyping and Trait Development",
+      "abstract": "<a href=https://www.purdue.edu/terra/>Terra project</a> is a collaboration among engineers and plant scientists to create a high-throughput automated phenotyping platform using either UVAs or trucks. The platform integrates multiple sensors (e.g., LiDAR, hyperspectral cameras, thermal cameras) to predict the phenotypic traits of crops. Our mission, as data visualization experts, is assisting the exploration of collected sensor data, measured ground truth plat traits, and present the connection among datasets. We created a visual analytics system, <b>FeatureExplorer</b>, that integrated the feature engineering pipeline of remote sensing experts to facilitate the selection of hyperspectral features in plant biomass prediction. ",
+      "publications": ["<a href=https://arxiv.org/pdf/1908.00671.pdf>IEEE VIS 2019 Short Papers</a>", "<a href=/assets/data/igarss18.pdf>IEEE IGARSS 2018</a>", "<a href=/assets/data/igarss17.pdf>IEEE IGARSS 2017</a>"],
+      "name": "terra-prj"
     },
     {
-      "title": "Mixed-Initiative Interaction for Visual Analytics",
-      "abstract": "This project aims at closely coupling computational models, such as from machine learning, data mining, and natural language processing, with visual data exploration. This creates mixed-initiative approaches for visual analytics where the machine uncovers intelligent pathways, makes observations, and creates representations of the data, while the analysts make decisions to guide the machine based on their high-level goals, hypotheses, knowledge, and intuition. We currently explored such a visual analytics approach for time-series prediction (called TimeFork).",
-      "publications": ["ACM CHI 2016"],
-      "name": "mixed-initiative"
+      "title": "Employee Performance Evaluation and Analysis for Law Enforcement Officers",
+      "abstract": "This project is a collaboration with local law enforcement agencies, and the goal is designing a visual analytics system to assist the performance evaluation of patrol officers. We adopted a set of hybrid evaluation metrics that considers both quantitative measures of employee achievements and subjective weighting of contribution to an organization. Additionally, customized visual representations are designed to display the performance for individuals, teams, and the organization regarding the organizational hierarchy.",
+      "publications": ["<a href=https://arxiv.org/pdf/1907.13601.pdf>IEEE VAST 2019</a>", "<a href=/assets/data/metricsvis17.pdf>IEEE HST 2017</a>"],
+      "name": "metricsvis-prj"
     },
     {
-      "title": "Progressive Visual Analytics",
-      "abstract": "Traditional visual analytics systems face challenges with latency when dealing with large datasets and complex computations. Considering that humans cannot maintain their attention when system response time exceeds approximately 10 seconds, we need alternative ways to create responsive visual analytics systems. This project targets creating such systems by taking advantage of a progressive paradigm that involves intermediate results and incremental data processing. Visualizing these intermediate results, associated uncertainities, and corresponding feedback and control options is the challenge in this project.",
-      "publications": ["EuroVis 2017"],
-      "name": "progressiveVA"
+      "title": "Route Packing: Geospatially-accurate visualization of route networks",
+      "abstract": "Displaying several routes simultaneously on a geographic map while preserving the geo-locations, identities, directionality, and volume of individual routes is challenging. We present route packing, a novel (geo)visualization technique collects variable-width route lines side by side while minimizing crossings, encodes them with categorical colors, and decorates them with glyphs to show their directions. Furthermore, nodes representing sources and sinks use glyphs to indicate whether routes stop at the node or merely pass through it. We conducted a crowd-sourced user study investigating route tracing performance with road networks visualized using our route packing technique. Our findings highlight the visual parameters under which the technique yields optimal performance.",
+      "publications": ["<a href=https://arxiv.org/pdf/1909.10173.pdf>HICSS-53</a>"],
+      "name": "routevis-prj"
     },
     {
-      "title": "Natural Interaction Spaces for Collaborative Design",
-      "abstract": "The goal of this project is to create exploratory environments that holistically support early design-driven innovation, especially concerning products, for groups of designers. This involves taking advantage of natural interaction technologies including large multi-touch displays, handheld direct-touch devices, and activity sensors in a coherent design environment. Furthermore, this  includes developing storage and history management platforms to keep track of the design process (which is traditionally done by sketching on paper and storyboarding).",
-      "publications": ["EuroVis 2017", "GI 2017", "ACM CHI 2014", "ASME IDETC/DIC 2014", "IJHCS 2014"],
-      "name": "nuidesign"
+      "title": "VASA: Interactive computational steering of large asynchronous simulation pipelines for infrastructure",
+      "abstract": "Society is under threat from many sources such as hurricanes, floods, food poisoning, major pandemics, crimes, and terrorist attacks. Simulations are feasible approaches to prepare us for server scenarios when real-world exercises are costly and dangerous. We create VASA, a visual analytics platform consisting of a workbench, that connects several distributed simulation components for modeling the impact of societal threats. Each component encapsulates a high-fidelity simulation model that together form an asynchronous simulation pipeline: a system of systems of individual simulations with a common data and parameter exchange format. VASA also supports coarse local approximations while high precision simuation takes long computation time. ",
+      "publications": ["<a href=/assets/data/vasa.pdf>IEEE VAST 2014</a>"],
+      "name": "vasa-prj"
     }
   ]

@@ -83,7 +83,7 @@ author:
   name             : "Jieqiong Zhao"
   avatar           : "profile.png"
   bio              : "Ph.D. Candidate @ Purdue University "
-  location         : "West Lafayette, IN"
+  location         : "West Lafayette, IN, USA"
   employer         :
   pubmed           : 
   googlescholar    : "https://scholar.google.com/citations?user=7WgUoKMAAAAJ&hl=en"
@@ -115,6 +115,7 @@ author:
   xing             :
   youtube          :
   wikipedia        :
+  cv               : "/files/CV_Jieqiong_Zhao.pdf"
 
 
 # Reading Files

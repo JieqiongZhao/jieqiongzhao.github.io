@@ -15,7 +15,8 @@ $(document).ready(function () {
         projectsContent = projectsList.append("div").attr("id", "projectsContent");
 
         data.forEach(function (project, i) {
-            projectsContent.append("h3").text(project.title);
+            projectsContent.append("h3").text(project.title)
+                .style("margin-bottom", "5px");
             showProject(projectsContent, project, i);
         });
 
@@ -33,18 +34,19 @@ function showProject (projectsContent, project, i) {
         .style("line-height", "1")
         .style("background", "white")
         .style("min-height", "150px")
-        .style("display", "flux");
+        .style("display", "flux")
+        .style("margin-bottom", "35px");
 
     pro.append("img").style("width", "200px")
         .style("display", "inline-block")
         // .style("border", "1.5px solid #222")
-        .style("border", "0.5px solid #aaa")
+        .style("border", "1px solid #aaa")
         // .style("background-size", "cover")
         // .style("background-repeat", "no-repeat")
         .style("vertical-align", "top")
         .style("float", "left")
         .style("height", "150px")
-        .style("margin-right", "7px")
+        .style("margin-right", "10px")
         .attr("src", "/assets/images/" + project.name + ".png");
 
     var proInfo = pro.append("p")
@@ -65,14 +67,19 @@ function showProject (projectsContent, project, i) {
     //     proInfo.append("span").html(advisor).style("font-size", "14px");
     // });
 
-    proInfo.append("span").html("Publication venues: ").style("font-size", "13px");
+    proInfo.append("span").html("Publication venues: ")
+        .style("font-size", "15px")
+        .style("color", "#555");
+
     project.publications.forEach(function (publication, j) {
         if (j != project.publications.length - 1) {
             publication = publication + ", ";
         } else {
             publication = publication + "<br/>";
         }
-        proInfo.append("span").html(publication).style("font-size", "13px");
+        proInfo.append("span").html(publication)
+            .style("font-size", "15px")
+            .style("color", "#555");
     });
 
     proInfo.append("span").html(project.abstract+" ").style("font-size", "15px");
