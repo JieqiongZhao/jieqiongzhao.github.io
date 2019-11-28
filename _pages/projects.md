@@ -1,24 +1,15 @@
 ---
-title: "Publications"
 layout: archive
-excerpt: "Karthik's research publications"
-sitemap: false
-permalink: /publications/
+title: "Research Projects"
+permalink: /projects/
 author_profile: true
 ---
 
-
 {% include base_path %}
 
-<script src="{{ base_path }}/assets/js/publications.js"></script>
+<script src="{{ base_path }}/assets/js/projects.js"></script>
 
-<div class="archive" id="publicationsViz">
-
-</div>
-
-<div class="archive" id="publicationsList">
-
-</div>
+<div class="archive" id="projectsList"></div>
 
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111496562-1"></script>
@@ -29,6 +20,5 @@ author_profile: true
 
   gtag('config', 'UA-111496562-1');
 </script>
-
 
 {% include paginator.html %}
