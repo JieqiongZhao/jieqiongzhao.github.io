@@ -39,7 +39,7 @@ redirect_from:
   </div>
   <div class="row" style="padding: 25px 0 5px 0; border-bottom: 1px solid #ddd;" >
     <div class="col-sm-5"  style="padding-left:0; float: left; vertical-align: top; dispaly: inline-block;">
-      <iframe src="https://player.vimeo.com/video/363456411" style="width: 100%;" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      <iframe src="https://player.vimeo.com/video/374187616" style="width: 100%;" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
     </div>
     <div class="col-sm-7" style="padding-left:0; font-size: 14px">
       <p>
