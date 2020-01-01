@@ -192,13 +192,13 @@
       "David S. Ebert"
     ],
     "title": "FeatureExplorer: Interactive Feature Selection and Exploration of Regression Models for Hyperspectral Images",
-    "venue": "IEEE VIS 2019 Short Papers",
+    "venue": "2019 IEEE Visualization Conference (VIS)",
     "year": "2019",
     "type": "Conference",
     "pdf": "https://arxiv.org/pdf/1908.00671.pdf",
     "presentation": "https://vimeo.com/374187616",
     "video": "https://vimeo.com/363456411",
-    "doi": "",
+    "doi": "https://doi.org/10.1109/VISUAL.2019.8933619",
     "bibtex": "",
     "name": "featureexplorer",
     "keywords": []
