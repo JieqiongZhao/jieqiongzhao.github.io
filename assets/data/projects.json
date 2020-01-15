@@ -14,7 +14,7 @@
     {
       "title": "Route Packing: Geospatially-accurate visualization of route networks",
       "abstract": "Displaying several routes simultaneously on a geographic map while preserving the geo-locations, identities, directionality, and volume of individual routes is challenging. We present route packing, a novel (geo)visualization technique collects variable-width route lines side by side while minimizing crossings, encodes them with categorical colors, and decorates them with glyphs to show their directions. Furthermore, nodes representing sources and sinks use glyphs to indicate whether routes stop at the node or merely pass through it. We conducted a crowd-sourced user study investigating route tracing performance with road networks visualized using our route packing technique. Our findings highlight the visual parameters under which the technique yields optimal performance.",
-      "publications": ["<a href=https://arxiv.org/pdf/1909.10173.pdf>HICSS-53</a>"],
+      "publications": ["<a href=https://scholarspace.manoa.hawaii.edu/bitstream/10125/63907/0136.pdf>HICSS-53</a>"],
       "name": "routevis-prj"
     },
     {

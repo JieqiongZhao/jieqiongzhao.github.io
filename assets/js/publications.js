@@ -211,6 +211,10 @@ function showPublication (publicationsContent, paper, i) {
         pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.presentation + '">[talk video]</a>  ').style("font-size", "16px");
     }
 
+    if (paper.slides != "") {
+        pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.slides + '">[slides]</a>  ').style("font-size", "16px");
+    }
+
     if (paper.doi != "") {
         pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.doi + '">[doi]</a>  ').style("font-size", "16px");
     }
