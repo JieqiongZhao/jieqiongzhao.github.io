@@ -17,7 +17,7 @@ author_profile: true
             <div class="timeline-heading">
             <div class="timeline-title">
                 <span><b>Purdue University</b>, West Lafayette, IN<br/>
-                <b>Ph.D. Candidate</b> in Electrical and Computer Engineering</span>
+                <b>Ph.D.</b> in Electrical and Computer Engineering</span>
             </div>
             <!-- <img class="timeline-image" src="img/anu.png" alt="" /> -->
             </div>
@@ -29,7 +29,7 @@ author_profile: true
             </div>
         </div>
         <div class="educationtime">
-            <span><br/>Jun 2013 - May 2020 (Expected)</span>
+            <span><br/>Jun 2013 - May 2020</span>
         </div>
       </li>
       <li class="timeline-panel">

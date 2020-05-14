@@ -6,7 +6,7 @@ author_profile: true
 redirect_from: 
   - /homepage/
 ---
-#### I am a Ph.D. candidate at Purdue University in the School of Electrical and Computer Engineering under the supervision of Dr. David S. Ebert. My broad research interests include visual analytics, information visualization, human-computer interaction, and applied artificial intelligence and machine learning. Currently, I am looking for research positions in data visualization.
+#### I received my Ph.D. degree at Purdue University in the School of Electrical and Computer Engineering under the supervision of Dr. David S. Ebert. My broad research interests include visual analytics, information visualization, human-computer interaction, and applied artificial intelligence and machine learning. Currently, I am looking for research positions in data visualization and applied machine learning.
 
 ## Recent News
 
