@@ -16,5 +16,5 @@ I received a Ph.D. degree in Electrical and Computer Engineering in 2020 at Purd
 Email: zhao413 AT purdue DOT edu <br>
 Contact: Potter Engineering Center Room 127, 500 Central Drive,  West Lafayette, IN 47907 <br>
 
-You can also download my [Curriculum Vitae](/files/CV_Jieqiong_Zhao.pdf).
+You can also download my [Curriculum Vitae](/files/CV_Jieqiong_Zhao.pdf) (last updated on June 19th, 2020).
 
