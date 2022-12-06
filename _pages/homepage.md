@@ -6,13 +6,13 @@ author_profile: true
 redirect_from: 
   - /homepage/
 ---
-#### I received my Ph.D. degree at Purdue University in the School of Electrical and Computer Engineering under the supervision of Dr. David S. Ebert. My broad research interests include visual analytics, information visualization, human-computer interaction, and applied artificial intelligence and machine learning. Currently, I am looking for research positions in data visualization and applied machine learning.
+#### I am currently a Postdoc Research Associate in the VADER lab with the School of Computing and Augmented Intelligence at Arizona State University, and I am supervised by Dr. Ross Maciejewski. I received my Ph.D. degree from Purdue University in the School of Electrical and Computer Engineering under the supervision of Dr. David S. Ebert. My broad research interests include visual analytics, information visualization, human-computer interaction, and applied artificial intelligence and machine learning.
 
 ## Recent News
 
-##### [Jan 10, 2020] I presented the paper [Route Packing](https://scholarspace.manoa.hawaii.edu/bitstream/10125/63907/0136.pdf) at the HICSS-53 conference.
-##### [Oct 25, 2019] I presented the paper [MetricsVis](https://arxiv.org/pdf/1907.13601.pdf) at the IEEE VIS 2019.
-##### [Oct 23, 2019] I presented the short paper [FeatureExplorer](/files/CV_Jieqiong_Zhao.pdf) at the IEEE VIS 2019.
+##### [Jan 10, 2020] I presented the paper [Route Packing](https://scholarspace.manoa.hawaii.edu/items/63efcfe0-bcc5-4039-a6c1-92b03f8c7cfc) at the HICSS-53 conference.
+##### [Oct 25, 2019] I presented the paper [MetricsVis](https://ieeexplore.ieee.org/abstract/document/8805443) at the IEEE VIS 2019.
+##### [Oct 23, 2019] I presented the short paper [FeatureExplorer](https://ieeexplore.ieee.org/abstract/document/8933619) at the IEEE VIS 2019.
 ##### [Sep 11, 2019] The [Route Packing] paper was accepted at the HICSS-53 conference.
 ##### [Aug 1, 2019] A short paper was accepted at IEEE VIS 2019 Short Papers, and it will be published in the IEEE VIS conference proceedings and IEEE Xplore.
 ##### [Jul 8, 2019 ] Two papers were accepted at IEEE VIS 2019 VAST Papers, and they will be published as a special issue of IEEE Transactions on Visualization and Computer Graphics (TVCG).
