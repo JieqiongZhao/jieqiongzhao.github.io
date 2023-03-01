@@ -1,6 +1,29 @@
 [
   {
     "authors": [
+      "Audrey Reinert",
+      "Luke S. Snyder",
+      "Jieqiong Zhao",
+      "Andrew S. Fox",
+      "Dean F. Hougen",
+      "Charles Nicholson",
+      "David S. Ebert"
+    ],
+    "title": "Visual Analytics for Decision-Making During Pandemics",
+    "venue": "Computing in Science & Engineering",
+    "year": "2020",
+    "type": "Journal",
+    "pdf": "/assets/data/va_pandemics.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1109/MCSE.2020.3023288",
+    "bibtex": "",
+    "name": "va_pandemics",
+    "keywords": []
+  },
+  {
+    "authors": [
       "Jieqiong Zhao",
       "Morteza Karimzadeh",
       "Luke S. Snyder",
@@ -166,6 +189,27 @@
   },
   {
     "authors": [
+      "Luke Snyder",
+      "Jieqiong Zhao",
+      "Audrey Reinert",
+      "Guizhen Wang",
+      "David S. Ebert"
+    ],
+    "title": "PanViz 2.0: Intregating AI into Visual analytics to adapt to the novel challenges of COVID-19",
+    "venue": "54th Hawaii International Conference (HICSS-54)",
+    "year": "2020",
+    "type": "Conference",
+    "pdf": "https://scholarspace.manoa.hawaii.edu/server/api/core/bitstreams/347709a4-e6d1-44e5-acbb-b1d4384b0908/content",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.24251/HICSS.2021.176",
+    "bibtex": "",
+    "name": "panviz2.0",
+    "keywords": []
+  },
+  {
+    "authors": [
       "Jieqiong Zhao",
       "Morteza Karimzadeh",
       "Hanye Xu",
@@ -324,6 +368,34 @@
   },
   {
     "authors": [
+      "Chen Guo", 
+      "Jieqiong Zhao", 
+      "Lu Ding", 
+      "Tianyi Zhang", 
+      "Weiyue Deng",
+      "Prince Owusu Attah", 
+      "Xiaolei Guo",
+      "Xuan Thao Nguyen", 
+      "Yunran Ju", 
+      "Zhenyu Cheryl Qian", 
+      "Yingjie Victor Chen"
+    ],
+    "title": "ConstellationBuilder: A High-Level Situational Awareness and Team Assembly Interface for Cybersecurity Events",
+    "venue": "2020 IEEE Conference on Visual Analytics Science and Technology (VAST)",
+    "year": "2020",
+    "type": "Workshop",
+    "pdf": "/assets/data/vast20_mc3.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "",
+    "bibtex": "",
+    "award": "Award for Effectively Transforming Task Decomposition into Conceptual Design",
+    "name": "vast20_mc3",
+    "keywords": []
+  },
+  {
+    "authors": [
       "William Hatton",
       "Jieqiong Zhao",
       "Mahesh Babu Gorantla",
@@ -347,7 +419,7 @@
     "video": "",
     "doi": "https://doi.org/10.1109/VAST.2015.7347648",
     "bibtex": "",
-    "award": "Honorable Mention for Compelling Narrative Debrief of VAST Challenge",
+    "award": "Honorable Mention for Compelling Narrative Debrief of VAST Challenge MC2",
     "name": "vast15_mc2",
     "keywords": []
   },

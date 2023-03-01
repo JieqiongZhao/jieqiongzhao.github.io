@@ -17,5 +17,5 @@ I am currently a Postdoc Research Associate in the [VADER lab](https://vader.lab
 Email: jzhao153 AT asu DOT edu <br>
 Contact: Brickyard Engineering Suite 337, 699 S Mill Ave, Tempe, AZ 85287 <br>
 
-You can also download my [Curriculum Vitae](/files/CV_Jieqiong_Zhao.pdf) (last updated on Dec 5, 2022).
+You can also download my [Curriculum Vitae](/files/CV_Jieqiong_Zhao.pdf) (last updated on Feb 28, 2023).
 
