@@ -1,6 +1,27 @@
 [
   {
     "authors": [
+      "Jieqiong Zhao",
+      "Yixuan Wang",
+      "Michelle V. Mancenido",
+      "Erin K. Chiou",
+      "Ross Maciejewski"
+    ],
+    "title": "Evaluating the Impact of Uncertainty Visualization on Model Reliance",
+    "venue": "IEEE TVCG",
+    "year": "2023",
+    "type": "Journal",
+    "pdf": "/assets/data/uncertainty2023.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1109/TVCG.2023.3251950",
+    "bibtex": "",
+    "name": "uncertainty2023",
+    "keywords": []
+  },
+  {
+    "authors": [
       "Audrey Reinert",
       "Luke S. Snyder",
       "Jieqiong Zhao",
