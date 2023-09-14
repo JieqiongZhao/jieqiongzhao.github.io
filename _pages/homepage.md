@@ -9,7 +9,7 @@ redirect_from:
 #### I am currently an assistant professor in the School of Computer and Cyber Sciences at Augusta University. Prior to this, I was a postdoc research associate with the VADER lab in the School of Computing and Augmented Intelligence (SCAI) at Arizona State University, under the guidance of Dr. Ross Maciejewski. I received my Ph.D. degree from Purdue University in the School of Electrical and Computer Engineering, where I was mentored by Dr. David S. Ebert. I received a master's degree in Computer Science from Tufts University in May 2013, mentored by Dr. Remco Chang. My broad research interests include visual analytics, data visualization, human-computer interaction, and applied artificial intelligence and machine learning.
 
 
-#### I am actively looking for dedicated and passionate Ph.D. students with a keen interest in data visualization, human-computer interaction, and applied machine learning/ artificial intelligence. If you are driven by curiosity and a desire to innovate in these domains, I encourage you to reach out.
+#### I am actively looking for dedicated and passionate Ph.D. students with a research interest in data visualization, human-computer interaction, and applied machine learning/ artificial intelligence. If you are driven by curiosity and a desire to innovate in these domains, I encourage you to reach out.
 
 ## Recent News
 
