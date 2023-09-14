@@ -6,10 +6,18 @@ author_profile: true
 redirect_from: 
   - /homepage/
 ---
-#### I am currently a Postdoc Research Associate in the VADER lab with the School of Computing and Augmented Intelligence at Arizona State University, and I am supervised by Dr. Ross Maciejewski. I received my Ph.D. degree from Purdue University in the School of Electrical and Computer Engineering under the supervision of Dr. David S. Ebert. My broad research interests include visual analytics, information visualization, human-computer interaction, and applied artificial intelligence and machine learning.
+#### I am currently an assistant professor in the School of Computer and Cyber Sciences at Augusta University. Prior to this, I was a postdoc research associate with the VADER lab in the School of Computing and Augmented Intelligence (SCAI) at Arizona State University, under the guidance of Dr. Ross Maciejewski. I received my Ph.D. degree from Purdue University in the School of Electrical and Computer Engineering, where I was mentored by Dr. David S. Ebert. I received a master's degree in Computer Science from Tufts University in May 2013, mentored by Dr. Remco Chang. My broad research interests include visual analytics, data visualization, human-computer interaction, and applied artificial intelligence and machine learning.
+
+
+#### I am actively looking for dedicated and passionate Ph.D. students with a keen interest in data visualization, human-computer interaction, and applied machine learning/ artificial intelligence. If you are driven by curiosity and a desire to innovate in these domains, I encourage you to reach out.
 
 ## Recent News
 
+##### [Aug 24, 2023] I joined Augusta University as an assistant professor.
+##### [July 15, 2023] Rostyslav Hnatyshyn's paper [MolSieve](https://arxiv.org/abs/2308.11724) was accepted at IEEE VIS 2023.
+##### [Feb, 23, 2023] The paper [Evaluating the Impact of Uncertainty Visualization on Model Reliance](https://doi.org/10.1109/TVCG.2023.3251950) was accepted at IEEE TVCG.
+##### [July 17, 2020] I joined the [VADER lab](https://vader.lab.asu.edu/#/) as a postdoc research associate at ASU in Tempe, AZ.
+##### [May 9, 2020] I received my Ph.D. degree in Electrical and Computer Engineering from Purdue University.
 ##### [Jan 10, 2020] I presented the paper [Route Packing](https://scholarspace.manoa.hawaii.edu/items/63efcfe0-bcc5-4039-a6c1-92b03f8c7cfc) at the HICSS-53 conference.
 ##### [Oct 25, 2019] I presented the paper [MetricsVis](https://ieeexplore.ieee.org/abstract/document/8805443) at the IEEE VIS 2019.
 ##### [Oct 23, 2019] I presented the short paper [FeatureExplorer](https://ieeexplore.ieee.org/abstract/document/8933619) at the IEEE VIS 2019.
