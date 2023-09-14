@@ -14,9 +14,9 @@ redirect_from:
 ## Recent News
 
 ##### [Aug 24, 2023] I joined Augusta University as an assistant professor.
-##### [July 15, 2023] Rostyslav Hnatyshyn's paper [MolSieve](https://arxiv.org/abs/2308.11724) was accepted at IEEE VIS 2023.
-##### [Feb, 23, 2023] The paper [Evaluating the Impact of Uncertainty Visualization on Model Reliance](https://doi.org/10.1109/TVCG.2023.3251950) was accepted at IEEE TVCG.
-##### [July 17, 2020] I joined the [VADER lab](https://vader.lab.asu.edu/#/) as a postdoc research associate at ASU in Tempe, AZ.
+##### [Jul 15, 2023] Rostyslav Hnatyshyn's paper [MolSieve](https://arxiv.org/abs/2308.11724) was accepted at IEEE VIS 2023.
+##### [Feb 23, 2023] The paper [Evaluating the Impact of Uncertainty Visualization on Model Reliance](https://doi.org/10.1109/TVCG.2023.3251950) was accepted at IEEE TVCG.
+##### [Jul 17, 2020] I joined the [VADER lab](https://vader.lab.asu.edu/#/) as a postdoc research associate at ASU in Tempe, AZ.
 ##### [May 9, 2020] I received my Ph.D. degree in Electrical and Computer Engineering from Purdue University.
 ##### [Jan 10, 2020] I presented the paper [Route Packing](https://scholarspace.manoa.hawaii.edu/items/63efcfe0-bcc5-4039-a6c1-92b03f8c7cfc) at the HICSS-53 conference.
 ##### [Oct 25, 2019] I presented the paper [MetricsVis](https://ieeexplore.ieee.org/abstract/document/8805443) at the IEEE VIS 2019.
