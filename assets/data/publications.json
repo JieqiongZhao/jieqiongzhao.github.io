@@ -1,6 +1,56 @@
 [
   {
     "authors": [
+      "Pouria Salehi",
+      "Yang Ba",
+      "Nayoung Kim",
+      "Ahmadreza Mosallanezhad",
+      "Anna Pan",
+      "Myke C. Cohen",
+      "Yixuan Wang",
+      "Jieqiong Zhao",
+      "Shawaiz Bhatti",
+      "James Sung",
+      "Erik Blasch", 
+      "Michelle V. Mancenido",
+      "Erin K. Chiou"
+    ],
+    "title": "Evaluating Trustworthiness of AI-Enabled Decision Support Systems: Validation of the Multisource AI Scorecard Table (MAST)",
+    "venue": "Journal of Artificial Intelligence Research",
+    "year": "To appear",
+    "type": "Journal",
+    "pdf": "https://arxiv.org/pdf/2311.18040",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.48550/arXiv.2311.18040",
+    "bibtex": "",
+    "name": "mast2024",
+    "keywords": []
+  },
+  {
+    "authors": [
+      "Rostyslav Hnatyshyn",
+      "Jieqiong Zhao",
+      "Danny Perez",
+      "James Ahrens",
+      "Ross Maciejewski"
+    ],
+    "title": "MolSieve: A Progressive Visual Analytics System for Molecular Dynamics Simulations",
+    "venue": "IEEE TVCG",
+    "year": "2024",
+    "type": "Journal",
+    "pdf": "https://arxiv.org/pdf/2308.11724",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1109/TVCG.2023.3326584",
+    "bibtex": "",
+    "name": "molsieve2024",
+    "keywords": []
+  },
+  {
+    "authors": [
       "Jieqiong Zhao",
       "Yixuan Wang",
       "Michelle V. Mancenido",
