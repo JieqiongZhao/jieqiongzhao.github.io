@@ -1,6 +1,27 @@
 [
   {
     "authors": [
+      "Yixuan Wang",
+      "Jieqiong Zhao",
+      "Jiayi Hong",
+      "Ronald G. Askin",
+      "Ross Maciejewski"
+    ],
+    "title": "A Simulation-based Approach for Quantifying the Impact of Interactive Label Correction for Machine Learning",
+    "venue": "IEEE TVCG",
+    "year": "Early access ",
+    "type": "Journal",
+    "pdf": "",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1109/TVCG.2024.3468352",
+    "bibtex": "",
+    "name": "costbenefit2024",
+    "keywords": []
+  },
+  {
+    "authors": [
       "Pouria Salehi",
       "Yang Ba",
       "Nayoung Kim",
@@ -19,11 +40,11 @@
     "venue": "Journal of Artificial Intelligence Research",
     "year": "To appear",
     "type": "Journal",
-    "pdf": "https://arxiv.org/pdf/2311.18040",
+    "pdf": "https://www.jair.org/index.php/jair/article/view/14990/27068",
     "presentation": "",
     "slides": "",
     "video": "",
-    "doi": "https://doi.org/10.48550/arXiv.2311.18040",
+    "doi": "https://doi.org/10.1613/jair.1.14990",
     "bibtex": "",
     "name": "mast2024",
     "keywords": []

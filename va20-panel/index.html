@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VA@20 VIS 24</title>
+  <meta name="description" content="Website for Panel [20 Years of Visual Analytics] in IEEE VIS 2024.">
+  <link rel="shortcut icon" href="./img/favicon.ico">
+  <link rel="stylesheet" href="./styles.css">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom CSS to override Bootstrap styles -->
+  <style>
+    /* Override Bootstrap link styles */
+    a {
+      text-decoration: none;
+      color: #316682;
+    }
+    
+    a:hover {
+      text-shadow: 0px 0px 10px #ff8a00;
+    }
+
+    .image-title-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .title-image {
+      max-width: 60px;
+      margin-right: 15px;
+    }
+
+    /* Styling for the title */
+    .title {
+      margin: 0; /* Remove extra margin from title */
+    }
+
+    /* Custom tooltip style */
+    .tooltip-inner {
+      max-width: 500px; /* Set the tooltip width */
+      background-color: rgba(0, 0, 0, 0.75); /* Adjust the transparency using RGBA */
+      font-size: 12px; /* Adjust the font size */
+      padding: 10px; /* Add padding for better readability */
+      color: #fff; /* Set text color */
+      border-radius: 5px; /* Optional: Round the tooltip corners */
+      text-align: left; /* Align text to the left */
+    }
+    
+    .tooltip.bs-tooltip-right .tooltip-arrow::before {
+      border-right-color: rgba(0, 0, 0, 0.75); /* Adjust transparency for the arrow */
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container d-flex justify-content-center" style="min-height: 100vh; align-items: center;">
+  <!-- <div class="container"> -->
+    <div class="col-md-10">
+
+      <a class="vis-logo" href="https://ieeevis.org/year/2024/welcome">
+        <img class="vis-logo-img" src="./img/vis2024_logo.png" alt="VIS 2024 Logo" />
+      </a>
+
+      <br /><br />
+
+      <!-- <h1 class="title">20 Years of Visual Analytics</h1> -->
+      <!-- Image and Title container -->
+      <div class="image-title-container">
+        <img src="./img/20VA.gif" alt="Image Description" class="title-image">
+        <h1 class="title">20 Years of Visual Analytics</h1>
+      </div>
+
+      <br />
+
+      <p class="content-text">
+        <b>Time:</b> Wednesday, October 16, 2024 1:30 PM-2:45 PM EDT (UTC-4)
+      </p>
+
+      <p class="content-text">
+        In 2004, Visual Analytics emerged as an outgrowth of scientific visualization and information visualization with a focus on the mechanisms of analytic reasoning facilitated by interactive visual interfaces. Now, twenty years later, this panel invites pioneers from the field of visual analytics to talk about the foundations of visual analytics, key works that helped define the field, and what they see as the emerging challenges for the next generation of visual analytics researchers.
+      </p>
+     
+      <p class="content-text">
+        With the founding of the National Visual Analytics Center at Pacific Northwest National Laboratory in 2004 and the publication of 
+        <a href="https://www.osti.gov/biblio/912515" title="K. A. Cook and J. J. Thomas. 2005. Illuminating the Path: The Research and Development Agenda for Visual Analytics. Pacific Northwest National Laboratory, 2005."><em>Illuminating the Path</em></a> in 2005, visual analytics emerged as "the science of analytical reasoning facilitated by interactive visual interfaces."
+        The Symposium on Visual Analytics Science and Technology (VAST) was established soon thereafter (2006), becoming part of the main IEEE Visualization Week conference in 2009.
+        In 2008, the VisMaster initiative funded by the European Union started, publishing its 
+        <a href="https://doi.org/10.2312/14803" title="D. A. Keim, J. Kohlhammer, G. P. Ellis, and F. Mansmann. 2010. Mastering the Information Age - Solving Problems with Visual Analytics. Eurographics Association, 2010.">Visual Analytics roadmap</a> in 2010.
+        Visualization Week (or VisWeek) would eventually become VIS (VAST-InfoVis-SciVis), and the three main conference tracks would be replaced with an area chair model in 2021.
+        Throughout its history, the visual analytics community has developed and deployed technology (e.g.,
+        <a href="https://doi.org/10.1109/VAST.2007.4389006" title="J. Stasko, C. Görg, Z. Liu, and K. Singhal. 2007. Jigsaw: Supporting Investigative Analysis through Interactive Visualization.">Jigsaw</a>,
+        <a href="https://doi.org/10.1109/VAST.2011.6102456" title="A. M. MacEachren et al. 2011. SensePlace2: Geotwitter Analytics Support for Situational Awareness.">SensePlace2</a>), 
+        explored numerous analytical challenges from various domains (e.g., movement analysis 
+        <a href="https://doi.org/10.1109/VAST.2008.4677356" title="G. Andrienko and N. Andrienko. 2008. Spatio-temporal Aggregation for Visual Analysis of Movements.">[Andrienko et al., 2008]</a>, 
+        <a href="https://doi.org/10.1109/TVCG.2013.226" title="N. Ferreira, J. Poco, H. T. Vo, J. Freire, and C. T. Silva. 2013. Visual Exploration of Big Spatio-temporal Urban Data: A Study of New York City Taxi Trips.">[Ferreira et al., 2013]</a>, 
+        <a href="https://doi.org/10.1109/VAST.2009.5333443" title="C. Collins, F. B. Viegas, and M. Wattenberg. 2009. Parallel Tag Clouds to Explore and Analyze Faceted Text Corpora.">text analysis</a>,  
+        <a href="https://doi.org/10.1109/VAST.2010.5652443" title="J. Choo et al. 2010. iVisClassifier: An Interactive Visual Analytics System for Classification Based on Supervised Dimension Reduction.">dimension reduction</a>,  
+        <a href="https://doi.org/10.1109/TVCG.2007.70415" title="W. Aigner, S. Miksch, W. Müller, H. Schumann, and C. Tominski. 2008. Visual Methods for Analyzing Time-Oriented Data.">temporal analysis</a>,  
+        <a href="https://doi.org/10.1109/TVCG.2010.85" title="S. Koch, H. Bosch, M. Giereth, and T. Ertl. 2011. Iterative Integration of Visual Insights During Scalable Patent Search and Analysis.">patent analysis</a>,  
+        <a href="https://doi.org/10.1109/VAST.2008.4677354" title="R. Maciejewski et al. 2008. Understanding Syndromic Hotspots: A Visual Analytics Approach.">syndromic surveillance</a>,  
+        <a href="https://doi.org/10.1109/VAST.2007.4389009" title="R. Kosara, W. Ribarsky, C. Ziemkiewicz, E. Suma, D. Kern, A. Sudjianto, M. Ghoniem, J. Yang, and R. Chang. 2007. WireVis: Visualization of Categorical, Time-varying Data from Financial Transactions.">fraud detection</a>, and more), 
+        and helped enable the world to detect the unexpected and discover the unexpected (e.g.,
+        <a href="https://doi.org/10.1109/TVCG.2012.219" title="S. Kandel, A. Paepcke, J. M. Hellerstein, and J. Heer. 2012. Enterprise Data Analysis and Visualization: An Interview Study.">[Kandel et al., 2012]</a>,
+        <a href="https://doi.org/10.1109/VAST.2012.6400554" title="S. Weber et al. 2012. Visual Analytics for the Big Data Era: A Comparative Review of State-of-the-art Commercial Systems.">[Weber et al., 2012]</a>).
+      </p>
+      <p class="content-text">
+        As such, Visual Analytics has become a central part of IEEE VIS and Keim's <a href="https://doi.org/10.1007/978-3-540-70956-5_7" title="D. Keim, G. Andrienko, J.-D. Fekete, C. Görg, J. Kohlhammer, and G. Melançon. 2008. Visual Analytics: Definition, Process, and Challenges.">visual analytics mantra</a> ("Analyze first, show the important, zoom, filter and analyze further, details on demand.") was astute in leaning into machine learning and artificial intelligence as a partner in the analytic and sensemaking process.
+        Today, visual analytics research is embedded into machine learning to help in model building (e.g.,
+        <a href="https://doi.org/10.1109/TVCG.2012.260" title="A. Endert, P. Fiaux, and C. North. 2012. Semantic Interaction for Sensemaking: Inferring Analytical Reasoning for Model Steering.">[Endert et al., 2012]</a>,
+        <a href="https://doi.org/10.1109/TVCG.2018.2864838" title="D. Sacha, M. Kraus, D. A. Keim, and M. Chen. 2019. VIS4ML: An Ontology for Visual Analytics Assisted Machine Learning.">[Sacha et al., 2019]</a>), 
+        diagnosis (e.g.,
+        <a href="https://doi.org/10.1109/TVCG.2020.3030350" title="L. Gou et al. 2021. VATLD: A Visual Analytics System to Assess, Understand, and Improve Traffic Light Detection.">[Guo et al., 2021]</a>,
+        <a href="https://doi.org/10.1109/VAST.2017.8585721" title="Y. Ming et al. 2017. Understanding Hidden Memories of Recurrent Neural Networks.">[Ming et al., 2017]</a>), 
+        and verification (e.g.,
+        <a href="https://doi.org/10.1109/VAST.2008.4677356" title="G. Andrienko and N. Andrienko. 2008. Spatio-temporal Aggregation for Visual Analysis of Movements.">[Andrienko et al., 2008]</a>,
+        <a href="https://doi.org/10.1109/TVCG.2018.2864812" title="Y. Ming, H. Qu, and E. Bertini. 2019. RuleMatrix: Visualizing and Understanding Classifiers with Rules.">[Ming et al., 2019]</a>).
+        Large Language Models are serving as conversational agents to support interactive data analysis
+        <a href="https://doi.org/10.1109/TVCG.2020.3030378" title="A. Narechania, A. Srinivasan, and J. Stasko. 2021. NL4DV: A Toolkit for Generating Analytic Specifications for Data Visualization from Natural Language Queries.">[Narechania et al., 2021]</a>, and the cognitive aspects of Human-AI teaming are becoming critical in deploying technology 
+        <a href="https://doi.org/10.1109/TVCG.2022.3209457" title="L. Padilla et al. 2023. Multiple Forecast Visualizations (MFVs): Trade-offs in Trust and Performance in Multiple COVID-19 Forecast Visualizations.">[Padilla et al., 2023]</a>, 
+        <a href="https://doi.org/10.1109/TVCG.2023.3251950" title="J. Zhao et al. 2024. Evaluating the Impact of Uncertainty Visualization on Model Reliance.">[Zhao et al., 2024]</a>, 
+        <a href="https://doi.org/10.1109/VAST.2017.8585669" title="E. Wall et al. 2017. Warning, Bias May Occur: A Proposed Approach to Detecting Cognitive Bias in Interactive Visual Analytics.">[Wall et al., 2017]</a>.
+        In this panel, we invite some of the pioneers of visual analytics to share with the community the journey of this area, reflecting on what worked, what did not work, and how they see visual analytics research evolving over the next 20 years.
+      </p>      
+      
+
+      <br />
+
+      <h3 class="title">
+        Panelists
+        <!-- <span class="tip">
+          *Listed in alphabetical order by surname.
+        </span> -->
+      </h3>
+
+      <div class="container">
+        <!-- Panelists' information -->
+          <!-- <div class="people">
+            <img class="people-img" src="./img/csm_Daniel_Keim_73713c1ad4.jpg" alt="Daniel A. Keim">
+            <a class="people-img-a" href="https://www.uni-konstanz.de/centre-for-human-data-society/people/prof-dr-daniel-keim/">
+              <p class="people-name">Daniel A. Keim</p>
+            </a>
+            <p class="people-school">University of Konstanz</p>
+          </div>
+          <div class="people">
+            <img class="people-img" src="./img/Miksch-Kopf-2-white-V3.jpg" alt="Silvia Miksch"/>
+            <a class="people-img-a" href="https://www.cvast.tuwien.ac.at/team/silvia-miksch">
+              <p class="people-name">Silvia Miksch</p>
+            </a>
+            <p class="people-school">Vienna University of Technology</p>
+          </div>
+          <div class="people">
+            <img class="people-img" src="./img/bill_pike.jpg" alt="Bill Pike"/>
+            <a class="people-img-a" href="https://www.pnnl.gov/people/william-pike-phd" >
+              <p class="people-name">Bill Pike</p>
+            </a>
+            <p class="people-school">Pacific Northwest National Laboratory</p>
+          </div>
+          <div class="people">
+            <img class="people-img" src="./img/david_ebert.jpg" alt="David S. Ebert"/>
+            <a class="people-img-a" href="https://www.ou.edu/coe/cs/people/faculty/david-ebert">
+              <p class="people-name">David S. Ebert</p>
+            </a>
+            <p class="people-school">University of Oklahoma</p>
+          </div> -->
+            <!-- Daniel A. Keim -->
+          <div class="people">
+            <div class="hover hover-1" data-bs-toggle="tooltip" data-container="body" data-bs-placement="right" title="Daniel A. Keim is a professor of Data Analysis and Visualization at the University of Konstanz. He received the VGTC Technical Achievement award for his work in high-dimensional data analysis and visualization of large data bases, which has stimulated research in the field of Visual Analytics, and he has been the scientific coordinator of the European Commission funded Coordination Action &quot;Visual Analytics – Mastering the Information Age (VisMaster)&quot;.">
+              <img class="people-img" src="./img/csm_Daniel_Keim_73713c1ad4.jpg" alt="Daniel A. Keim" />
+              <div class="hover-overlay"></div>
+            </div>
+            <a class="people-img-a" href="https://www.uni-konstanz.de/centre-for-human-data-society/people/prof-dr-daniel-keim/">
+              <p class="people-name">Daniel A. Keim</p>
+            </a>
+            <p class="people-school">University of Konstanz</p>
+          </div>
+
+          <!-- Silvia Miksch -->
+          <div class="people">
+            <div class="hover hover-1" data-bs-toggle="tooltip" data-container="body" data-bs-placement="right" 
+                title="Silvia Miksch is a professor of Visual Analytics at Vienna University of Technology. She received the VGTC Technical Achievement award for her outstanding technical contributions to visual analytics of time-varying data, and she leads the Laura Bassi Centre of Expertise &quot;CVAST - Center for Visual Analytics Science and Technology&quot; funded by the Federal Ministry of Economy, Family and Youth of the Republic of Austria.">
+              <img class="people-img" src="./img/Miksch-Kopf-2-white-V3.jpg" alt="Silvia Miksch" />
+              <div class="hover-overlay"></div>
+            </div>
+            <a class="people-img-a" href="https://www.cvast.tuwien.ac.at/team/silvia-miksch">
+              <p class="people-name">Silvia Miksch</p>
+            </a>
+            <p class="people-school">Vienna University of Technology</p>
+          </div>
+
+          <!-- Bill Pike -->
+          <div class="people">
+            <div class="hover hover-1" data-bs-toggle="tooltip" data-container="body" data-bs-placement="right" 
+                title="Bill Pike is the Chief Science and Technology Officer for Pacific Northwest National Laboratory's National Security Directorate, where he guides organizational vision and strategy across PNNL's security mission space. His office is responsible for establishing long-term research and development strategy and investments across a science and technology portfolio that includes nonproliferation and nuclear science, artificial intelligence and advanced computing, chemical and biological defense, and systems engineering and deployment. He guides organizational processes for connecting geopolitical drivers, market trends, and emerging technologies to shape new investments that advance US goals in science, energy, and security.">
+              <img class="people-img" src="./img/bill_pike.jpg" alt="Bill Pike" />
+              <div class="hover-overlay"></div>
+            </div>
+            <a class="people-img-a" href="https://www.pnnl.gov/people/william-pike-phd">
+              <p class="people-name">Bill Pike</p>
+            </a>
+            <p class="people-school">Pacific Northwest National Laboratory</p>
+          </div>
+
+          <!-- David S. Ebert -->
+          <div class="people">
+            <div class="hover hover-1" data-bs-toggle="tooltip" data-container="body" data-bs-placement="right" 
+                title="David S. Ebert is a Gallogly Chair Professor of electrical and computer engineering at the University of Oklahoma. He is the recipient of the 2017 IEEE Computer Society VGTC Technical Achievement Award for foundational work in visual analytics, a co-author of Illuminating the Path and the Director of the Visualization Science team of the Department of Homeland Security's Visual Analytics and Data Analytics Emeritus Center of Excellence that deployed tens of visual analytic tools to local, state, and federal agencies, as well as the public.">
+              <img class="people-img" src="./img/david_ebert.jpg" alt="David S. Ebert" />
+              <div class="hover-overlay"></div>
+            </div>
+            <a class="people-img-a" href="https://www.ou.edu/coe/cs/people/faculty/david-ebert">
+              <p class="people-name">David S. Ebert</p>
+            </a>
+            <p class="people-school">University of Oklahoma</p>
+          </div>
+        </div>
+
+      <br/>
+
+      <!-- <h3 class="title">Highlights</h3>
+      <div class="content-text">
+        To be added
+      </div> -->
+
+      <br/>
+
+      <h3 class="title">Organizers</h3>
+      <div class="container">
+        <!-- Organizers' information -->
+
+        <!-- David S. Ebert -->
+        <div class="people">
+          <div class="hover hover-1" data-bs-toggle="tooltip" data-container="body" data-bs-placement="right" title="David S. Ebert is a Gallogly Chair Professor of electrical and computer engineering at the University of Oklahoma. He is the recipient of the 2017 IEEE Computer Society VGTC Technical Achievement Award for foundational work in visual analytics, a co-author of Illuminating the Path and the Director of the Visualization Science team of the Department of Homeland Security's Visual Analytics and Data Analytics Emeritus Center of Excellence that deployed tens of visual analytic tools to local, state, and federal agencies, as well as the public.">
+            <img class="people-img" src="./img/david_ebert.jpg" alt="David S. Ebert"/>
+            <div class="hover-overlay"></div>
+          </div>
+          <a class="people-img-a" href="https://www.ou.edu/coe/cs/people/faculty/david-ebert">
+            <p class="people-name">David S. Ebert</p>
+          </a>
+          <p class="people-school">University of Oklahoma</p>
+        </div>
+
+        <!-- Wolfgang Jentner -->
+        <div class="people">
+          <div class="hover hover-1" data-bs-toggle="tooltip" data-container="body" data-bs-placement="right"
+              title="Wolfgang Jentner is a research associate at the Data Institute for Societal Challenges (DISC) at the University of Oklahoma, USA, and was previously at the University of Konstanz, Germany. He received five awards and one honorable mention in VAST Challenges since 2013 and is a reviewer for VIS and EuroVis since 2018.">
+            <img class="people-img" src="./img/Wolfgang_Jentner.jpg" alt="Wolfgang Jentner" />
+            <div class="hover-overlay"></div>
+          </div>
+          <a class="people-img-a" href="https://wjentner.io/">
+            <p class="people-name">Wolfgang Jentner</p>
+          </a>
+          <p class="people-school">University of Oklahoma</p>
+        </div>
+
+        <!-- Ross Maciejewski -->
+        <div class="people">
+          <div class="hover hover-1" data-bs-toggle="tooltip" data-container="body" data-bs-placement="right"
+              title="Ross Maciejewski is a professor at Arizona State University. He has served on the organizing committees for the IEEE Conference on Visual Analytics Science and Technology and he currently serves as the co-chair of the Visualization Executive Committee (VEC). His work has been recognized through a variety of awards at the IEEE Visual Analytics Contest (2010, 2013, 2015), a best paper award in EuroVis 2017, and CHI Honorable Mention Awards (2018, 2022).">
+            <img class="people-img" src="./img/ross_Maciejewski.png" alt="Ross Maciejewski" />
+            <div class="hover-overlay"></div>
+          </div>
+          <a class="people-img-a" href="https://rmaciejewski.faculty.asu.edu/">
+            <p class="people-name">Ross Maciejewski</p>
+          </a>
+          <p class="people-school">Arizona State University</p>
+        </div>
+
+        <!-- Jieqiong Zhao -->
+        <div class="people">
+          <div class="hover hover-1" data-bs-toggle="tooltip" data-container="body" data-bs-placement="right"
+              title="Jieqiong Zhao is an assistant professor in Computer and Cyber Sciences at Augusta University. She has served as a reviewer for IEEE VIS since 2018. She received an honorable mention in the IEEE VAST Challenge in 2015 and won an award in 2020.">
+            <img class="people-img" src="./img/Jieqiong_Zhao.png" alt="Jieqiong Zhao" />
+            <div class="hover-overlay"></div>
+          </div>
+          <a class="people-img-a" href="https://jieqiongzhao.github.io/">
+            <p class="people-name">Jieqiong Zhao</p>
+          </a>
+          <p class="people-school">Augusta University</p>
+        </div>
+      </div>
+
+      <br>
+      <br>
+
+      <div class="container">
+        <iframe src="https://app.sli.do/event/imoJcHiAoBphdJMvhhKxLi?_gl=1*ys4lrb*_gcl_au*NDc4Njc3MTgyLjE3Mjc3MTc0ODM." height="100%" width="100%" style="min-height: 560px;"></iframe>
+      </div>
+
+      <div class="footer">
+        <a href="https://ieeevis.org/year/2024/info/panels">IEEE VIS 2024 Panels</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS and Popper.js -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+  </script>
+</body>
+
+</html>
