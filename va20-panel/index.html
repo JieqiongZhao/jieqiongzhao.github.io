@@ -51,6 +51,22 @@
     .tooltip.bs-tooltip-right .tooltip-arrow::before {
       border-right-color: rgba(0, 0, 0, 0.75); /* Adjust transparency for the arrow */
     }
+
+    .youtubecontainer {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* This sets the aspect ratio to 16:9 (9 / 16 = 0.5625) */
+      height: 0; /* Set height to 0 and use padding for responsive aspect ratio */
+    }
+
+    .youtubecontainer iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
   </style>
 </head>
 <body>
@@ -138,35 +154,7 @@
 
       <div class="container">
         <!-- Panelists' information -->
-          <!-- <div class="people">
-            <img class="people-img" src="./img/csm_Daniel_Keim_73713c1ad4.jpg" alt="Daniel A. Keim">
-            <a class="people-img-a" href="https://www.uni-konstanz.de/centre-for-human-data-society/people/prof-dr-daniel-keim/">
-              <p class="people-name">Daniel A. Keim</p>
-            </a>
-            <p class="people-school">University of Konstanz</p>
-          </div>
-          <div class="people">
-            <img class="people-img" src="./img/Miksch-Kopf-2-white-V3.jpg" alt="Silvia Miksch"/>
-            <a class="people-img-a" href="https://www.cvast.tuwien.ac.at/team/silvia-miksch">
-              <p class="people-name">Silvia Miksch</p>
-            </a>
-            <p class="people-school">Vienna University of Technology</p>
-          </div>
-          <div class="people">
-            <img class="people-img" src="./img/bill_pike.jpg" alt="Bill Pike"/>
-            <a class="people-img-a" href="https://www.pnnl.gov/people/william-pike-phd" >
-              <p class="people-name">Bill Pike</p>
-            </a>
-            <p class="people-school">Pacific Northwest National Laboratory</p>
-          </div>
-          <div class="people">
-            <img class="people-img" src="./img/david_ebert.jpg" alt="David S. Ebert"/>
-            <a class="people-img-a" href="https://www.ou.edu/coe/cs/people/faculty/david-ebert">
-              <p class="people-name">David S. Ebert</p>
-            </a>
-            <p class="people-school">University of Oklahoma</p>
-          </div> -->
-            <!-- Daniel A. Keim -->
+          <!-- Daniel A. Keim -->
           <div class="people">
             <div class="hover hover-1" data-bs-toggle="tooltip" data-container="body" data-bs-placement="right" title="Daniel A. Keim is a professor of Data Analysis and Visualization at the University of Konstanz. He received the VGTC Technical Achievement award for his work in high-dimensional data analysis and visualization of large data bases, which has stimulated research in the field of Visual Analytics, and he has been the scientific coordinator of the European Commission funded Coordination Action &quot;Visual Analytics – Mastering the Information Age (VisMaster)&quot;.">
               <img class="people-img" src="./img/csm_Daniel_Keim_73713c1ad4.jpg" alt="Daniel A. Keim" />
@@ -286,8 +274,11 @@
       <br>
       <br>
 
-      <div class="container">
+      <!-- <div class="container">
         <iframe src="https://app.sli.do/event/imoJcHiAoBphdJMvhhKxLi?_gl=1*ys4lrb*_gcl_au*NDc4Njc3MTgyLjE3Mjc3MTc0ODM." height="100%" width="100%" style="min-height: 560px;"></iframe>
+      </div> -->
+      <div class="container youtubecontainer">
+        <iframe width="100%" src="https://www.youtube.com/embed/mTmbT2o7NRY?si=Jo_ho6P2e9uutooC" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
       </div>
 
       <div class="footer">
