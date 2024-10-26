@@ -1,6 +1,27 @@
 [
   {
     "authors": [
+      "Fang Zhu",
+      "Xufei Zhu",
+      "Xumeng Wang",
+      "Yuxin Ma",
+      "Jieqiong Zhao"
+    ],
+    "title": "ATVis: Understanding and Diagnosing Adversarial Training Processes through Visual Analytics",
+    "venue": "Visual Informatics",
+    "year": "In Press, Journal Pre-proof",
+    "type": "Journal",
+    "pdf": "",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1016/j.visinf.2024.10.003",
+    "bibtex": "",
+    "name": "atvis2024",
+    "keywords": []
+  },
+  {
+    "authors": [
       "Yixuan Wang",
       "Jieqiong Zhao",
       "Jiayi Hong",
@@ -9,7 +30,7 @@
     ],
     "title": "A Simulation-based Approach for Quantifying the Impact of Interactive Label Correction for Machine Learning",
     "venue": "IEEE TVCG",
-    "year": "Early access ",
+    "year": "Early Access",
     "type": "Journal",
     "pdf": "",
     "presentation": "",
@@ -38,7 +59,7 @@
     ],
     "title": "Evaluating Trustworthiness of AI-Enabled Decision Support Systems: Validation of the Multisource AI Scorecard Table (MAST)",
     "venue": "Journal of Artificial Intelligence Research",
-    "year": "To appear",
+    "year": "2024",
     "type": "Journal",
     "pdf": "https://www.jair.org/index.php/jair/article/view/14990/27068",
     "presentation": "",
@@ -80,7 +101,7 @@
     ],
     "title": "Evaluating the Impact of Uncertainty Visualization on Model Reliance",
     "venue": "IEEE TVCG",
-    "year": "2023",
+    "year": "2024",
     "type": "Journal",
     "pdf": "/assets/data/uncertainty2023.pdf",
     "presentation": "",

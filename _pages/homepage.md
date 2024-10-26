@@ -6,12 +6,15 @@ author_profile: true
 redirect_from: 
   - /homepage/
 ---
-#### I am currently an Tenure-Track Assistant Professor in the School of Computer and Cyber Sciences at Augusta University. Prior to this, I was a postdoc research associate with the VADER lab in the School of Computing and Augmented Intelligence (SCAI) at Arizona State University, under the guidance of Dr. Ross Maciejewski. I received my Ph.D. degree from Purdue University in the School of Electrical and Computer Engineering, where I was mentored by Dr. David S. Ebert. I received a master's degree in Computer Science from Tufts University in May 2013, mentored by Dr. Remco Chang. My broad research interests include visual analytics, data visualization, human-computer interaction, and applied artificial intelligence and machine learning.
+#### I am currently a Tenure-Track Assistant Professor in the School of Computer and Cyber Sciences at Augusta University. Prior to this, I was a postdoc research associate in the VADER lab at the School of Computing and Augmented Intelligence (SCAI), Arizona State University, working under the guidance of Dr. Ross Maciejewski. I received my Ph.D. in Electrical and Computer Engineering from Purdue University, where I was mentored by Dr. David S. Ebert. I received a master's degree in Computer Science from Tufts University in May 2013, under the mentorship of Dr. Remco Chang. My broad research interests include visual analytics, data visualization, human-computer interaction, and applied artificial intelligence and machine learning.
 
 #### I am actively looking for dedicated and passionate Ph.D. students with a research interest in data visualization, HCI, and human-AI trust. If you are driven by curiosity and a desire to innovate in these domains, I encourage you to reach out.
 
 ## Recent News
 
+##### [Oct 19, 2024] Fang Zhu's paper [ATVis: Understanding and diagnosing adversarial training processes through visual analytics](https://doi.org/10.1016/j.visinf.2024.10.003) was accepted at Visual Informatics.
+##### [Sep 2, 2024] Yixuan Wang's paper [A Simulation-based Approach for Quantifying the Impact of Interactive Label Correction for Machine Learning](https://doi.org/10.1109/TVCG.2024.3468352) was accepted at IEEE TVCG.
+##### [Mar 20, 2024] Pouria Salehi's paper [Towards Trustworthy AI-Enabled Decision Support Systems:Validation of the Multisource AI Scorecard Table (MAST)](https://doi.org/10.1613/jair.1.14990) was accepted at Journal of Artificial Intelligence Research.
 ##### [Aug 24, 2023] I joined Augusta University as an assistant professor.
 ##### [Jul 15, 2023] Rostyslav Hnatyshyn's paper [MolSieve](https://arxiv.org/abs/2308.11724) was accepted at IEEE VIS 2023.
 ##### [Feb 23, 2023] The paper [Evaluating the Impact of Uncertainty Visualization on Model Reliance](https://doi.org/10.1109/TVCG.2023.3251950) was accepted at IEEE TVCG.
