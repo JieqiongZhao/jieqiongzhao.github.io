@@ -12,7 +12,7 @@ redirect_from:
 
 ## Recent News
 
-##### [Oct 19, 2024] Fang Zhu's paper [ATVis: Understanding and diagnosing adversarial training processes through visual analytics](https://doi.org/10.1016/j.visinf.2024.10.003) was accepted at Visual Informatics.
+##### [Oct 19, 2024] Fang Zhu's paper [ATVis](https://doi.org/10.1016/j.visinf.2024.10.003) was accepted at Visual Informatics.
 ##### [Sep 2, 2024] Yixuan Wang's paper [A Simulation-based Approach for Quantifying the Impact of Interactive Label Correction for Machine Learning](https://doi.org/10.1109/TVCG.2024.3468352) was accepted at IEEE TVCG.
 ##### [Mar 20, 2024] Pouria Salehi's paper [Towards Trustworthy AI-Enabled Decision Support Systems:Validation of the Multisource AI Scorecard Table (MAST)](https://doi.org/10.1613/jair.1.14990) was accepted at Journal of Artificial Intelligence Research.
 ##### [Aug 24, 2023] I joined Augusta University as an assistant professor.
