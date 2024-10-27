@@ -17,5 +17,5 @@ I am currently an assistant professor in the School of Computer and Cyber Scienc
 Email: jiezhao AT augusta DOT edu <br>
 <!-- Contact: Brickyard Engineering Suite 337, 699 S Mill Ave, Tempe, AZ 85287 <br> -->
 
-You can also download my [Curriculum Vitae](/files/CV_Jieqiong_Zhao.pdf) (last updated on May 20, 2024).
+You can also download my [Curriculum Vitae](/files/CV_Jieqiong_Zhao.pdf) (last updated on Oct 24, 2024).
 
