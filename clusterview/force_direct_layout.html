@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Directed Knowledge Graph with Force-Directed Community Layout</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- <script src="d3.v7.min.js"></script> -->
+
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        svg {
+            width: 100vw;
+            height: 100vh;
+            background-color: #f9f9f9;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: lightsteelblue;
+            border: 1px solid #ccc;
+            padding: 4px 6px;
+            font-size: 12px;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-size: 13px;
+            max-height: 90vh;
+            overflow-y: auto;
+            width: 270px;
+            z-index: 1000;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            margin-right: 6px;
+            flex-shrink: 0;
+        }
+
+        .control-buttons {
+            margin-top: 6px;
+        }
+
+        .control-buttons button {
+            margin-right: 5px;
+            margin-top: 4px;
+        }
+
+        #search-box {
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 3px;
+        }
+
+        .community-center {
+            fill: rgba(255, 255, 255, 0.8);
+            stroke-width: 4;
+        }
+
+        .community-band {
+            stroke: #333;
+            stroke-width: 2;
+            stroke-dasharray: 5, 5;
+        }
+
+        .community-bandoutline {
+            fill: rgba(255, 255, 255, 0.8);
+            stroke: #333;
+            stroke-width: 2;
+            stroke-dasharray: 5, 5;
+        }
+
+        .node-highlighted {
+            stroke: #ff0000 !important;
+            stroke-width: 3px !important;
+        }
+
+        .link-highlighted {
+            fill: #ff0000 !important;
+            /* stroke-width: 2px !important; */
+            opacity: 0.9 !important;
+        }
+
+        .node-dimmed {
+            opacity: 0.3;
+        }
+
+        .link-dimmed {
+            opacity: 0.3;
+            /* opacity: 0.0; */
+        }
+    </style>
+</head>
+
+<body>
+    <svg></svg>
+    <div id="tooltip" class="tooltip"></div>
+    <div id="controls" class="controls">
+        <input type="text" id="search-box" placeholder="Search node by name...">
+        <div class="control-buttons">
+            <button id="selectAll">Select All</button>
+            <button id="clearAll">Clear All</button>
+            <button id="toggleEdges">Hide Edges</button>
+            <button id="exportJson">Export Filtered</button>
+            <button id="restartLayout">Restart Layout</button>
+            <button id="stopSimulation">Stop Simulation</button>
+            <button id="startSimulation">Start Simulation</button>
+        </div>
+        <h4>Communities</h4>
+        <div id="checkboxes"></div>
+    </div>
+    <script>
+        const svg = d3.select("svg");
+        const width = 1000;
+        const height = 1000;
+
+        const genreColor = d3.scaleOrdinal()
+            .domain([
+                "Folk", "Acoustic Folk", "Celtic Folk", "Indie Folk", "Oceanus Folk", "Post-Apocalyptic Folk",
+                "Alternative Rock", "Blues Rock", "Desert Rock", "Indie Rock", "Jazz Surf Rock",
+                "Psychedelic Rock", "Southern Gothic Rock", "Space Rock", "Indie Pop", "Dream Pop",
+                "Synthpop", "Doom Metal", "Speed Metal", "Symphonic Metal", "Americana", "Darkwave",
+                "Emo/Pop Punk", "Lo-Fi Electronica", "Sea Shanties", "Synthwave"
+            ])
+            .range([
+                "#FFD518", "#FFD518", "#FFD518", "#FFD518", "#FFD518", "#FFD518",  // Folk colors
+                "#DA002C", "#DA002C", "#DA002C", "#DA002C", "#DA002C", "#DA002C", "#DA002C", "#DA002C",  // Rock colors
+                "#078EAC", "#078EAC", "#078EAC", // Pop colors
+                "#610BD9", "#610BD9", "#610BD9", // Metal colors
+                "#31A217", "#31A217", "#31A217", "#31A217", "#31A217", "#31A217"  // Americana and other genres
+            ]);
+
+        const tooltip = d3.select("#tooltip");
+        const checkboxes = d3.select("#checkboxes");
+        const searchBox = d3.select("#search-box");
+        const selectedGroups = new Set();
+        let edgesVisible = true;
+        let allNodes = [], allLinks = [], nodeById = new Map();
+
+        // const myColor = d3.scaleOrdinal(d3.schemeCategory10);
+        const communityCenters = {};
+        let communityNodes = [];
+        let communitySimulation;
+        let nodeSimulation;
+
+        // New map to store the pre-calculated colors for each community
+        const communityColorMap = new Map();
+
+        // const jsonFile = "community_bbox_layout.json";
+        const jsonFile = "test1.json"
+
+        const zoom = d3.zoom().on("zoom", (event) => {
+            container.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+
+        const container = svg.append("g");
+
+        fetch(jsonFile).then(res => res.json()).then(graph => {
+            // const org_community_boxes = graph.community_boxes;
+            let community_boxes = graph.community_boxes;
+
+            // Calculate community colors only once and store them
+            function calculateCommunityColor(groupID) {
+                const communityNodes = graph.nodes.filter(n => n.group === groupID);
+                const majorityGenre = getMajorityGenre(communityNodes);
+                return genreColor(majorityGenre); // Return the pre-calculated color
+            }
+
+            // Function to get the majority genre for a community
+            function getMajorityGenre(communityNodes) {
+                const songAndAlbumNodes = communityNodes.filter(n => (n["Node Type"] === "Song" || n["Node Type"] === "Album") && n.genre);
+                const genreCount = d3.rollup(songAndAlbumNodes, v => v.length, d => d.genre);
+                const majorityGenre = Array.from(genreCount).reduce((max, current) => {
+                    return current[1] > max[1] ? current : max;
+                });
+                return majorityGenre ? majorityGenre[0] : null; // Return null if no genre found
+            }
+
+            // Store the pre-calculated color for each community in the communityColorMap
+            const communities = d3.group(graph.nodes, d => d.group);
+
+            communities.forEach((nodes, groupID) => {
+                const communityColor = calculateCommunityColor(groupID);
+                communityColorMap.set(groupID, communityColor);
+            });
+
+            function rescaleCommunity(communityId, scaleFactor) {
+
+                // Find nodes in the selected community
+                const communityNodes = graph.nodes.filter(n => n.group === communityId);
+
+                if (communityNodes.length === 0) return;
+
+                console.log(`Before scaling community ${communityId}:`);
+
+                communityNodes.forEach(node => {
+                    console.log(`Node ${node.id}: x=${node.x}, y=${node.y}`);
+                });
+
+                // Calculate community centroid from original positions
+                const centroidX = d3.mean(communityNodes, n => n.x);
+                const centroidY = d3.mean(communityNodes, n => n.y);
+
+                console.log(`Centroid: (${centroidX}, ${centroidY}), Scale factor: ${scaleFactor}`);
+
+                // Rescale positions relative to centroid
+                communityNodes.forEach(node => {
+                    const relativeX = node.x - centroidX;
+                    const relativeY = node.y - centroidY;
+
+                    console.log(`Node ${node.id} relative: (${relativeX}, ${relativeY})`);
+
+                    // Apply scale factor
+                    const newX = centroidX + (relativeX * scaleFactor);
+                    const newY = centroidY + (relativeY * scaleFactor);
+
+                    console.log(`Node ${node.id} new position: (${newX}, ${newY})`);
+
+                    node.x = newX;
+                    node.y = newY;
+
+                    console.log(`Node ${node.id} after assignment: x=${node.x}, y=${node.y}`);
+
+                });
+
+                console.log(`After scaling community ${communityId}:`);
+                communityNodes.forEach(node => {
+                    console.log(`Node ${node.id}: x=${node.x}, y=${node.y}, screenX=${node.screenX}, screenY=${node.screenY}`);
+                });
+
+                const filteredCommunityBoxes = community_boxes.filter(box => box.group === communityId);
+
+                // Check if the filtered array is empty
+                if (filteredCommunityBoxes.length === 0) {
+                    console.log(`Community box not found for groupID ${communityId}`);
+                }
+
+                // Assuming there is only one matching community box (adjust if there can be multiple)
+                const communityBox = filteredCommunityBoxes[0];
+
+                // update community centor in the JSON file
+                communityBox.center_x = centroidX + (communityBox.center_x - centroidX) * scaleFactor;
+                communityBox.center_y = centroidY + (communityBox.center_y - centroidY) * scaleFactor;
+
+                communityBox.radius = communityBox.radius * scaleFactor;
+
+
+                console.log(`Rescaled community ${communityId} by factor ${scaleFactor}`);
+            }
+
+            function rescaleAllCommunitiesLinear() {
+                const communities = d3.group(graph.nodes, d => d.group);
+                const maxNodes = d3.max(Array.from(communities.values()), nodes => nodes.length);
+                const minNodes = d3.min(Array.from(communities.values()), nodes => nodes.length);
+
+                // Linear scaling parameters
+                const minScaleFactor = 15.0;  // Scale factor for smallest communities
+                const maxScaleFactor = 50.0;  // Scale factor for largest communities
+
+                communities.forEach((nodes, communityId) => {
+
+                    const nodeCount = nodes.length;
+
+                    // Calculate linear scale factor
+                    const linearScaleFactor = minScaleFactor + ((nodeCount - minNodes) / (maxNodes - minNodes)) * (maxScaleFactor - minScaleFactor);
+
+                    console.log(`Community ${communityId}: ${nodeCount} nodes, scale factor ${linearScaleFactor.toFixed(2)}`);
+
+                    // Calculate centroid and rescale
+                    const centroidX = d3.mean(nodes, n => n.x);
+                    const centroidY = d3.mean(nodes, n => n.y);
+
+                    // //get the community centroid from JSON file
+
+                    nodes.forEach(node => {
+                        const relativeX = node.x - centroidX;
+                        const relativeY = node.y - centroidY;
+
+                        node.x = centroidX + (relativeX * linearScaleFactor);
+                        node.y = centroidY + (relativeY * linearScaleFactor);
+                    });
+
+                    const filteredCommunityBoxes = community_boxes.filter(box => box.group === communityId);
+
+                    // Check if the filtered array is empty
+                    if (filteredCommunityBoxes.length === 0) {
+                        console.log(`Community box not found for groupID ${communityId}`);
+                    }
+
+                    // Assuming there is only one matching community box (adjust if there can be multiple)
+                    const communityBox = filteredCommunityBoxes[0];
+
+                    // update community centor in the JSON file
+                    communityBox.center_x = centroidX + (communityBox.center_x - centroidX) * linearScaleFactor;
+                    communityBox.center_y = centroidY + (communityBox.center_y - centroidY) * linearScaleFactor;
+
+                    communityBox.radius = communityBox.radius * linearScaleFactor;
+                });
+
+                // Recalculate all community bounds and restart simulation
+                // ... (rest of bounds recalculation code)
+            }
+
+            rescaleAllCommunitiesLinear()
+            // rescaleCommunity(82, 10.0); //test re-scale for one community
+
+            graph.nodes.forEach(n => nodeById.set(n.id, n));
+
+            // // Scale original positions to screen coordinates
+            // const leftmargin = 50;
+            // const topmargin = 50;
+            // Scale original positions to screen coordinates
+            const leftmargin = 80;  // Increased left margin
+            const topmargin = 80;   // Increased top margin
+            const rightmargin = 80;
+            const bottommargin = 80;
+
+            const xScale = d3.scaleLinear()
+                .domain(d3.extent(graph.nodes, d => d.x))
+                .range([leftmargin, width - rightmargin]);
+            const yScale = d3.scaleLinear()
+                .domain(d3.extent(graph.nodes, d => d.y))
+                .range([topmargin, height - bottommargin]);
+
+            // Scale and assign screen coordinates
+            graph.nodes.forEach(n => {
+                n.screenX = xScale(n.x);
+                n.screenY = yScale(n.y);
+            });
+
+            community_boxes.forEach(comm => {
+                comm.screenCenterX = xScale(comm.center_x)
+                comm.screenCenterY = yScale(comm.center_y)
+            })
+
+            graph.nodes.forEach(n => {
+                n.screenX = xScale(n.x);
+                n.screenY = yScale(n.y);
+            });
+
+
+            // Calculate community bounds using scaled positions
+            const communityBounds = new Map();
+            for (const [groupID, nodes] of communities) {
+
+                if (nodes[0].group !== groupID) {
+                    console.log(`groupID does not match ${nodes[0].group}`);
+                }
+
+                // Calculate bounding box of scaled positions
+                const xCoords = nodes.map(n => n.screenX);
+                const yCoords = nodes.map(n => n.screenY);
+                const minX = d3.min(xCoords);
+                const maxX = d3.max(xCoords);
+                const minY = d3.min(yCoords);
+                const maxY = d3.max(yCoords);
+
+                // Calculate centroid and size
+                const centroidX = (minX + maxX) / 2;
+                const centroidY = (minY + maxY) / 2;
+
+                //get the community centroid from JSON file
+                const tmpID = nodes[0].group;
+                const filteredCommunityBoxes = community_boxes.filter(box => box.group === tmpID);
+
+                // Check if the filtered array is empty
+                if (filteredCommunityBoxes.length === 0) {
+                    console.log(`Community box not found for groupID ${communityId}`);
+                }
+
+                // Assuming there is only one matching community box (adjust if there can be multiple)
+                const communityBox = filteredCommunityBoxes[0];
+
+                const org_centroidX = communityBox.screenCenterX
+                const org_centroidY = communityBox.screenCenterY
+
+                const tmpWidth = Math.max(60, maxX - minX + 40);
+                const tmpHeight = Math.max(60, maxY - minY + 40);
+                const radius = Math.max(40, Math.sqrt(tmpWidth * tmpWidth + tmpHeight * tmpHeight) / 2);
+                const org_radius = communityBox.radius
+
+                communityBounds.set(groupID, {
+                    centroidX, centroidY, tmpWidth, tmpHeight, radius,
+                    minX, maxX, minY, maxY, org_centroidX, org_centroidY, org_radius
+                });
+            }
+
+            // Create virtual nodes for each community
+            communityNodes = Array.from(communities, ([group, nodes]) => {
+                const bounds = communityBounds.get(group);
+                return {
+                    id: `community-${group}`,
+                    group: group,
+                    nodes: nodes,
+                    radius: bounds.radius,
+                    nodeCount: nodes.length,
+                    bounds: bounds,
+                    x: bounds.centroidX, // Start at the original centroid
+                    y: bounds.centroidY,
+                    org_centroidX: bounds.org_centroidX,
+                    org_centroidY: bounds.org_centroidY,
+                    org_radius: bounds.org_radius,
+                };
+            });
+
+            // Define the myColor function based on community's majority genre
+            function myColor(groupID) {
+                // Get the community nodes for the given groupID
+                const communityNodes = graph.nodes.filter(n => n.group === groupID);
+
+                // Determine the majority genre for the community
+                const majorityGenre = getMajorityGenre(communityNodes);
+
+                // Return the color associated with the majority genre
+                return genreColor(majorityGenre);
+            }
+
+            // Initialize node simulation first (will be configured later)
+            nodeSimulation = d3.forceSimulation(graph.nodes);
+
+            // Create force simulation for community layout
+            communitySimulation = d3.forceSimulation(communityNodes)
+                .force("charge", d3.forceManyBody()
+                    .strength(-5000)
+                    .distanceMin(50)
+                    .distanceMax(400)
+                )
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide()
+                    .radius(d => d.radius + 60)
+                    .strength(0.8)
+                )
+                .force("x", d3.forceX(width / 2).strength(0.2))
+                .force("y", d3.forceY(height / 2).strength(0.2))
+                .on("tick", () => {
+                    // Update community centers
+                    communityNodes.forEach(community => {
+                        communityCenters[community.group] = {
+                            x: community.x,
+                            y: community.y
+                        };
+
+                        // Position nodes using their scaled positions relative to community movement
+                        const bounds = community.bounds;
+                        const offsetX = community.x - bounds.centroidX;
+                        const offsetY = community.y - bounds.centroidY;
+
+                        community.nodes.forEach(node => {
+                            node.fx = node.screenX + offsetX;
+                            node.fy = node.screenY + offsetY;
+                        });
+                    });
+
+                    // Update the main simulation
+                    nodeSimulation.alpha(0.1).restart();
+                });
+
+            // Add community center visualization (optional)
+            const communityViz = container.append("g").attr("class", "community-centers");
+
+            function updateCommunityViz() {
+                const visibleCommunities = communityNodes.filter(d => selectedGroups.has(d.group));
+
+                // Outer circles (main community boundary for force directed layout)
+                const outerCircles = communityViz.selectAll("circle.outer2")
+                    .data(visibleCommunities)
+                    .join("circle")
+                    // .attr("class", "community-center outer")
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y)
+                    .attr("r", d => d.radius / Math.sqrt(2) * 1.05)
+                    .attr("fill", "none")
+                    .attr("stroke", d => myColor(d.group))
+                    .attr("stroke-width", 2)
+                    .attr("opacity", 0.0);
+
+                // Apply drag behavior to new circles
+                outerCircles.call(communityDrag);
+            }
+
+            allNodes = graph.nodes;
+            allLinks = graph.links;
+            const groups = Array.from(new Set(graph.nodes.map(d => d.group))).sort((a, b) => a - b);
+            groups.forEach(g => selectedGroups.add(g));
+
+            const groupCounts = d3.rollup(graph.nodes, v => v.length, d => d.group);
+            groups.forEach(group => {
+                const row = checkboxes.append("div").attr("class", "checkbox-group");
+                row.append("div")
+                    .attr("class", "legend-color")
+                    .style("background-color", myColor(group));
+                row.append("input")
+                    .attr("type", "checkbox")
+                    .attr("id", `group-${group}`)
+                    .property("checked", true)
+                    .on("change", function () {
+                        if (this.checked) selectedGroups.add(group);
+                        else selectedGroups.delete(group);
+                        updateVisibility();
+                    });
+                row.append("label")
+                    .attr("for", `group-${group}`)
+                    .text(`Community ${group} (${groupCounts.get(group)})`);
+            });
+
+            d3.select("#selectAll").on("click", () => {
+                groups.forEach(group => {
+                    selectedGroups.add(group);
+                    d3.select(`#group-${group}`).property("checked", true);
+                });
+                updateVisibility();
+            });
+
+            d3.select("#clearAll").on("click", () => {
+                groups.forEach(group => {
+                    selectedGroups.delete(group);
+                    d3.select(`#group-${group}`).property("checked", false);
+                });
+                updateVisibility();
+            });
+
+            d3.select("#toggleEdges").on("click", () => {
+                edgesVisible = !edgesVisible;
+                d3.select("#toggleEdges").text(edgesVisible ? "Hide Edges" : "Show Edges");
+                updateVisibility();
+            });
+
+            d3.select("#restartLayout").on("click", () => {
+                // Randomize community positions and restart simulation
+                communityNodes.forEach(community => {
+                    community.x = Math.random() * (width - 200) + 100;
+                    community.y = Math.random() * (height - 200) + 100;
+                });
+                communitySimulation.alpha(1).restart();
+            });
+
+            d3.select("#stopSimulation").on("click", () => {
+                stopSimulations();
+            });
+
+            d3.select("#startSimulation").on("click", () => {
+                startSimulations();
+            });
+
+            d3.select("#exportJson").on("click", () => {
+                const visibleIds = new Set(allNodes.filter(n => selectedGroups.has(n.group)).map(n => n.id));
+                const filteredNodes = allNodes.filter(n => visibleIds.has(n.id));
+                const filteredLinks = allLinks.filter(l => visibleIds.has(l.source.id || l.source) && visibleIds.has(l.target.id || l.target));
+                const json = { nodes: filteredNodes, links: filteredLinks };
+                const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "filtered_subgraph.json";
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            d3.select("#search-box").on("input", function () {
+                const query = this.value.toLowerCase();
+
+                // node.attr("stroke", d => query && d.label.toLowerCase().includes(query) ? "#blue" : null)
+                //     .attr("stroke-width", d => query && d.label.toLowerCase().includes(query) ? 3 : null);
+
+                // Highlight all nodes, both circles and rects, based on the query
+                // node.selectAll("*")  // Select both circles and rects within each node
+                //     .attr("stroke", d => query && d.label.toLowerCase().includes(query) ? "blue" : null)  // Highlight based on query
+                //     .attr("stroke-width", d => query && d.label.toLowerCase().includes(query) ? 3 : null);  // Apply stroke width for highlighted nodes
+
+                // // Select all nodes and separate based on shape type
+                // node.selectAll("circle")  // Apply for circle nodes
+                //     .attr("stroke", d => query && d.label.toLowerCase().includes(query) ? "blue" : null)  // Highlight circles based on query
+                //     .attr("stroke-width", d => query && d.label.toLowerCase().includes(query) ? 3 : null);  // Apply stroke width for circles
+
+                // Apply search highlight to the inner circles (r = 3.5)
+                node.selectAll("circle")  // Select all circle elements
+                    .filter(function (d) {
+                        return d3.select(this).attr("r") == 3.5;  // Only apply to inner circles (radius 3.5)
+                    })
+                    .attr("stroke", d => query && d.label.toLowerCase().includes(query) ? "blue" : null)  // Highlight based on query
+                    .attr("stroke-width", d => query && d.label.toLowerCase().includes(query) ? 3 : null);  // Apply stroke width for inner circles
+
+
+                node.selectAll("rect")  // Apply for rect nodes
+                    .attr("stroke", d => query && d.label.toLowerCase().includes(query) ? "blue" : "#000")  // Highlight rects based on query (different color for distinction)
+                    .attr("stroke-width", d => query && d.label.toLowerCase().includes(query) ? 3 : 2);  // Apply stroke width for rects
+            });
+
+            // Add these functions
+            function stopSimulations() {
+                // Stop both simulations
+                communitySimulation.stop();
+                nodeSimulation.stop();
+
+                console.log("Simulations stopped");
+
+                // Update button states
+                d3.select("#stopSimulation").property("disabled", true);
+                d3.select("#startSimulation").property("disabled", false);
+            }
+
+            function startSimulations() {
+                // Restart both simulations
+                communitySimulation.alpha(0.3).restart();
+
+                console.log("Simulations started");
+
+                // Update button states
+                d3.select("#stopSimulation").property("disabled", false);
+                d3.select("#startSimulation").property("disabled", true);
+            }
+
+            function computeTaperPath(s, t) {
+                const x1 = s.x, y1 = s.y, x2 = t.x, y2 = t.y;
+                if ([x1, y1, x2, y2].some(v => isNaN(v))) return "";
+                const dx = x2 - x1, dy = y2 - y1;
+                const len = Math.sqrt(dx * dx + dy * dy);
+                if (len === 0) return "";
+                const ux = dx / len, uy = dy / len;
+                // const w1 = 1.25, w2 = 0.15;
+                const w1 = 2.00, w2 = 0.15;
+                const p1x = x1 - uy * w1, p1y = y1 + ux * w1;
+                const p2x = x1 + uy * w1, p2y = y1 - ux * w1;
+                const p3x = x2 + uy * w2, p3y = y2 - ux * w2;
+                const p4x = x2 - uy * w2, p4y = y2 + ux * w2;
+                return `M${p1x},${p1y} L${p2x},${p2y} L${p3x},${p3y} L${p4x},${p4y}Z`;
+            }
+
+            const bboxGroup = container.append("g").lower();
+
+            const link = container.selectAll("path.link")
+                .data(graph.links)
+                .join("path")
+                .attr("class", "link")
+                .attr("fill", "#aaa")
+                // .attr("stroke", "#aaa")
+                // .attr("stroke-width", "1px")
+                .attr("stroke", "none")
+                .attr("opacity", 0.4)
+                .attr("d", d => computeTaperPath(
+                    nodeById.get(d.source.id || d.source),
+                    nodeById.get(d.target.id || d.target)
+                ))
+                .on("mouseover", function (event, d) {
+                    // tooltip.html(`<strong>${d.type || ""}</strong><br>`)
+                    //     .style("left", `${event.pageX + 5}px`)
+                    //     .style("top", `${event.pageY + 5}px`)
+                    //     .style("opacity", 1);
+                    // d3.select(this).attr("fill", "#f00").attr("opacity", 0.9);
+                    // Get source and target nodes
+                    const source = typeof d.source === "object" ? d.source : nodeById.get(d.source);
+                    const target = typeof d.target === "object" ? d.target : nodeById.get(d.target);
+
+                    // Highlight this link
+                    d3.select(this).classed("link-highlighted", true);
+
+                    // Dim all other links
+                    link.filter(l => l !== d).classed("link-dimmed", true);
+
+                    // Highlight connected nodes
+                    node.classed("node-dimmed", true);
+                    node.filter(n => n.id === source.id || n.id === target.id)
+                        .classed("node-dimmed", false)
+                        .classed("node-highlighted", true);
+
+                    // Show tooltip with link information
+                    const direction = "→"; // You can make this dynamic based on link type
+                    tooltip.html(`<span style="color: ${myColor(source.group)}; font-weight:bold;">${source.label} (${source.id}, ${source["Node Type"]})</span><br>
+                        <span style="text-align: center; font-size: 16px;">${d.type || ""} ${direction}</span><br>
+                        <span style="color: ${myColor(target.group)}; font-weight:bold;">${target.label} (${target.id}, ${target["Node Type"]})</span><br>
+                        <small>Communities: ${source.group} → ${target.group}</small>
+                    `)
+                        .style("left", `${event.pageX + 10}px`)
+                        .style("top", `${event.pageY + 10}px`)
+                        .style("opacity", 0.8);
+                })
+                .on("mouseout", function () {
+
+                    // d3.select(this).attr("fill", "#aaa").attr("opacity", 0.4);
+                    d3.select(this).classed("link-highlighted", false);
+                    link.classed("link-dimmed", false);
+                    node.classed("node-highlighted", false)
+                        .classed("node-dimmed", false);
+
+                    // Hide tooltip
+                    tooltip.style("opacity", 0);
+                });
+
+            // const drag = d3.drag()
+            //     .on("start", function (event, d) {
+            //         d3.select(this).raise().classed("active", true);
+            //     })
+            //     .on("drag", function (event, d) {
+            //         d.fx = event.x;
+            //         d.fy = event.y;
+            //     })
+            //     .on("end", function (event, d) {
+            //         d3.select(this).classed("active", false);
+            //     });
+
+            const nodeDrag = d3.drag()
+                .on("start", function (event, d) {
+                    d3.select(this).raise().classed("active", true);
+                    d.isDragged = true; // Mark as manually positioned
+                    // Stop both simulations while dragging individual nodes
+                    nodeSimulation.stop();
+                    communitySimulation.stop();
+                })
+                .on("drag", function (event, d) {
+                    // Update the node's fixed position
+                    // d.fx, d.fy: Fixed positions that override simulation forces
+                    d.fx = event.x;
+                    d.fy = event.y;
+
+                    // Also update screenX/screenY for consistency
+                    d.screenX = event.x;
+                    d.screenY = event.y;
+
+                    // // Update the visual position immediately
+                    d3.select(this).attr("transform", `translate(${event.x},${event.y})`);
+
+                    // Update all links connected to this node
+                    link.attr("d", linkData => {
+                        const source = typeof linkData.source === "object" ? linkData.source : nodeById.get(linkData.source);
+                        const target = typeof linkData.target === "object" ? linkData.target : nodeById.get(linkData.target);
+
+                        const sourcePos = {
+                            x: source.fx !== null && source.fx !== undefined ? source.fx : source.x,
+                            y: source.fy !== null && source.fy !== undefined ? source.fy : source.y
+                        };
+                        const targetPos = {
+                            x: target.fx !== null && target.fx !== undefined ? target.fx : target.x,
+                            y: target.fy !== null && target.fy !== undefined ? target.fy : target.y
+                        };
+
+                        return computeTaperPath(sourcePos, targetPos);
+                    });
+
+                })
+                .on("end", function (event, d) {
+                    d3.select(this).classed("active", false);
+
+                    // Update the original x,y coordinates based on the inverse scale
+                    d.x = xScale.invert(d.fx);
+                    d.y = yScale.invert(d.fy);
+
+                    // Update screenX/screenY to match the new position
+                    d.screenX = d.fx;
+                    d.screenY = d.fy;
+
+                    // Release this specific node
+                    d.fx = null;
+                    d.fy = null;
+
+                    // // Option: Auto-restart after 2 seconds
+                    // setTimeout(() => {
+                    //     if (confirm(`Release node ${d.label} and restart simulation?`)) {
+                    //         // d.fx = null;
+                    //         // d.fy = null;
+                    //         communitySimulation.alpha(0.3).restart();
+                    //     }
+                    // }, 2000);
+                });
+            // .on("end", function (event, d) {
+            //     d3.select(this).classed("active", false);
+
+            //     // Update the original x,y coordinates based on the inverse scale
+            //     d.x = xScale.invert(d.fx);
+            //     d.y = yScale.invert(d.fy);
+
+            //     // Release this specific node
+            //     d.fx = null;
+            //     d.fy = null;
+
+            //     // Option: Auto-restart after 2 seconds
+            //     setTimeout(() => {
+            //         if (confirm(`Release node ${d.label} and restart simulation?`)) {
+            //             d.fx = null;
+            //             d.fy = null;
+            //             communitySimulation.alpha(0.3).restart();
+            //             nodeSimulation.alpha(0.1).restart();
+            //         }
+            //     }, 2000);
+            // });
+
+
+            // Add drag behavior for community centers
+            const communityDrag = d3.drag()
+                .on("start", function (event, d) {
+                    communitySimulation.alphaTarget(0.3).restart();
+                    d.fx = d.x;
+                    d.fy = d.y;
+                })
+                .on("drag", function (event, d) {
+                    d.fx = event.x;
+                    d.fy = event.y;
+                })
+                .on("end", function (event, d) {
+                    communitySimulation.alphaTarget(0);
+                    d.fx = null;
+                    d.fy = null;
+                });
+
+            const shapeMap = {
+                "Person": "rect",           // Person is now a square (rect)
+                "Song": "circle",           // Song remains a circle
+                "Album": "circle",          // Album remains a circle
+                "RecordLabel": "rect",      // RecordLabel is now a square (rect)
+                "MusicalGroup": "rect"      // MusicalGroup is now a square (rect)
+            };
+
+            // Define colors for Person, RecordLabel, and MusicalGroup nodes
+            const specialNodeColor = {
+                "Person": "#fff",       // For Person nodes (Tomato color)
+                "RecordLabel": "#e7e7e7",  // For RecordLabel nodes (BlueViolet color)
+                "MusicalGroup": "#838383"  // For MusicalGroup nodes (LimeGreen color)
+            };
+
+            const node = container.selectAll("g.node")
+                .data(graph.nodes)
+                .join("g")
+                .attr("class", "node")
+                .call(nodeDrag);
+
+            node.each(function (d) {
+                const group = d3.select(this);
+                const shape = shapeMap[d["Node Type"]] || "circle";
+
+                let genreColorValue = "#fff"; // Default color for non-Song and non-Album nodes
+
+                // Apply special colors for Person, RecordLabel, and MusicalGroup
+                const specialFillColor = specialNodeColor[d["Node Type"]] || genreColorValue;
+
+                // Check if the node is a Song or Album and apply the genre color
+                if (d["Node Type"] === "Song" || d["Node Type"] === "Album") {
+                    genreColorValue = genreColor(d.genre);  // Apply genre-based color
+                }
+
+                // Create a circle for Song and Album
+                if (shape === "circle") {
+                    group.append("circle")
+                        .attr("r", 3.5)  // Set the radius for Song and Album nodes
+                        .attr("fill", genreColorValue)
+                        .attr("opacity", 0.8); // Apply the genre color or default color
+
+                    // If the Song or Album is notable, add an outer ring
+                    if (d.notable) {
+                        group.append("circle")
+                            .attr("r", 6.0)  // Outer ring radius (larger than inner circle)
+                            .attr("fill", "none")
+                            .attr("stroke", genreColorValue)
+                            .attr("stroke-width", 2)
+                            .attr("opacity", 0.8);
+                    }
+                }
+                // For Person, Musical Group, and Record Label, use rotated square
+                else if (shape === "rect") {
+                    group.append("rect")
+                        .attr("x", -3)  // Centering the square (half width)
+                        .attr("y", -3)  // Centering the square (half height)
+                        .attr("width", 6)  // Set the width for square
+                        .attr("height", 6)  // Set the height for square
+                        .attr("fill", specialFillColor)
+                        .attr("stroke", "#000")
+                        .attr("stroke-width", 2)
+                        .attr("transform", "rotate(45)")  // Rotate 45 degrees for Person, Musical Group, and Record Label
+                        .attr("opacity", 0.8);
+                }
+            });
+
+            node.on("mouseover", function (event, d) {
+                // Show tooltip
+                tooltip.html(`<strong>${d.label}</strong> (${d.id})<br>Type: ${d["Node Type"]}<br>Community: ${d["group"]}`)
+                    .style("left", `${event.pageX + 5}px`)
+                    .style("top", `${event.pageY + 5}px`)
+                    .style("opacity", 0.8);
+
+                // Highlight the hovered node
+                d3.select(this).classed("node-highlighted", true);
+
+                // Find all connected nodes and links
+                const connectedNodeIds = new Set();
+                const connectedLinks = [];
+
+                // Check all links to find connections
+                allLinks.forEach(link => {
+                    const sourceId = typeof link.source === "object" ? link.source.id : link.source;
+                    const targetId = typeof link.target === "object" ? link.target.id : link.target;
+
+                    if (sourceId === d.id) {
+                        connectedNodeIds.add(targetId);
+                        connectedLinks.push(link);
+                    } else if (targetId === d.id) {
+                        connectedNodeIds.add(sourceId);
+                        connectedLinks.push(link);
+                    }
+                });
+
+                // Dim all nodes and links first
+                node.classed("node-dimmed", true);
+                link.classed("link-dimmed", true);
+
+                // Highlight connected nodes
+                node.filter(n => connectedNodeIds.has(n.id) || n.id === d.id)
+                    .classed("node-dimmed", false)
+                    .classed("node-highlighted", n => n.id === d.id); // Only the main node gets red highlight
+
+                // Highlight connected links
+                link.filter(l => {
+                    const sourceId = typeof l.source === "object" ? l.source.id : l.source;
+                    const targetId = typeof l.target === "object" ? l.target.id : l.target;
+                    return (sourceId === d.id || targetId === d.id);
+                })
+                    .classed("link-dimmed", false)
+                    .classed("link-highlighted", true);
+            })
+                .on("mouseout", function (event, d) {
+                    // Hide tooltip
+                    tooltip.style("opacity", 0);
+
+                    // Remove all highlighting and dimming
+                    node.classed("node-highlighted", false)
+                        .classed("node-dimmed", false);
+
+                    link.classed("link-highlighted", false)
+                        .classed("link-dimmed", false);
+                });
+
+            // Configure the main node simulation with minimal forces since positions are controlled by communities
+            nodeSimulation
+                .force("link", d3.forceLink(graph.links).id(d => d.id).distance(25).strength(0.1))
+                .force("charge", d3.forceManyBody().strength(-15))
+                .alphaDecay(0.05)
+                .on("tick", ticked);
+
+            function drawBoundingBoxes() {
+                const grouped = d3.group(graph.nodes.filter(d => selectedGroups.has(d.group)), d => d.group);
+
+                const boxes = [];
+                for (const [groupID, nodes] of grouped) {
+                    const communityColor = communityColorMap.get(groupID); // Retrieve pre-calculated color
+
+                    // Filter nodes to get only bridge nodes (if applicable)
+                    const bridgeNodes = nodes.filter(n => n.is_bridge); // Use the is_bridge property
+
+                    // Use bridge nodes if they exist, otherwise fall back to all nodes
+                    const xCoords = (bridgeNodes.length > 0 ? bridgeNodes : nodes).map(n => n.fx !== null && n.fx !== undefined ? n.fx : n.x);
+                    const yCoords = (bridgeNodes.length > 0 ? bridgeNodes : nodes).map(n => n.fy !== null && n.fy !== undefined ? n.fy : n.y);
+
+                    // Dynamically calculate padding (optional)
+                    const padding = 0.05 * (d3.max(xCoords) - d3.min(xCoords)); // 5% padding
+                    const minX = d3.min(xCoords) - padding;
+                    const maxX = d3.max(xCoords) + padding;
+                    const minY = d3.min(yCoords) - padding;
+                    const maxY = d3.max(yCoords) + padding;
+
+                    const tmpID = nodes[0].group;
+
+                    const filteredCommunityBoxes = community_boxes.filter(box => box.group === tmpID);
+
+                    // Check if the filtered array is empty
+                    if (filteredCommunityBoxes.length === 0) {
+                        console.log(`Community box not found for groupID ${tmpID}`);
+                        continue;  // Skip this iteration if no community box is found
+                    }
+
+                    // Assuming there is only one matching community box (adjust if there can be multiple)
+                    const communityBox = filteredCommunityBoxes[0];
+
+                    // Get the majority genre for the community
+                    const majorityGenre = getMajorityGenre(nodes);  // Get the majority genre of the current community
+
+                    const orgMinX = d3.min(xCoords);
+                    const orgMaxX = d3.max(xCoords);
+                    const orgMinY = d3.min(yCoords);
+                    const orgMaxY = d3.max(yCoords);
+                    const tmpWidth = orgMaxX - orgMinX;
+                    const tmpHeight = orgMaxY - orgMinY;
+                    const drawCenterX = (orgMinX + orgMaxX) / 2;
+                    const drawCenterY = (orgMinY + orgMaxY) / 2;
+                    const drawRadius = Math.sqrt(tmpWidth * tmpWidth + tmpHeight * tmpHeight) / 2
+                    const hasBridges = communityBox.has_bridges;
+
+                    // Push the calculated box to the boxes array
+                    boxes.push({
+                        groupID: tmpID,
+                        x: minX,
+                        y: minY,
+                        width: maxX - minX,
+                        height: maxY - minY,
+                        drawCenterX: drawCenterX,
+                        drawCenterY: drawCenterY,
+                        hasBridges: hasBridges,
+                        drawRadius: drawRadius,
+                        communityColor: communityColor  // Store the community color
+                    });
+                }
+
+                // Separate boxes by whether they have bridges
+                const bridgeBoxes = boxes.filter(d => d.hasBridges);
+                const regularBoxes = boxes.filter(d => !d.hasBridges);
+
+
+
+                // Draw circles for communities with bridges
+                if (bridgeBoxes.length > 0) {
+                    const innerCircles1 = bboxGroup.selectAll("circle.inner1")
+                        .data(bridgeBoxes)
+                        .join("circle")
+                        .attr("class", "community-band inner1")
+                        .attr("cx", d => d.drawCenterX)
+                        .attr("cy", d => d.drawCenterY)
+                        .attr("r", d => d.drawRadius * 0.70)
+                        // .attr("fill", d => myColor(d.groupID))
+                        .attr("fill", d => d.communityColor)  // Use the majority genre color
+                        // .attr("stroke", d => myColor(d.groupID))
+                        .attr("stroke", d => d.communityColor)
+                        .attr("stroke-width", 1)
+                        .attr("opacity", 0.08);
+
+                    const innerCircles2 = bboxGroup.selectAll("circle.inner2")
+                        .data(bridgeBoxes)
+                        .join("circle")
+                        .attr("class", "community-bandoutline inner2")
+                        .attr("cx", d => d.drawCenterX)
+                        .attr("cy", d => d.drawCenterY)
+                        .attr("r", d => d.drawRadius * 0.90)
+                        .attr("fill", d => d.communityColor)
+                        .attr("stroke", d => d.communityColor)
+                        .attr("stroke-width", 1)
+                        .attr("opacity", 0.1);
+
+                    // // Outer circles (main community boundary for force directed layout)
+                    const outerCircles = bboxGroup.selectAll("circle.outer")
+                        .data(bridgeBoxes)
+                        .join("circle")
+                        .attr("class", "community-center outer")
+                        .attr("cx", d => d.drawCenterX)
+                        .attr("cy", d => d.drawCenterY)
+                        .attr("r", d => d.drawRadius * 1.15)
+                        .attr("fill", "none")
+                        .attr("stroke", d => d.communityColor)
+                        .attr("stroke-width", 2)
+                        .attr("opacity", 0.4);
+
+                    // // Function to get the genre distribution for the community
+                    // function getGenreDistribution(communityNodes) {
+                    //     // Filter out only the Song and Album nodes
+                    //     const songAndAlbumNodes = communityNodes.filter(n => (n["Node Type"] === "Song" || n["Node Type"] === "Album") && n.genre);
+
+                    //     // Count the occurrence of each genre
+                    //     const genreCount = d3.rollup(songAndAlbumNodes, v => v.length, d => d.genre);
+
+                    //     // Convert genre count to an array of objects with genre and count
+                    //     const genreData = Array.from(genreCount).map(([genre, count]) => ({ genre, count }));
+
+                    //     // Calculate the total number of artworks (songs + albums)
+                    //     const totalArtworks = d3.sum(genreData, d => d.count);
+
+                    //     // Calculate the percentage for each genre
+                    //     genreData.forEach(d => {
+                    //         d.percentage = (d.count / totalArtworks) * 100;
+                    //     });
+
+                    //     return genreData;
+                    // }
+
+                    // // Pie chart for each community showing genre distribution
+                    // const pie = d3.pie()
+                    //     .value(d => d.count)  // The value for each pie segment is the genre count
+                    //     .sort(null);  // Don't sort the slices (i.e., they are in the order they appear in the data)
+
+                    // const arc = d3.arc()
+                    //     .innerRadius(d => d.drawRadius * 0.75)  // Set inner radius to make it a ring
+                    //     .outerRadius(d => d.drawRadius * 1.05);  // Outer radius of the ring
+
+                    // // Draw the pie chart for each community
+                    // communityViz.selectAll("g.pie")
+                    //     .data(bridgeBoxes)
+                    //     .join("g")
+                    //     .attr("class", "pie-chart")
+                    //     .attr("transform", d => `translate(${d.drawCenterX}, ${d.drawCenterY})`)  // Position each pie chart at the center of each community
+                    //     .each(function (d) {
+                    //         const genreData = getGenreDistribution(graph.nodes.filter(n => n.group === d.groupID)); // Get genre distribution for the community
+
+                    //         const pieGroup = d3.select(this)
+                    //             .selectAll("path")
+                    //             .data(pie(genreData))  // Create pie slices based on genre data
+                    //             .join("path")
+                    //             .attr("d", arc)
+                    //             .attr("fill", d => genreColor(d.data.genre))  // Fill each slice with the color of the genre
+                    //             .attr("stroke", "white")
+                    //             .attr("stroke-width", 0.5)
+                    //             .attr("opacity", 0.8);
+
+                    //         // Optionally, you can add labels to each slice
+                    //         pieGroup.append("title")
+                    //             .text(d => `${d.data.genre}: ${d.data.percentage.toFixed(2)}%`);
+                    //     });
+                }
+
+                // Draw rectangles for communities without bridges
+                if (regularBoxes.length > 0) {
+                    // bboxGroup.selectAll("rect")
+                    //     .data(regularBoxes)
+                    //     .join("rect")
+                    //     .attr("x", d => d.x)
+                    //     .attr("y", d => d.y)
+                    //     .attr("width", d => d.width)
+                    //     .attr("height", d => d.height)
+                    //     .attr("fill", d => myColor(d.groupID)) // Fixed: use groupID instead of group
+                    //     .attr("opacity", 0.08)
+                    //     .attr("stroke", d => myColor(d.groupID))
+                    //     .attr("stroke-width", 1.2);
+
+                    bboxGroup.selectAll("circle.nobridge")
+                        .data(regularBoxes)
+                        .join("circle")
+                        .attr("class", "community-band nobridge")
+                        .attr("cx", d => d.drawCenterX)
+                        .attr("cy", d => d.drawCenterY)
+                        .attr("r", d => {
+                            return Math.sqrt(d.width * d.width + d.height * d.height) / 2
+                        })
+                        // .attr("fill", d => myColor(d.groupID))
+                        .attr("fill", d => d.communityColor)  // Use the majority genre color
+                        .attr("stroke", d => d.communityColor)
+                        .attr("stroke-width", 1)
+                        .attr("opacity", 0.08);
+                }
+
+                // Clean up elements that should no longer exist
+                if (bridgeBoxes.length === 0) {
+                    bboxGroup.selectAll("circle.inner1, circle.inner2 circle.outer").remove();
+                }
+
+                if (regularBoxes.length === 0) {
+                    bboxGroup.selectAll("circle.nobridge").remove();
+                }
+            }
+            // function ticked() {
+            //     link.attr("d", d => computeTaperPath(
+            //         typeof d.source === "object" ? d.source : nodeById.get(d.source),
+            //         typeof d.target === "object" ? d.target : nodeById.get(d.target)
+            //     ));
+
+            //     node.attr("transform", d => `translate(${d.x},${d.y})`);
+            //     drawBoundingBoxes();
+            //     updateCommunityViz();
+            // }
+            function ticked() {
+                link.attr("d", d => {
+                    // Use fixed positions (fx, fy) if available, otherwise use simulation positions (x, y)
+                    const source = typeof d.source === "object" ? d.source : nodeById.get(d.source);
+                    const target = typeof d.target === "object" ? d.target : nodeById.get(d.target);
+
+                    const sourcePos = {
+                        x: source.fx !== null && source.fx !== undefined ? source.fx : source.x,
+                        y: source.fy !== null && source.fy !== undefined ? source.fy : source.y
+                    };
+                    const targetPos = {
+                        x: target.fx !== null && target.fx !== undefined ? target.fx : target.x,
+                        y: target.fy !== null && target.fy !== undefined ? target.fy : target.y
+                    };
+
+                    return computeTaperPath(sourcePos, targetPos);
+                });
+
+                node.attr("transform", d => {
+                    // Use fixed positions if available, otherwise use simulation positions
+                    const x = d.fx !== null && d.fx !== undefined ? d.fx : d.x;
+                    const y = d.fy !== null && d.fy !== undefined ? d.fy : d.y;
+                    return `translate(${x},${y})`;
+                });
+
+                drawBoundingBoxes();
+                // updateCommunityViz();
+            }
+
+            function updateVisibility() {
+                const visible = new Set(graph.nodes.filter(d => selectedGroups.has(d.group)).map(d => d.id));
+                node.style("display", d => selectedGroups.has(d.group) ? null : "none");
+                link.style("display", d => edgesVisible && visible.has(d.source.id || d.source) && visible.has(d.target.id || d.target) ? null : "none");
+                drawBoundingBoxes();
+                // updateCommunityViz();
+            }
+
+            updateVisibility();
+        });
+    </script>
+</body>
+
+</html>
