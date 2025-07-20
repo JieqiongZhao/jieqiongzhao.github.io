@@ -119,9 +119,11 @@
         <input type="text" id="search-box" placeholder="Search node by name...">
         <div class="control-buttons">
             <button id="selectAll">Select All</button>
-            <button id="clearAll">Clear All</button>
-            <button id="toggleEdges">Hide Edges</button>
-            <button id="exportJson">Export Filtered</button>
+            <button id="clearAll">Clear All</button> <br>
+            <!-- <button id="toggleEdges">Hide Edges</button> -->
+            <button id="toggleInsideEdges">Hide Inside Edges</button>
+            <button id="toggleOutsideEdges">Hide Outside Edges</button> <br>
+            <button id="exportJson">Export Filtered</button> <br>
             <button id="restartLayout">Restart Layout</button>
             <button id="stopSimulation">Stop Simulation</button>
             <button id="startSimulation">Start Simulation</button>
@@ -154,7 +156,10 @@
         const checkboxes = d3.select("#checkboxes");
         const searchBox = d3.select("#search-box");
         const selectedGroups = new Set();
-        let edgesVisible = true;
+        // let edgesVisible = true; //Flags to toggle all edges
+        let showInsideEdges = true; // Flags to toggle inside edges
+        let showOutsideEdges = true; // Flags to toggle outside edgess
+
         let allNodes = [], allLinks = [], nodeById = new Map();
 
         // const myColor = d3.scaleOrdinal(d3.schemeCategory10);
@@ -163,8 +168,8 @@
         let communitySimulation;
         let nodeSimulation;
 
-        // New map to store the pre-calculated colors for each community
-        const communityColorMap = new Map();
+        const communityColorMap = new Map(); // New map to store the pre-calculated colors for each community
+        const communityGenreDistributionMap = new Map(); // New map to store the genre distribution for each community
 
         // const jsonFile = "community_bbox_layout.json";
         const jsonFile = "test1.json"
@@ -197,12 +202,36 @@
                 return majorityGenre ? majorityGenre[0] : null; // Return null if no genre found
             }
 
+            // Function to get the genre distribution for the community
+            function getGenreDistribution(communityNodes) {
+                // Filter out only the Song and Album nodes
+                const songAndAlbumNodes = communityNodes.filter(n => (n["Node Type"] === "Song" || n["Node Type"] === "Album") && n.genre);
+
+                // Count the occurrence of each genre
+                const genreCount = d3.rollup(songAndAlbumNodes, v => v.length, d => d.genre);
+
+                // Convert genre count to an array of objects with genre and count
+                const genreData = Array.from(genreCount).map(([genre, count]) => ({ genre, count }));
+
+                // Calculate the total number of artworks (songs + albums)
+                const totalArtworks = d3.sum(genreData, d => d.count);
+
+                // Calculate the percentage for each genre
+                genreData.forEach(d => {
+                    d.percentage = (d.count / totalArtworks) * 100;
+                });
+
+                return genreData;
+            }
+
             // Store the pre-calculated color for each community in the communityColorMap
             const communities = d3.group(graph.nodes, d => d.group);
 
             communities.forEach((nodes, groupID) => {
                 const communityColor = calculateCommunityColor(groupID);
                 communityColorMap.set(groupID, communityColor);
+                const communityGenreDist = getGenreDistribution(nodes)
+                communityGenreDistributionMap.set(groupID, communityGenreDist)
             });
 
             function rescaleCommunity(communityId, scaleFactor) {
@@ -540,9 +569,23 @@
                 updateVisibility();
             });
 
-            d3.select("#toggleEdges").on("click", () => {
-                edgesVisible = !edgesVisible;
-                d3.select("#toggleEdges").text(edgesVisible ? "Hide Edges" : "Show Edges");
+            // d3.select("#toggleEdges").on("click", () => {
+            //     edgesVisible = !edgesVisible;
+            //     d3.select("#toggleEdges").text(edgesVisible ? "Hide Edges" : "Show Edges");
+            //     updateVisibility();
+            // });
+
+            // Toggle function for inside edges
+            d3.select("#toggleInsideEdges").on("click", function () {
+                showInsideEdges = !showInsideEdges;
+                d3.select("#toggleInsideEdges").text(showInsideEdges ? "Hide Inside Edges" : "Show Inside Edges");
+                updateVisibility();
+            });
+
+            // Toggle function for outside edges
+            d3.select("#toggleOutsideEdges").on("click", function () {
+                showOutsideEdges = !showOutsideEdges;
+                d3.select("#toggleOutsideEdges").text(showOutsideEdges ? "Hide Outside Edges" : "Show Outside Edges");
                 updateVisibility();
             });
 
@@ -960,6 +1003,7 @@
                 const boxes = [];
                 for (const [groupID, nodes] of grouped) {
                     const communityColor = communityColorMap.get(groupID); // Retrieve pre-calculated color
+                    const communityGenreDist = communityGenreDistributionMap.get(groupID); // Retrieve pre-calculated distribution of genre
 
                     // Filter nodes to get only bridge nodes (if applicable)
                     const bridgeNodes = nodes.filter(n => n.is_bridge); // Use the is_bridge property
@@ -1013,7 +1057,8 @@
                         drawCenterY: drawCenterY,
                         hasBridges: hasBridges,
                         drawRadius: drawRadius,
-                        communityColor: communityColor  // Store the community color
+                        communityColor: communityColor,  // Store the community color
+                        communityGenreDist: communityGenreDist // store the genre distribution of each community
                     });
                 }
 
@@ -1064,45 +1109,31 @@
                         .attr("stroke-width", 2)
                         .attr("opacity", 0.4);
 
-                    // // Function to get the genre distribution for the community
-                    // function getGenreDistribution(communityNodes) {
-                    //     // Filter out only the Song and Album nodes
-                    //     const songAndAlbumNodes = communityNodes.filter(n => (n["Node Type"] === "Song" || n["Node Type"] === "Album") && n.genre);
-
-                    //     // Count the occurrence of each genre
-                    //     const genreCount = d3.rollup(songAndAlbumNodes, v => v.length, d => d.genre);
-
-                    //     // Convert genre count to an array of objects with genre and count
-                    //     const genreData = Array.from(genreCount).map(([genre, count]) => ({ genre, count }));
-
-                    //     // Calculate the total number of artworks (songs + albums)
-                    //     const totalArtworks = d3.sum(genreData, d => d.count);
-
-                    //     // Calculate the percentage for each genre
-                    //     genreData.forEach(d => {
-                    //         d.percentage = (d.count / totalArtworks) * 100;
-                    //     });
-
-                    //     return genreData;
-                    // }
-
                     // // Pie chart for each community showing genre distribution
                     // const pie = d3.pie()
                     //     .value(d => d.count)  // The value for each pie segment is the genre count
                     //     .sort(null);  // Don't sort the slices (i.e., they are in the order they appear in the data)
 
-                    // const arc = d3.arc()
-                    //     .innerRadius(d => d.drawRadius * 0.75)  // Set inner radius to make it a ring
-                    //     .outerRadius(d => d.drawRadius * 1.05);  // Outer radius of the ring
+                    // // Clean up existing pie charts before drawing new ones
+                    // bboxGroup.selectAll("g.pie-chart").remove();  // Remove all existing pie charts
 
                     // // Draw the pie chart for each community
-                    // communityViz.selectAll("g.pie")
+                    // bboxGroup.selectAll("g.pie-chart")
                     //     .data(bridgeBoxes)
                     //     .join("g")
                     //     .attr("class", "pie-chart")
                     //     .attr("transform", d => `translate(${d.drawCenterX}, ${d.drawCenterY})`)  // Position each pie chart at the center of each community
                     //     .each(function (d) {
-                    //         const genreData = getGenreDistribution(graph.nodes.filter(n => n.group === d.groupID)); // Get genre distribution for the community
+                    //         const genreData = d.communityGenreDist;
+                    //         const innerRadius = Math.round(d.drawRadius * 1.05 * 100) / 100;
+                    //         const outerRadius = innerRadius + 10;
+
+                    //         // Check if genreData is not empty
+                    //         if (!genreData || genreData.length === 0) return;
+
+                    //         const arc = d3.arc()
+                    //             .innerRadius(innerRadius)  // Set inner radius for a ring chart
+                    //             .outerRadius(outerRadius); // Outer radius for the pie slice
 
                     //         const pieGroup = d3.select(this)
                     //             .selectAll("path")
@@ -1110,13 +1141,11 @@
                     //             .join("path")
                     //             .attr("d", arc)
                     //             .attr("fill", d => genreColor(d.data.genre))  // Fill each slice with the color of the genre
-                    //             .attr("stroke", "white")
-                    //             .attr("stroke-width", 0.5)
                     //             .attr("opacity", 0.8);
 
-                    //         // Optionally, you can add labels to each slice
-                    //         pieGroup.append("title")
-                    //             .text(d => `${d.data.genre}: ${d.data.percentage.toFixed(2)}%`);
+                    //         // Optionally, add labels to each slice
+                    //         // pieGroup.append("title")
+                    //         //     .text(d => `${d.data.genre}: ${d.data.percentage.toFixed(2)}%`);
                     //     });
                 }
 
@@ -1152,11 +1181,17 @@
 
                 // Clean up elements that should no longer exist
                 if (bridgeBoxes.length === 0) {
-                    bboxGroup.selectAll("circle.inner1, circle.inner2 circle.outer").remove();
+                    bboxGroup.selectAll("circle.inner1, circle.inner2, circle.outer").remove();
+
+                    // Also remove the pie chart (arc) elements
+                    bboxGroup.selectAll("g.pie-chart").remove();
                 }
 
                 if (regularBoxes.length === 0) {
                     bboxGroup.selectAll("circle.nobridge").remove();
+
+                    // Also remove the pie chart (arc) elements
+                    bboxGroup.selectAll("g.pie-chart").remove();
                 }
             }
             // function ticked() {
@@ -1198,10 +1233,24 @@
                 // updateCommunityViz();
             }
 
+
+
             function updateVisibility() {
                 const visible = new Set(graph.nodes.filter(d => selectedGroups.has(d.group)).map(d => d.id));
                 node.style("display", d => selectedGroups.has(d.group) ? null : "none");
-                link.style("display", d => edgesVisible && visible.has(d.source.id || d.source) && visible.has(d.target.id || d.target) ? null : "none");
+
+                // link.style("display", d => edgesVisible && visible.has(d.source.id || d.source) && visible.has(d.target.id || d.target) ? null : "none");
+                // Update link visibility based on edge type (inside or outside)
+                link.style("display", function (d) {
+                    const isInsideEdge = d.source.group === d.target.group;
+                    const isOutsideEdge = d.source.group !== d.target.group;
+
+                    const showInside = showInsideEdges && isInsideEdge;
+                    const showOutside = showOutsideEdges && isOutsideEdge;
+
+                    return (showInside || showOutside) ? null : "none";
+                });
+
                 drawBoundingBoxes();
                 // updateCommunityViz();
             }
