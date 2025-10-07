@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIRE 2025 – AI in Research and Education Workshop</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "EducationEvent",
+    "name": "AIRE 2025 – AI in Research and Education Workshop",
+    "startDate": "2025-11-21T09:00:00-05:00",
+    "endDate": "2025-11-21T17:00:00-05:00",
+    "eventAttendanceMode": "https://schema.org/MixedEventAttendanceMode",
+    "eventStatus": "https://schema.org/EventScheduled",
+    "url": "https://example.org/aire2025",
+    "location": {
+      "@type": "Place",
+      "name": "Georgia Cyber Center",
+      "address": "100 Grace Hopper Lane, Augusta, GA 30901, USA"
+    },
+    "organizer": {
+      "@type": "Organization",
+      "name": "Augusta University – School of Computer and Cyber Sciences"
+    },
+    "description": "A focused, one‑day workshop exploring how modern AI systems transform research workflows and teaching practice – from literature triage and data analysis to assessment, ethics, and trustworthy deployment."
+  }
+  </script>
+  <meta name="description" content="AIRE 2025: a one‑day workshop on AI for research workflows and education practice. Join us for talks, posters, and discussions on LLMs, pedagogy, reproducibility, and trustworthy AI." />
+  <link rel="icon" type="image/png" href="aire-icon.png" />
+  
+  <!-- Open Graph / Twitter -->
+  <meta property="og:title" content="AIRE 2025 – AI in Research and Education Workshop" />
+  <meta property="og:description" content="Talks • Panels • Posters on AI for research and education practice." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://example.org/aire2025" />
+  <meta property="og:image" content="https://placehold.co/1200x630/png?text=AIRE+2025" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <style>
+    :root{
+      --bg:#f7f8fc;
+      --panel:#ffffff;
+      --muted:#4b5563;
+      --text:#0f172a;
+      --brand:#1e40af;
+      --brand-2:#16a34a;
+      --warn:#b45309;
+      --max:1200px;
+      --radius:18px;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; color:var(--text); background:var(--bg);} 
+    a{color:var(--brand); text-decoration: none}
+    a:hover{text-decoration:underline}
+    .container{max-width:var(--max); margin:0 auto; padding:0 20px}
+
+    /* Header - Improved */
+    .skip{position:absolute; left:-9999px}
+    .skip:focus{left:20px; top:10px; background:#fff; color:#000; padding:8px 12px; border-radius:8px; z-index:9999}
+    
+    header{
+      position:sticky; 
+      top:0; 
+      backdrop-filter:saturate(120%) blur(6px); 
+      background:rgba(255,255,255,.95); 
+      border-bottom:1px solid rgba(0,0,0,.06); 
+      z-index:50;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    
+    .nav{
+      display:flex; 
+      align-items:center; 
+      justify-content: space-between;
+      padding:14px 0;
+      gap:20px;
+    }
+    
+    .brand{
+      display:flex; 
+      align-items:center; 
+      gap:12px; 
+      font-weight:700; 
+      letter-spacing:.3px;
+      color:var(--text);
+      white-space: nowrap;
+    }
+    
+    .brand:hover{text-decoration:none}
+    
+    /* .brand .logo{
+      width:36px; 
+      height:36px; 
+      background:conic-gradient(from 210deg at 50% 50%, #79f2c0, #6aa3ff 60%, #b3e5ff); 
+      border-radius:12px; 
+      flex-shrink: 0;
+      box-shadow: var(--shadow);
+    } */
+    .brand .logo{
+      width:36px; 
+      height:36px; 
+      border-radius:12px; 
+      flex-shrink: 0;
+      object-fit: cover;
+    }
+
+    /* Navigation - Improved */
+    nav{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap: wrap;
+    }
+    
+    nav a{
+      padding:8px 14px;
+      border-radius:8px;
+      font-size:.95rem;
+      font-weight:500;
+      color:var(--text);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    
+    nav a:hover{
+      background:rgba(30,64,175,.08);
+      text-decoration:none;
+      color:var(--brand);
+    }
+    
+    nav a.active{
+      background:rgba(30,64,175,.12);
+      color:var(--brand);
+      font-weight:600;
+    }
+
+    /* Mobile menu button */
+    .menu-toggle{
+      display:none;
+      background:transparent;
+      border:none;
+      cursor:pointer;
+      padding:8px;
+      border-radius:8px;
+      color:var(--text);
+    }
+    
+    .menu-toggle:hover{
+      background:rgba(0,0,0,.05);
+    }
+    
+    .menu-icon{
+      display:block;
+      width:24px;
+      height:2px;
+      background:currentColor;
+      position:relative;
+      transition: background 0.3s;
+    }
+    
+    .menu-icon::before,
+    .menu-icon::after{
+      content:'';
+      position:absolute;
+      width:24px;
+      height:2px;
+      background:currentColor;
+      transition: transform 0.3s;
+    }
+    
+    .menu-icon::before{top:-7px}
+    .menu-icon::after{top:7px}
+    
+    .menu-toggle.open .menu-icon{background:transparent}
+    .menu-toggle.open .menu-icon::before{transform:rotate(45deg); top:0}
+    .menu-toggle.open .menu-icon::after{transform:rotate(-45deg); top:0}
+
+    /* Responsive behavior */
+    @media (max-width: 1024px){
+      nav a{
+        padding:6px 10px;
+        font-size:.9rem;
+      }
+    }
+
+    @media (max-width: 900px){
+      .menu-toggle{display:block}
+      
+      nav{
+        position:absolute;
+        top:100%;
+        left:0;
+        right:0;
+        background:rgba(255,255,255,.98);
+        backdrop-filter:blur(8px);
+        flex-direction:column;
+        align-items:stretch;
+        padding:12px 20px;
+        gap:4px;
+        box-shadow:0 8px 16px rgba(0,0,0,.08);
+        border-bottom:1px solid rgba(0,0,0,.06);
+        max-height:0;
+        overflow:hidden;
+        opacity:0;
+        transition: all 0.3s ease;
+      }
+      
+      nav.open{
+        max-height:600px;
+        opacity:1;
+        padding:12px 20px 20px;
+      }
+      
+      nav a{
+        padding:12px 16px;
+        border-radius:8px;
+        text-align:left;
+      }
+    }
+
+    /* Buttons */
+    .btn{display:inline-block; padding:12px 18px; border-radius:12px; font-weight:700; border:1px solid rgba(0,0,0,.12); background:linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,.01)); color:var(--text)}
+    .btn:hover{transform:translateY(-1px); text-decoration:none}
+    .btn.brand{background:linear-gradient(135deg, var(--brand), #3b82f6); color:#ffffff; border:none}
+    .btn.ghost{background:transparent}
+
+    /* Hero */
+    .hero{position:relative; overflow:hidden}
+    .hero .bg-grad{position:absolute; inset:0; background:radial-gradient(800px 500px at 0% 0%, rgba(30,64,175,.08), transparent 60%), radial-gradient(700px 450px at 100% 0%, rgba(16,185,129,.08), transparent 60%)}
+    .hero .wrap{position:relative; padding:68px 0 44px}
+    .kicker{display:inline-flex; gap:8px; align-items:center; font-weight:800; color:#1f2937; letter-spacing:.04em; text-transform:uppercase; font-size:.85rem}
+    .kicker .dot{width:8px; height:8px; background:var(--brand-2); border-radius:999px; box-shadow:0 0 0 6px rgba(16,185,129,.12)}
+    h1{font-size:clamp(1.8rem, 4vw, 3rem); margin:.3rem 0 1rem; line-height:1.1}
+    .sub{max-width:800px; color:#475569; font-size:1.05rem}
+    .cta{display:flex; gap:12px; margin-top:22px; flex-wrap:wrap}
+
+    /* Sections */
+    section{padding:64px 0; border-top:1px solid rgba(0,0,0,.06)}
+    section .lead{max-width:820px; color:#1f2937}
+    .two-col{display:grid; grid-template-columns: 1.1fr .9fr; gap:28px}
+    @media (max-width: 900px){ .two-col{grid-template-columns:1fr} }
+
+    /* Cards & grids */
+    .grid{display:grid; grid-template-columns: repeat(12, 1fr); gap:16px}
+    .card{background:var(--panel); border:1px solid rgba(0,0,0,.08); padding:18px; border-radius:var(--radius); box-shadow: var(--shadow)}
+    .card h3{margin-top:0}
+    .span-4{grid-column: span 4}
+    .span-6{grid-column: span 6}
+    .span-12{grid-column: 1 / -1}
+    @media (max-width: 900px){ .span-4, .span-6{grid-column: 1 / -1} }
+
+    /* Key dates */
+    .dates ul{list-style:none; padding:0; margin:0}
+    .dates li{display:flex; align-items:center; gap:12px; padding:12px 14px; margin:8px 0; background:linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,.01)); border:1px dashed rgba(0,0,0,.12); border-radius:12px}
+    .dates time{font-weight:800; color:var(--warn); min-width:160px}
+
+    /* Schedule */
+    .schedule table{width:100%; border-collapse: collapse}
+    .schedule th, .schedule td{padding:12px; border-bottom:1px solid rgba(0,0,0,.08); text-align:left; vertical-align:top}
+    .badge{display:inline-flex; align-items:center; font-size:.78rem; gap:8px; padding:6px 10px; border-radius:999px; background:#e6f1ff; border:1px solid #bcd8ff; color:#113b6e}
+
+    /* People */
+    .people{display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px}
+    .person{display:flex; gap:12px}
+    .person img{width:64px; height:64px; border-radius:12px; object-fit:cover; border:1px solid rgba(0,0,0,.08)}
+    .person .meta{font-size:.95rem}
+
+    /* Footer */
+    footer{padding:32px 0; color:#475569}
+    .foot-grid{display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between}
+    .small{font-size:.9rem; color:var(--muted)}
+
+    /* Utility */
+    .sr{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0, 0, 0, 0); white-space:nowrap; border:0}
+    .muted{color:var(--muted)}
+    .center{text-align:center}
+  </style>
+</head>
+<body>
+  <a href="#main" class="skip">Skip to content</a>
+  
+  <header>
+    <div class="container nav">
+      <a href="#" class="brand">
+        <img src="aire-icon.png" alt="AIRE Logo" class="logo" />
+        <span>AIRE 2025</span>
+      </a>
+      
+      <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span class="menu-icon"></span>
+      </button>
+      
+      <nav aria-label="Primary">
+        <a href="#overview">Overview</a>
+        <a href="#dates">Key Dates</a>
+        <a href="#cfp">Call</a>
+        <a href="#program">Program</a>
+        <a href="#speakers">Speakers</a>
+        <a href="#venue">Venue</a>
+        <a href="#registration">Registration</a>
+        <a href="#sponsors">Sponsors</a>
+        <a href="#organizers">Organizers</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="bg-grad" aria-hidden="true"></div>
+    <div class="container wrap">
+      <span class="kicker"><span class="dot"></span> AI in Research and Education Workshop</span>
+      <h1 id="main">AIRE 2025 – AI in Research and Education Workshop</h1>
+      <p class="sub">Connecting people and practice to turn AI into measurable gains across healthcare, education, cybersecurity, and beyond. A focused, one-day workshop on how modern AI transforms research and teaching practice, from literature triage and data analysis to assessment, ethics, and trustworthy deployment.</p>
+      <p class="muted">Augusta, Georgia • <strong>November 21, 2025</strong> • In‑person</p>
+      <div class="cta">
+        <a class="btn brand" href="#registration">Register</a>
+        <a class="btn ghost" href="#cfp">Read the Call for Participation</a>
+      </div>
+    </div>
+  </div>
+
+  <main id="overview" class="container">
+    <section>
+      <div class="two-col">
+        <div>
+          <h2>Overview</h2>
+          <p>
+            AIRE 2025 is a local event that brings together
+            faculty, students, and staff from every discipline to explore how AI can
+            advance research, teaching, and societal impact. As AI tools become
+            ubiquitous, AIRE provides a forum to <strong>share work, meet collaborators,
+            and discuss responsible, human-centered AI</strong>.
+          </p>
+          <p>
+            The program features <strong>20-minute talks</strong> (15-minute presentation + 5-minute Q&amp;A)
+            and <strong>posters</strong> across four tracks:
+            <strong>AI in Healthcare</strong>, <strong>AI in Education</strong>, <strong>AI in Cybersecurity</strong>, and <strong>Applied AI</strong>. We welcome contributions from all fields—STEM, health sciences, social sciences, the arts, business, and beyond—at any stage, from early prototypes to deployed systems.
+          </p>
+          <p>
+            <strong>How to participate:</strong> Submit a short abstract, indicate your
+            presentation type (Talk or Poster), and select one primary track. If your work
+            doesn't clearly fit a single track, choose the closest option and suggest others.
+          </p>
+        </div>
+        <aside class="card">
+          <h3>At‑a‑Glance</h3>
+          <p><span class="badge" aria-hidden="true">In person</span></p>
+          <p><strong>Date:</strong> Nov 21, 2025<br>
+             <strong>Location:</strong> Georgia Cyber Center, Augusta, GA (Plug 'n' Play Room)<br>
+             <strong>Hashtag:</strong> #AIRE2025
+          </p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="dates" class="dates">
+      <h2>Key Dates</h2>
+      <div class="grid">
+        <div class="card span-6">
+          <ul>
+            <li><time datetime="2025-10-31">Oct 31, 2025</time> Submission deadline (talks, posters)</li>
+            <li><time datetime="2025-11-07">Nov 7, 2025</time> Notifications</li>
+            <li><time datetime="2025-11-14">Nov 14, 2025</time> Camera‑ready / slide links due</li>
+            <li><time datetime="2025-11-21">Nov 21, 2025</time> Workshop day</li>
+          </ul>
+        </div>
+        <div class="card span-6">
+          <h3>Add to Calendar</h3>
+          <p>Download <a href="#" onclick="downloadICS(); return false;">AIRE-2025.ics</a> and import into your calendar.</p>
+          <!-- <p class="small muted">The file encodes a single‑day event with the placeholder times shown above.</p> -->
+        </div>
+      </div>
+    </section>
+
+    <section id="cfp">
+      <div class="card span-12">
+        <h2>Call for Participation</h2>
+        <p>
+          We welcome <strong>20-minute talks</strong> (15-minute presentation + 5-minute Q&amp;A)
+          and <strong>posters</strong>.
+        </p>
+
+        <p><strong>Topics</strong> include, but are not limited to:</p>
+        <ul>
+          <li>AI in Healthcare</li>
+          <li>AI in Education</li>
+          <li>AI in Cybersecurity</li>
+          <li>Applied AI</li>
+        </ul>
+
+        <p>
+          <strong>How to submit:</strong>
+          Email the organizers with your <em>title</em>, a short <em>abstract</em> (2–4 sentences),
+          <em>presentation type</em> (Talk or Poster), and <em>track</em> (choose one of the four above).
+          If your work doesn’t clearly fit one track, select the closest option and
+          <em>suggest other track(s)</em> in your message. Slides and posters will be requested
+          from accepted authors prior to the event.
+        </p>
+
+        <p>
+          Authors of selected submissions will be scheduled in the talk sessions or the poster session.
+        </p>
+      </div>
+    </section>
+
+    <section id="program" class="schedule">
+      <h2>Program</h2>
+      <p class="muted">Draft schedule; all times Eastern (UTC‑5). Replace content as confirmed.</p>
+      <div class="card">
+        <table aria-describedby="program-note">
+          <thead>
+            <tr><th style="width:140px">Time</th><th>Session</th><th>Details</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>08:30–09:00</td><td>Check‑in & Coffee</td><td>Badges, wifi, poster setup.</td></tr>
+            <tr><td>09:00–09:20</td><td>Welcome & Opening</td><td>Workshop chairs; goals & logistics.</td></tr>
+            <tr><td>09:20–10:00</td><td>Keynote</td><td><em>TBD speaker</em> – <em>Putting AI to Work in Research & Education</em></td></tr>
+            <tr><td>10:00–10:15</td><td>Break</td><td></td></tr>
+            <!-- <tr><td>10:15–11:30</td><td>Lightning Talks I</td><td>5–7 talks • Research workflows</td></tr>
+            <tr><td>11:30–12:15</td><td>Panel</td><td>Critical thinking, assessment, and integrity</td></tr>
+            <tr><td>12:15–13:30</td><td>Lunch</td><td>On your own / birds‑of‑a‑feather tables</td></tr>
+            <tr><td>13:30–14:30</td><td>Lightning Talks II</td><td>5–7 talks • Teaching practice</td></tr>
+            <tr><td>14:30–15:15</td><td>Demo & Poster Walk</td><td>Hands‑on systems and curricular artifacts</td></tr>
+            <tr><td>15:15–16:00</td><td>Panel</td><td>Responsible use & governance</td></tr>
+            <tr><td>16:00–16:30</td><td>Closing & Next Steps</td><td>Community roadmap and takeaways</td></tr> -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="speakers">
+      <h2>Speakers</h2>
+      <div class="people">
+        <div class="card person">
+          <img src="https://placehold.co/256x256" alt="Headshot placeholder" />
+          <div class="meta"><strong>TBD Keynote Speaker</strong><br><span class="muted">Affiliation</span><br><em>Keynote title to be announced</em></div>
+        </div>
+        <div class="card person">
+          <img src="https://placehold.co/256x256" alt="Headshot placeholder" />
+          <div class="meta"><strong>Panelist</strong><br><span class="muted">Affiliation</span></div>
+        </div>
+        <div class="card person">
+          <img src="https://placehold.co/256x256" alt="Headshot placeholder" />
+          <div class="meta"><strong>Panelist</strong><br><span class="muted">Affiliation</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="venue">
+      <h2>Venue & Travel</h2>
+      <div class="grid">
+        <div class="card span-6">
+          <h3>Location</h3>
+          <p><strong>Georgia Cyber Center – Plug 'n' Play Room</strong><br>100 Grace Hopper Lane, Augusta, GA 30901</p>
+          <p><a href="https://maps.google.com/?q=Georgia+Cyber+Center+100+Grace+Hopper+Lane+Augusta+GA+30901" target="_blank" rel="noreferrer">Open in Google Maps</a></p>
+          <p class="small muted"><strong>Parking</strong> : Parking is available on the Nathan Deal Campus for Innovation in the adjacent parking deck for $1.25/hour or $7 all day. The parking deck is cashless and accepts all major credit cards. It is located at the front of the campus and can be accessed from 11th Street or Grace Hopper Lane. The Georgia Cyber Center is not able to provide validated parking passes. For more details please follow this link: <a href="https://www.gacybercenter.org/facility/map-directions/">https://www.gacybercenter.org/facility/map-directions/</a>.</p>
+        </div>
+        <div class="card span-6">
+          <h3>Hotels (nearby)</h3>
+          <p>The main hotel for the conference is the <a href="https://www.marriott.com/en-us/hotels/agsmc-augusta-marriott-at-the-convention-center/overview/" target="_blank" rel="noreferrer noopener">Augusta Marriott at the Convention Center</a>. The hotel is about 200 meters away from Georgia Cyber Center, and the shortest walk is on the scenic <a href="https://www.augustatomorrow.com/portfolio_page/river-walk-award-winning/" target="_blank" rel="noreferrer noopener">Augusta Riverwalk</a> that runs along the Savannah River. 
+            <!-- We have arranged a special rate with Augusta Marriott for CPS attendees. Please book the hotel using <a href="https://www.marriott.com/event-reservations/reservation-link.mi?id=1756145959917&key=CORP&app=resvlink" target="_blank" rel="noreferrer noopener">this link</a>. -->
+          </p>
+          
+          <p><strong>Other options include:</strong></p>
+          <ul>
+            <li><a href="https://www.hyatt.com/en-US/hotel/georgia/hyatt-house-augusta-downtown/agsxa" target="_blank" rel="noreferrer noopener">Hyatt House Downtown Augusta</a>, on Broad Street about one block away from the conference venue.</li>
+            <li><a href="https://www.ihg.com/crowneplaza/hotels/us/en/north-augusta/aikna/hoteldetail" target="_blank" rel="noreferrer noopener">Crowne Plaza North Augusta</a>, just across the Savannah River in North Augusta.</li>
+            <li><a href="https://www.hilton.com/en/hotels/agscuqq-the-partridge-inn-augusta/" target="_blank" rel="noreferrer noopener">The Partridge Inn</a>, a historic hotel with a rooftop bar, a short drive down Walton Way from downtown Augusta.</li>
+          </ul>
+          
+          <p><strong>Budget option nearby:</strong></p>
+          <ul>
+            <li><a href="https://www.wyndhamhotels.com/ramada/augusta-georgia/ramada-augusta-conference-center/overview" target="_blank" rel="noreferrer noopener">Ramada by Wyndham Augusta Downtown Hotel & Conference Center</a>, 640 Broad Street, Augusta, Georgia 30901</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="registration">
+      <h2>Registration</h2>
+      <div class="grid">
+        <div class="card span-6">
+          <h3>General</h3>
+          <p>Registration is free but required. Please register by <strong>Nov 14, 2025</strong>.</p>
+          <p><a class="btn brand" href="https://forms.gle/pWHNUe8G7vupXQCb8" target="_blank" rel="noreferrer">Register via Google Form</a></p>
+        </div>
+        <div class="card span-6">
+          <h3>Sponsorship</h3>
+          <p>Organizations can support the symposium through tiered sponsorships:</p>
+          <ul>
+            <li>Platinum – $5,000</li>
+            <li>Gold – $2,500</li>
+            <li>Silver – $1,000</li>
+          </ul>
+          <p class="small muted">Sponsorships will help cover event costs and increase student participation. Sponsors will receive logo placement on the symposium website, program guide, and presentation materials.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="sponsors">
+      <h2>Sponsors & Partners</h2>
+      <div class="grid">
+        <div class="card span-12 left"><p>The <a href="https://www.augusta.edu/ccs/" target="_blank" rel="noreferrer">School of Computer and Cyber Sciences (SCCS), Augusta University</a> aims to provide high-engagement, state-of-the-art technology education and research across its computer science, information technology and cybersecurity disciplines. SCCS is uniquely positioned within multiple facilities at Augusta University, including the prestigious Georgia Cyber Innovation & Training Center. Through strong partnerships, SCCS impacts K-12 education, higher education, healthcare, government, and the business community. These collaborations foster cutting-edge cybersecurity research, workforce development, and entrepreneurial innovation, positioning Augusta as a national hub for talent in the cyber industry.</p><img decoding="async" width="800" src="Au-Cybers-fullsizeoutput_167.jpeg" alt="Sponsor logo"/></div>
+        <!-- <div class="card span-4 center"><img src="https://placehold.co/240x80?text=Logo" alt="Sponsor logo"/></div>
+        <div class="card span-4 center"><img src="https://placehold.co/240x80?text=Logo" alt="Sponsor logo"/></div> -->
+      </div>
+    </section>
+    <section id="organizers">
+      <h2>Organizing Committee</h2>
+      <div class="people" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <div class="card">
+          <div class="meta"><strong>Hisham Daoud</strong><br><span class="muted">Chair, Augusta University</span><br><a href="https://sites.google.com/view/aimlab-daoud/home?authuser=0" target="_blank" rel="noreferrer">Website</a><br><a href="mailto:HDAOUD@augusta.edu?subject=">Email Dr. Daoud</a></div>
+        </div>
+        <div class="card">
+          <div class="meta"><strong>Jieqiong Zhao</strong><br><span class="muted">Vice-Chair, Augusta University</span><br><a href="https://jieqiongzhao.github.io/" target="_blank" rel="noreferrer">Website</a><br><a href="mailto:JIEZHAO@augusta.edu?subject=">Email Dr. Zhao</a></div>
+        </div>
+        <div class="card">
+          <div class="meta"><strong>Arman Adibi</strong><br><span class="muted">Steering Committee, Augusta University</span><br><a href="https://adibiarman.github.io/" target="_blank" rel="noreferrer">Website</a><br><a href="mailto:AADIBI@augusta.edu?subject=">Email Dr. Adibi</a></div>
+        </div>
+        <div class="card">
+          <div class="meta"><strong>Gokila Dorai</strong><br><span class="muted">Steering Committee, Augusta University</span><br><a href="https://dfairlab.com/" target="_blank" rel="noreferrer">Website</a><br><a href="mailto:GDORAI@augusta.edu?subject=">Email Dr. Dorai</a></div>
+        </div>
+        <div class="card">
+          <div class="meta"><strong>Shungeng Zhang</strong><br><span class="muted">Steering Committee, Augusta University</span><br><a href="https://sgzhang.top/" target="_blank" rel="noreferrer">Website</a><br><a href="mailto:SZHANG2@augusta.edu?subject=">Email Dr. Zhang</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ</h2>
+      <div class="grid">
+        <div class="card span-6">
+          <h3>Posters</h3>
+          <p>The posters must be formatted to be up to 48×42 inches (Height x Width). Please post it before the  welcome reception.</p>
+        </div>
+        <div class="card span-6">
+          <h3>Slides</h3>
+          <p>Slides for presentations shall be sent to the organizer's email by Nov 14, 2025.</p>
+        </div>
+        <!-- <div class="card span-6">
+          <h3>Will the event be recorded?</h3>
+          <p>Selected sessions will be recorded and shared with registered attendees (subject to speaker approval).</p>
+        </div>
+        <div class="card span-6">
+          <h3>What formats do you accept?</h3>
+          <p>Lightning talks (5–10 minutes), system demos, and posters. See the <a href="#cfp">Call</a> for details.</p>
+        </div>
+        <div class="card span-6">
+          <h3>Accessibility</h3>
+          <p>The venue is wheelchair‑accessible. Please contact us for specific accommodations (CART, dietary needs, etc.).</p>
+        </div>
+        <div class="card span-6">
+          <h3>Code of Conduct</h3>
+          <p>We expect all participants to follow a professional code of conduct. Harassment or discrimination is not tolerated.</p>
+        </div> -->
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container foot-grid">
+      <div>© 2025 AIRE Workshop. All rights reserved.</div>
+      <!-- <div class="small">Questions? <a href="mailto:your.email@augusta.edu">your.email@augusta.edu</a></div> -->
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    const menuToggle = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('nav');
+    
+    menuToggle.addEventListener('click', () => {
+      const isOpen = nav.classList.toggle('open');
+      menuToggle.classList.toggle('open');
+      menuToggle.setAttribute('aria-expanded', isOpen);
+    });
+
+    // Close menu when clicking a link
+    nav.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        nav.classList.remove('open');
+        menuToggle.classList.remove('open');
+        menuToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!nav.contains(e.target) && !menuToggle.contains(e.target)) {
+        nav.classList.remove('open');
+        menuToggle.classList.remove('open');
+        menuToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Active section highlighting with improved visibility
+    const links = Array.from(document.querySelectorAll('header nav a'));
+    const sections = links.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+    
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        const i = sections.indexOf(e.target);
+        if(i >= 0){
+          const link = links[i];
+          if(e.isIntersecting){ 
+            links.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+          }
+        }
+      })
+    }, {rootMargin: '-20% 0px -70% 0px', threshold: 0});
+    
+    sections.forEach(s => obs.observe(s));
+
+    // Download an .ics file with placeholder data
+    function downloadICS(){
+      const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//AIRE 2025//EN
+BEGIN:VEVENT
+UID:${Date.now()}@aire2025
+DTSTAMP:20251021T150000Z
+DTSTART:20251121T140000Z
+DTEND:20251121T220000Z
+SUMMARY:AIRE 2025 – AI in Research and Education Workshop
+LOCATION:Georgia Cyber Center, Augusta, GA
+DESCRIPTION:One‑day workshop on AI for research and education practice.
+END:VEVENT
+END:VCALENDAR`;
+      const blob = new Blob([ics], {type:'text/calendar'});
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), {href:url, download:'AIRE-2025.ics'});
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+    window.downloadICS = downloadICS;
+  </script>
+</body>
+</html>
