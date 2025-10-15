@@ -110,15 +110,15 @@
     /* Navigation - Improved */
     nav{
       display:flex;
-      gap:8px;
+      gap:2px;
       align-items:center;
       flex-wrap: wrap;
     }
     
     nav a{
-      padding:8px 14px;
+      padding:8px 10px;
       border-radius:8px;
-      font-size:.95rem;
+      font-size:.85rem;
       font-weight:500;
       color:var(--text);
       transition: all 0.2s ease;
@@ -181,8 +181,8 @@
     /* Responsive behavior */
     @media (max-width: 1024px){
       nav a{
-        padding:6px 10px;
-        font-size:.9rem;
+        padding:6px 8px;
+        font-size:.8rem;
       }
     }
 
@@ -227,15 +227,20 @@
     .btn.brand{background:linear-gradient(135deg, var(--brand), #3b82f6); color:#ffffff; border:none}
     .btn.ghost{background:transparent}
 
-    /* Hero */
-    .hero{position:relative; overflow:hidden}
-    .hero .bg-grad{position:absolute; inset:0; background:radial-gradient(800px 500px at 0% 0%, rgba(30,64,175,.08), transparent 60%), radial-gradient(700px 450px at 100% 0%, rgba(16,185,129,.08), transparent 60%)}
-    .hero .wrap{position:relative; padding:68px 0 44px}
-    .kicker{display:inline-flex; gap:8px; align-items:center; font-weight:800; color:#1f2937; letter-spacing:.04em; text-transform:uppercase; font-size:.85rem}
-    .kicker .dot{width:8px; height:8px; background:var(--brand-2); border-radius:999px; box-shadow:0 0 0 6px rgba(16,185,129,.12)}
-    h1{font-size:clamp(1.8rem, 4vw, 3rem); margin:.3rem 0 1rem; line-height:1.1}
-    .sub{max-width:800px; color:#475569; font-size:1.05rem}
-    .cta{display:flex; gap:12px; margin-top:22px; flex-wrap:wrap}
+    /* Hero Image */
+    .hero{
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .hero-image{
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: cover;
+      max-height: 600px;
+      border-radius: var(--radius);
+    }
 
     /* Sections */
     section{padding:64px 0; border-top:1px solid rgba(0,0,0,.06)}
@@ -295,20 +300,22 @@
       
       <nav aria-label="Primary">
         <a href="#overview">Overview</a>
-        <a href="#dates">Key Dates</a>
         <a href="#cfp">Call</a>
-        <a href="#program">Program</a>
-        <a href="#speakers">Speakers</a>
-        <a href="#venue">Venue</a>
         <a href="#registration">Registration</a>
-        <a href="#sponsors">Sponsors</a>
+        <a href="#dates">Key Dates</a>
+        <a href="#program">Program</a>
+        <a href="#guidance">Guidance</a>
+        <a href="#venue">Venue</a>
+        <a href="#hotels">Hotels</a>
+        <a href="#sponsorship">Sponsorship</a>
+        <a href="#background">background</a>
         <a href="#organizers">Organizers</a>
-        <a href="#faq">FAQ</a>
+        <a href="#sponsors">Sponsors</a>
       </nav>
     </div>
   </header>
 
-  <div class="hero">
+  <!-- <div class="hero">
     <div class="bg-grad" aria-hidden="true"></div>
     <div class="container wrap">
       <span class="kicker"><span class="dot"></span> AI in Research and Education Workshop</span>
@@ -320,58 +327,31 @@
         <a class="btn ghost" href="#cfp">Read the Call for Participation</a>
       </div>
     </div>
+  </div> -->
+  <div class="hero">
+    <img src="titlefigure.jpg" alt="AIRE 2025 - AI in Research and Education Workshop - November 21, 2025, Augusta, Georgia" class="hero-image" />
   </div>
 
   <main id="overview" class="container">
     <section>
-      <div class="two-col">
+      <div class="one-col">
         <div>
           <h2>Overview</h2>
           <p>
-            AIRE 2025 is a local event that brings together
-            faculty, students, and staff from every discipline to explore how AI can
-            advance research, teaching, and societal impact. As AI tools become
-            ubiquitous, AIRE provides a forum to <strong>share work, meet collaborators,
-            and discuss responsible, human-centered AI</strong>.
+            We are thrilled to announce the inaugural <strong>Workshop on Artificial Intelligence in Research and Education (AIRE)</strong>, scheduled on November 21, 2025, at the <strong>Georgia Cyber Center</strong> in <strong>Augusta, GA</strong>. AIRE aims to serve as a dynamic forum designed to bring together scholars, researchers, and educators to explore the transformative impact of AI on scientific and academic practices and to present groundbreaking research, share innovative ideas, and foster meaningful collaborations. 
           </p>
           <p>
-            The program features <strong>20-minute talks</strong> (15-minute presentation + 5-minute Q&amp;A)
-            and <strong>posters</strong> across four tracks:
-            <strong>AI in Healthcare</strong>, <strong>AI in Education</strong>, <strong>AI in Cybersecurity</strong>, and <strong>Applied AI</strong>. We welcome contributions from all fields—STEM, health sciences, social sciences, the arts, business, and beyond—at any stage, from early prototypes to deployed systems.
-          </p>
-          <p>
-            <strong>How to participate:</strong> Submit a short abstract, indicate your
-            presentation type (Talk or Poster), and select one primary track. If your work
-            doesn't clearly fit a single track, choose the closest option and suggest others.
+            Over the years, AI has undergone remarkable transformations—driven by increasing computational power, an explosion of data, and a deeper understanding of intelligent frameworks. The integration of AI into research workflows and educational environments is reshaping the way knowledge is created, shared, and taught. The workshop focuses on the application of AI in healthcare, cybersecurity, and education through a series of talks, posters, and a panel discussion. We enthusiastically invite you to contribute your latest work to the AIRE Workshop.
           </p>
         </div>
-        <aside class="card">
+        <!-- <aside class="card">
           <h3>At‑a‑Glance</h3>
           <p><span class="badge" aria-hidden="true">In person</span></p>
           <p><strong>Date:</strong> Nov 21, 2025<br>
              <strong>Location:</strong> Georgia Cyber Center, Augusta, GA (Plug 'n' Play Room)<br>
              <strong>Hashtag:</strong> #AIRE2025
           </p>
-        </aside>
-      </div>
-    </section>
-
-    <section id="dates" class="dates">
-      <h2>Key Dates</h2>
-      <div class="grid">
-        <div class="card span-6">
-          <ul>
-            <li><time datetime="2025-10-31">Oct 31, 2025</time> Submission deadline (talks, posters)</li>
-            <li><time datetime="2025-11-07">Nov 7, 2025</time> Notifications</li>
-            <li><time datetime="2025-11-14">Nov 14, 2025</time> Camera‑ready / slide links due</li>
-            <li><time datetime="2025-11-21">Nov 21, 2025</time> Workshop day</li>
-          </ul>
-        </div>
-        <div class="card span-6">
-          <h3>Add to Calendar</h3>
-          <p>Download <a href="#" onclick="downloadICS(); return false;">AIRE-2025.ics</a> and import into your calendar.</p>
-          <!-- <p class="small muted">The file encodes a single‑day event with the placeholder times shown above.</p> -->
-        </div>
+        </aside> -->
       </div>
     </section>
 
@@ -393,7 +373,7 @@
 
         <p>
           <strong>How to submit:</strong>
-          Email the organizers with your <em>title</em>, a short <em>abstract</em> (2–4 sentences),
+          Email the organizers with your <em>title</em>, a short <em>abstract</em>,
           <em>presentation type</em> (Talk or Poster), and <em>track</em> (choose one of the four above).
           If your work doesn’t clearly fit one track, select the closest option and
           <em>suggest other track(s)</em> in your message. Slides and posters will be requested
@@ -401,24 +381,55 @@
         </p>
 
         <p>
-          Authors of selected submissions will be scheduled in the talk sessions or the poster session.
+          Authors of selected submissions will be scheduled in the talk sessions or the poster.
         </p>
       </div>
     </section>
 
+    <section id="registration">
+      <h2>Registration</h2>
+      <div class="grid">
+        <div class="card span-12">
+          <!-- <h3>General</h3> -->
+          <p>Registration is free but required. Please register by <strong>Nov 7, 2025</strong>.</p>
+          <p><a class="btn brand" href="https://forms.gle/pWHNUe8G7vupXQCb8" target="_blank" rel="noreferrer">Register Now</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="dates" class="dates">
+      <h2>Key Dates</h2>
+      <div class="grid">
+        <div class="card span-6">
+          <ul>
+            <li><time datetime="2025-10-31">Oct 31, 2025</time> Abstract Submission Deadline</li>
+            <li><time datetime="2025-11-07">Nov 7, 2025</time> Decision Notifications</li>
+            <li><time datetime="2025-11-07">Nov 7, 2025</time> Registration deadline</li>
+            <li><time datetime="2025-11-19">Nov 19, 2025</time> Presentation Submission</li>
+            <li><time datetime="2025-11-21">Nov 21, 2025</time> Workshop Day</li>
+          </ul>
+        </div>
+        <div class="card span-6">
+          <h3>Add to Calendar</h3>
+          <p>Download <a href="#" onclick="downloadICS(); return false;">AIRE-2025.ics</a> and import into your calendar.</p>
+          <!-- <p class="small muted">The file encodes a single‑day event with the placeholder times shown above.</p> -->
+        </div>
+      </div>
+    </section>
+
     <section id="program" class="schedule">
-      <h2>Program</h2>
-      <p class="muted">Draft schedule; all times Eastern (UTC‑5). Replace content as confirmed.</p>
+      <h2>Program Outline</h2>
+      <p class="muted">Coming soon</p>
       <div class="card">
         <table aria-describedby="program-note">
           <thead>
             <tr><th style="width:140px">Time</th><th>Session</th><th>Details</th></tr>
           </thead>
           <tbody>
-            <tr><td>08:30–09:00</td><td>Check‑in & Coffee</td><td>Badges, wifi, poster setup.</td></tr>
+            <!-- <tr><td>08:30–09:00</td><td>Check‑in & Coffee</td><td>Badges, wifi, poster setup.</td></tr>
             <tr><td>09:00–09:20</td><td>Welcome & Opening</td><td>Workshop chairs; goals & logistics.</td></tr>
             <tr><td>09:20–10:00</td><td>Keynote</td><td><em>TBD speaker</em> – <em>Putting AI to Work in Research & Education</em></td></tr>
-            <tr><td>10:00–10:15</td><td>Break</td><td></td></tr>
+            <tr><td>10:00–10:15</td><td>Break</td><td></td></tr> -->
             <!-- <tr><td>10:15–11:30</td><td>Lightning Talks I</td><td>5–7 talks • Research workflows</td></tr>
             <tr><td>11:30–12:15</td><td>Panel</td><td>Critical thinking, assessment, and integrity</td></tr>
             <tr><td>12:15–13:30</td><td>Lunch</td><td>On your own / birds‑of‑a‑feather tables</td></tr>
@@ -431,7 +442,7 @@
       </div>
     </section>
 
-    <section id="speakers">
+    <!-- <section id="speakers">
       <h2>Speakers</h2>
       <div class="people">
         <div class="card person">
@@ -447,31 +458,48 @@
           <div class="meta"><strong>Panelist</strong><br><span class="muted">Affiliation</span></div>
         </div>
       </div>
+    </section> -->
+    <section id="guidance">
+      <h2>Guidance</h2>
+      <div class="grid">
+        <div class="card span-12">
+          <h3>Posters and Slides:</h3>
+          <ul>
+            <li>Slides for presentations shall be sent to the organizer's email.</li>
+            <li>The posters must be formatted to be up to 48×42 inches (Height x Width). Please post it before the welcome reception.</li>
+          </ul>
+        </div>
+      </div>
     </section>
 
     <section id="venue">
-      <h2>Venue & Travel</h2>
+      <h2>Venue</h2>
       <div class="grid">
-        <div class="card span-6">
-          <h3>Location</h3>
+        <div class="card span-12">
+          <!-- <h3>Location</h3> -->
           <p><strong>Georgia Cyber Center – Plug 'n' Play Room</strong><br>100 Grace Hopper Lane, Augusta, GA 30901</p>
           <p><a href="https://maps.google.com/?q=Georgia+Cyber+Center+100+Grace+Hopper+Lane+Augusta+GA+30901" target="_blank" rel="noreferrer">Open in Google Maps</a></p>
           <p class="small muted"><strong>Parking</strong> : Parking is available on the Nathan Deal Campus for Innovation in the adjacent parking deck for $1.25/hour or $7 all day. The parking deck is cashless and accepts all major credit cards. It is located at the front of the campus and can be accessed from 11th Street or Grace Hopper Lane. The Georgia Cyber Center is not able to provide validated parking passes. For more details please follow this link: <a href="https://www.gacybercenter.org/facility/map-directions/">https://www.gacybercenter.org/facility/map-directions/</a>.</p>
         </div>
-        <div class="card span-6">
-          <h3>Hotels (nearby)</h3>
+      </div>
+    </section>
+
+    <section id="hotels">
+      <h2>Hotels</h2>
+      <div class="grid">
+        <div class="card span-12">
           <p>The main hotel for the conference is the <a href="https://www.marriott.com/en-us/hotels/agsmc-augusta-marriott-at-the-convention-center/overview/" target="_blank" rel="noreferrer noopener">Augusta Marriott at the Convention Center</a>. The hotel is about 200 meters away from Georgia Cyber Center, and the shortest walk is on the scenic <a href="https://www.augustatomorrow.com/portfolio_page/river-walk-award-winning/" target="_blank" rel="noreferrer noopener">Augusta Riverwalk</a> that runs along the Savannah River. 
             <!-- We have arranged a special rate with Augusta Marriott for CPS attendees. Please book the hotel using <a href="https://www.marriott.com/event-reservations/reservation-link.mi?id=1756145959917&key=CORP&app=resvlink" target="_blank" rel="noreferrer noopener">this link</a>. -->
           </p>
           
-          <p><strong>Other options include:</strong></p>
+          <p><strong>There are several other hotels in the area. Other options include:</strong></p>
           <ul>
             <li><a href="https://www.hyatt.com/en-US/hotel/georgia/hyatt-house-augusta-downtown/agsxa" target="_blank" rel="noreferrer noopener">Hyatt House Downtown Augusta</a>, on Broad Street about one block away from the conference venue.</li>
             <li><a href="https://www.ihg.com/crowneplaza/hotels/us/en/north-augusta/aikna/hoteldetail" target="_blank" rel="noreferrer noopener">Crowne Plaza North Augusta</a>, just across the Savannah River in North Augusta.</li>
             <li><a href="https://www.hilton.com/en/hotels/agscuqq-the-partridge-inn-augusta/" target="_blank" rel="noreferrer noopener">The Partridge Inn</a>, a historic hotel with a rooftop bar, a short drive down Walton Way from downtown Augusta.</li>
           </ul>
           
-          <p><strong>Budget option nearby:</strong></p>
+          <p><strong>Other budget option nearby include:</strong></p>
           <ul>
             <li><a href="https://www.wyndhamhotels.com/ramada/augusta-georgia/ramada-augusta-conference-center/overview" target="_blank" rel="noreferrer noopener">Ramada by Wyndham Augusta Downtown Hotel & Conference Center</a>, 640 Broad Street, Augusta, Georgia 30901</li>
           </ul>
@@ -479,35 +507,30 @@
       </div>
     </section>
 
-    <section id="registration">
-      <h2>Registration</h2>
+
+    <section id="sponsorship">
+      <h2>Sponsorship Opportunities</h2>
       <div class="grid">
-        <div class="card span-6">
-          <h3>General</h3>
-          <p>Registration is free but required. Please register by <strong>Nov 14, 2025</strong>.</p>
-          <p><a class="btn brand" href="https://forms.gle/pWHNUe8G7vupXQCb8" target="_blank" rel="noreferrer">Register via Google Form</a></p>
-        </div>
-        <div class="card span-6">
-          <h3>Sponsorship</h3>
-          <p>Organizations can support the symposium through tiered sponsorships:</p>
+        <div class="card span-12">
+          <p>Organizations can support the workshop through tiered sponsorships:</p>
           <ul>
             <li>Platinum – $5,000</li>
             <li>Gold – $2,500</li>
             <li>Silver – $1,000</li>
           </ul>
-          <p class="small muted">Sponsorships will help cover event costs and increase student participation. Sponsors will receive logo placement on the symposium website, program guide, and presentation materials.</p>
+          <p class="small muted">Sponsorships will help cover event costs and increase student participation. Sponsors will receive logo placement on the workshop website, program guide, and presentation materials.</p>
         </div>
       </div>
     </section>
 
-    <section id="sponsors">
-      <h2>Sponsors & Partners</h2>
+    <section id="background">
+      <h2>Background</h2>
       <div class="grid">
-        <div class="card span-12 left"><p>The <a href="https://www.augusta.edu/ccs/" target="_blank" rel="noreferrer">School of Computer and Cyber Sciences (SCCS), Augusta University</a> aims to provide high-engagement, state-of-the-art technology education and research across its computer science, information technology and cybersecurity disciplines. SCCS is uniquely positioned within multiple facilities at Augusta University, including the prestigious Georgia Cyber Innovation & Training Center. Through strong partnerships, SCCS impacts K-12 education, higher education, healthcare, government, and the business community. These collaborations foster cutting-edge cybersecurity research, workforce development, and entrepreneurial innovation, positioning Augusta as a national hub for talent in the cyber industry.</p><img decoding="async" width="800" src="Au-Cybers-fullsizeoutput_167.jpeg" alt="Sponsor logo"/></div>
-        <!-- <div class="card span-4 center"><img src="https://placehold.co/240x80?text=Logo" alt="Sponsor logo"/></div>
-        <div class="card span-4 center"><img src="https://placehold.co/240x80?text=Logo" alt="Sponsor logo"/></div> -->
+        <div class="card span-12 left"><p>The <a href="https://www.augusta.edu/ccs/" target="_blank" rel="noreferrer">School of Computer and Cyber Sciences (SCCS), Augusta University</a> aims to provide high-engagement, state-of-the-art technology education and research across its computer science, information technology and cybersecurity disciplines. SCCS is uniquely positioned within multiple facilities at Augusta University, including the prestigious Georgia Cyber Innovation & Training Center. Through strong partnerships, SCCS impacts K-12 education, higher education, healthcare, government, and the business community. These collaborations foster cutting-edge cybersecurity research, workforce development, and entrepreneurial innovation, positioning Augusta as a national hub for talent in the cyber industry.</p>
+        <!-- <img decoding="async" width="800" src="Au-Cybers-fullsizeoutput_167.jpeg" alt="Sponsor logo"/></div> -->
       </div>
     </section>
+
     <section id="organizers">
       <h2>Organizing Committee</h2>
       <div class="people" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
@@ -529,7 +552,17 @@
       </div>
     </section>
 
-    <section id="faq">
+    <section id="sponsors">
+      <h2>Sponsors</h2>
+      <div class="grid">
+        <div class="card span-12 left">
+          <p><a href="https://www.augusta.edu/ccs/" data-type="link" data-id="https://www.augusta.edu/ccs/">School of Computer and Cyber Sciences, Augusta University</a></p>
+          <img decoding="async" width="800" src="Au-Cybers-fullsizeoutput_167.jpeg" alt="Sponsor logo"/>
+        </div>
+      </div>
+    </section>
+
+    <!-- <section id="faq">
       <h2>FAQ</h2>
       <div class="grid">
         <div class="card span-6">
@@ -540,24 +573,8 @@
           <h3>Slides</h3>
           <p>Slides for presentations shall be sent to the organizer's email by Nov 14, 2025.</p>
         </div>
-        <!-- <div class="card span-6">
-          <h3>Will the event be recorded?</h3>
-          <p>Selected sessions will be recorded and shared with registered attendees (subject to speaker approval).</p>
-        </div>
-        <div class="card span-6">
-          <h3>What formats do you accept?</h3>
-          <p>Lightning talks (5–10 minutes), system demos, and posters. See the <a href="#cfp">Call</a> for details.</p>
-        </div>
-        <div class="card span-6">
-          <h3>Accessibility</h3>
-          <p>The venue is wheelchair‑accessible. Please contact us for specific accommodations (CART, dietary needs, etc.).</p>
-        </div>
-        <div class="card span-6">
-          <h3>Code of Conduct</h3>
-          <p>We expect all participants to follow a professional code of conduct. Harassment or discrimination is not tolerated.</p>
-        </div> -->
       </div>
-    </section>
+    </section> -->
   </main>
 
   <footer>
