@@ -1,23 +1,48 @@
 [
   {
     "authors": [
-      "Fang Zhu",
-      "Xufei Zhu",
-      "Xumeng Wang",
-      "Yuxin Ma",
-      "Jieqiong Zhao"
+      "Yixuan Wang",
+      "Jieqiong Zhao",
+      "Yang Ba",
+      "Michelle V. Mancenido",
+      "Erin K. Chiou",
+      "Ross Maciejewski"
     ],
-    "title": "ATVis: Understanding and Diagnosing Adversarial Training Processes through Visual Analytics",
-    "venue": "Visual Informatics",
-    "year": "In Press, Journal Pre-proof",
+    "title": "Impact of EXplainable AI on Trust Evolution With AI Error Severity: Comparing Similar Instances and Saliency Map in a Baggage Screening Task",
+    "venue": "International Journal of Human-Computer Interaction",
+    "year": "2025",
     "type": "Journal",
-    "pdf": "",
+    "pdf": "/assets/data/trustrepair2025.pdf",
     "presentation": "",
     "slides": "",
     "video": "",
-    "doi": "https://doi.org/10.1016/j.visinf.2024.10.003",
+    "doi": "https://doi.org/10.1080/10447318.2025.2564272",
     "bibtex": "",
-    "name": "atvis2024",
+    "name": "trustrepair2025",
+    "keywords": []
+  },
+  {
+    "authors": [
+      "Jinliang Liu",
+      "Jianwei Zhang",
+      "Sen Yang",
+      "Jinxi Xiang",
+      "Xiyue Wang",
+      "Jieqiong Zhao",
+      "Zongxin Yang", 
+      "Junhan Zhao"
+    ],
+    "title": "Towards General-Purpose Video Reconstruction through Synergy of Grid-Splicing Diffusion and Large Language Models",
+    "venue": "IEEE TCSVT",
+    "year": "Early Access",
+    "type": "Journal",
+    "pdf": "/assets/data/video2025.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1109/TCSVT.2025.3545795",
+    "bibtex": "",
+    "name": "video2025",
     "keywords": []
   },
   {
@@ -30,15 +55,36 @@
     ],
     "title": "A Simulation-based Approach for Quantifying the Impact of Interactive Label Correction for Machine Learning",
     "venue": "IEEE TVCG",
-    "year": "Early Access",
+    "year": "2025",
     "type": "Journal",
-    "pdf": "",
+    "pdf": "/assets/data/costbenefit2025.pdf",
     "presentation": "",
     "slides": "",
     "video": "",
     "doi": "https://doi.org/10.1109/TVCG.2024.3468352",
     "bibtex": "",
     "name": "costbenefit2024",
+    "keywords": []
+  },
+  {
+    "authors": [
+      "Fang Zhu",
+      "Xufei Zhu",
+      "Xumeng Wang",
+      "Yuxin Ma",
+      "Jieqiong Zhao"
+    ],
+    "title": "ATVis: Understanding and Diagnosing Adversarial Training Processes through Visual Analytics",
+    "venue": "Visual Informatics",
+    "year": "2024",
+    "type": "Journal",
+    "pdf": "/assets/data/atvis2024.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1016/j.visinf.2024.10.003",
+    "bibtex": "",
+    "name": "atvis2024",
     "keywords": []
   },
   {
@@ -302,6 +348,89 @@
   },
   {
     "authors": [
+      "Alireza Taheritajar",
+      "Jieqiong Zhao", 
+      "Jason Orlosky"
+    ],
+    "title": "Augmented Reality Visual Retrieval for Object Detection and Corpus-Guided Content Generation",
+    "venue": "IEEE AIxVR",
+    "year": "2026",
+    "type": "Conference",
+    "pdf": "",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "",
+    "bibtex": "",
+    "name": "arvrag2025",
+    "keywords": []
+  },
+  {
+    "authors": [
+      "Alireza Taheritajar",
+      "Jeffrey Benson",
+      "Anthony Gibson",
+      "Brandon Wilburn",
+      "Jieqiong Zhao", 
+      "Jason Orlosky"
+    ],
+    "title": "Scalable Object Detection in Mixed Reality Using Incremental Re-Training and One-Shot 3D Annotation",
+    "venue": "IEEE ISMAR",
+    "year": "2025",
+    "type": "Conference",
+    "pdf": "/assets/data/incremental2025.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1109/ISMAR67309.2025.00040",
+    "bibtex": "",
+    "name": "incremental2025",
+    "keywords": []
+  },
+  {
+    "authors": [
+      "Dipu Ram Roy",
+      "Jieqiong Zhao",
+      "Shijia Pan", 
+      "Shiwei Fang"
+    ],
+    "title": "Towards Understanding User Privacy Concerns of Internet of Things Sensor Data",
+    "venue": "ACM Sensors S&P",
+    "year": "2025",
+    "type": "Conference",
+    "pdf": "/assets/data/privacy2025.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1145/3722566.3727627",
+    "bibtex": "",
+    "name": "privacy2025",
+    "keywords": []
+  },
+  {
+    "authors": [
+      "Hanlin Chen",
+      "Guanhao Xu",
+      "Anye Zhou",
+      "Zejiang Wang",
+      "Jieqiong Zhao",
+      "Shiwei Fang"
+    ],
+    "title": "Adaptive Dynamic Digital Twin for Test Scenario Generation",
+    "venue": "IEEE MOST",
+    "year": "2025",
+    "type": "Conference",
+    "pdf": "/assets/data/digitaltwin2025.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1109/MOST65065.2025.00024",
+    "bibtex": "",
+    "name": "digitaltwin2025",
+    "keywords": []
+  },
+  {
+    "authors": [
       "Luke Snyder",
       "Jieqiong Zhao",
       "Audrey Reinert",
@@ -312,7 +441,7 @@
     "venue": "54th Hawaii International Conference (HICSS-54)",
     "year": "2020",
     "type": "Conference",
-    "pdf": "https://scholarspace.manoa.hawaii.edu/server/api/core/bitstreams/347709a4-e6d1-44e5-acbb-b1d4384b0908/content",
+    "pdf": "/assets/data/panviz2.0.pdf",
     "presentation": "",
     "slides": "",
     "video": "",
@@ -336,7 +465,7 @@
     "venue": "53rd Hawaii International Conference (HICSS-53)",
     "year": "2020",
     "type": "Conference",
-    "pdf": "https://scholarspace.manoa.hawaii.edu/bitstream/10125/63907/0136.pdf",
+    "pdf": "/assets/data/routepacking2020.pdf",
     "presentation": "",
     "slides": "/assets/data/HICSS-53_Presentation_Jieqiong_Zhao_V2.pptx",
     "video": "",
@@ -478,6 +607,78 @@
       "Mixed-Initative",
       "Web-Based"
     ]
+  },
+  {
+    "authors": [
+      "Sundas Qaiser",
+      "Jieqiong Zhao",
+      "Nabin Khanal",
+      "Qi Yang",
+      "Sizheng Cailean Chen", 
+      "Helena Jiuru Liu",
+      "Hannah Yanhua Zong",
+      "Yingjie Victor Chen",
+      "Zhenyu Cheryl Qian"
+    ],
+    "title": "BlossomNet: Visualizing Influence and Community Evolution with Floral Glyphs in Large Person-Centric Knowledge graphs",
+    "venue": "2025 IEEE Conference on Visual Analytics Science and Technology (VAST)",
+    "year": "2025",
+    "type": "Workshop",
+    "pdf": "/assets/data/vast2025_dc.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "",
+    "bibtex": "",
+    "award": "Award for Expressive Design",
+    "name": "vast2025_dc",
+    "keywords": []
+  },
+  {
+    "authors": [
+      "Hannah Yanhua Zong",
+      "Nabin Khanal", 
+      "Qi Yang",
+      "Sundas Qaiser",
+      "Sizheng Cailean Chen",   
+      "Helena Jiuru Liu",  
+      "Zhenyu Cheryl Qian", 
+      "Yingjie Victor Chen",
+      "Jieqiong Zhao"
+    ],
+    "title": "Melody Way: Visualizing Influence, Collaboration, and Genre Evolution in the Music Industry",
+    "venue": "2025 IEEE Conference on Visual Analytics Science and Technology (VAST)",
+    "year": "2025",
+    "type": "Workshop",
+    "pdf": "/assets/data/vast2025_mc1.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "",
+    "bibtex": "",
+    "award": "Award for Comprehensive Treatment of Time",
+    "name": "vast2025_mc1",
+    "keywords": []
+  },
+  {
+    "authors": [
+      "Dipu Ram Roy",
+      "Jieqiong Zhao",
+      "Shijia Pan", 
+      "Shiwei Fang"
+    ],
+    "title": "PrivacyVis: Interactive Visualization Tool for Privacy Risks of Internet of Things Sensors",
+    "venue": "Proceedings of the ACM Conference on Embedded Networked Sensor Systems",
+    "year": "2025",
+    "type": "Workshop",
+    "pdf": "/assets/data/privacyvis2025.pdf",
+    "presentation": "",
+    "slides": "",
+    "video": "",
+    "doi": "https://doi.org/10.1145/3715014.3724041",
+    "bibtex": "",
+    "name": "privacyvis2025",
+    "keywords": []
   },
   {
     "authors": [
