@@ -14,9 +14,21 @@
     {% endif %}
   </div>
 
-  <div class="author__content">
+  <!-- <div class="author__content">
+    {% if site.author.title %}
+      <p class="author__title">{{ site.author.title }}</p>
+    {% endif %}
     <h3 class="author__name">{{ author.name }}</h3>
     {% if author.bio %}<p class="author__bio">{{ author.bio }}</p>{% endif %}
+  </div> -->
+  <div class="author__content">
+    {% if site.author.title %}
+      <p class="author__title">{{ site.author.title }}</p>
+    {% endif %}
+    <h3 class="author__name">{{ site.author.name }}</h3>
+    {% if site.author.bio %}
+      <p class="author__bio">{{ site.author.bio }}</p>
+    {% endif %}
   </div>
 
   <div class="author__urls-wrapper">
