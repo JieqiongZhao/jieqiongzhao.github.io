@@ -107,126 +107,219 @@ $(document).ready(function () {
 
 });
 
-function showPublication (publicationsContent, paper, i) {
+// function showPublication (publicationsContent, paper, i) {
 
-    publicationsContent.append("div").style("float", "left").style("display", "block")
-        .style("width", "100%")
-        .style("class", "archive");
+//     publicationsContent.append("div").style("float", "left").style("display", "block")
+//         .style("width", "100%")
+//         .style("class", "archive");
 
-    var pub = publicationsContent.append("div").style("display", "flex")
-        .style("justify-content", "center")
-        .style("align-items", "center")
-        .style("padding-left", "10px")
-        .style("line-height", "1")
-        .style("padding-bottom", "5px")
-        .style("margin-bottom", "5px")
-        .style("padding-top", "5px")
-        .style("background", "white");
+//     var pub = publicationsContent.append("div").style("display", "flex")
+//         .style("justify-content", "center")
+//         .style("align-items", "center")
+//         .style("padding-left", "10px")
+//         .style("line-height", "1")
+//         .style("padding-bottom", "5px")
+//         .style("margin-bottom", "5px")
+//         .style("padding-top", "5px")
+//         .style("background", "white");
 
-    pub.append("a").attr("href", paper.pdf).attr("target", "_blank").append("div").style("width", "120px")
-        .style("height", "80px")
-        .style("display", "inline-block")
-        .style("border", "0.5px solid #aaa")
-        .style("background-size", "cover")
-        .style("background-repeat", "no-repeat")
-        .style("vertical-align", "top")
-        .style("background-image", "url(/assets/images/" + paper.name + ".png)")
+//     pub.append("a").attr("href", paper.pdf).attr("target", "_blank").append("div").style("width", "120px")
+//         .style("height", "80px")
+//         .style("display", "inline-block")
+//         .style("border", "0.5px solid #aaa")
+//         .style("background-size", "cover")
+//         .style("background-repeat", "no-repeat")
+//         .style("vertical-align", "top")
+//         .style("background-image", "url(/assets/images/" + paper.name + ".png)")
         
 
-    var pubInfo = pub.append("div").style("width", "calc(100% - 120px)")
-        .style("height", "100%")
-        .style("background", "transparent")
-        .style("padding-left", "10px")
-        // .style("height", "72px")
-        .style("display", "inline-block");
+//     var pubInfo = pub.append("div").style("width", "calc(100% - 120px)")
+//         .style("height", "100%")
+//         .style("background", "transparent")
+//         .style("padding-left", "10px")
+//         // .style("height", "72px")
+//         .style("display", "inline-block");
 
-     if ("award" in paper) {
-        var award = pubInfo.append("div").style("float", "right").style("height", "auto");
-        // award.append("span").html("<b>" + paper["award"].toUpperCase() + "</b>").style("font-size", "12px");
-        award.append("img").attr("src", "/assets/images/badge.png").style("height", "25px").style("margin-right", "3px");
+//      if ("award" in paper) {
+//         var award = pubInfo.append("div").style("float", "right").style("height", "auto");
+//         // award.append("span").html("<b>" + paper["award"].toUpperCase() + "</b>").style("font-size", "12px");
+//         award.append("img").attr("src", "/assets/images/badge.png").style("height", "25px").style("margin-right", "3px");
+//     }
+
+//     pubInfo.append("span").html(paper.title+"<br/>")
+//         .style("font-size", "16px")
+//         .style("font-style", "italic");
+
+//     var firstAuthor = false;
+
+
+//     paper.authors.forEach(function (author, j) {
+//         var mainAuthor = false;
+//         if (author == "Jieqiong Zhao" || author == "Jieqiong(Helen) Zhao") {
+//             author = "" + author + "";
+//             mainAuthor = true;
+//             if (j == 0)
+//                 firstAuthor = true;
+//         }
+
+//         // if (j != paper.authors.length - 1) {
+//         //     author = author + ", ";
+//         // } else {
+//         //     author = author + "<br/>";
+//         // }
+
+//         pubInfo.append("span").html(function ()
+//         {
+//             return mainAuthor? "<b>" + author + "</b>" : author;
+//         }
+//         ).style("font-size", "16px")
+//             // .style("background-color", mainAuthor?"#f0e8ff":"transparent");
+
+//         if (j != paper.authors.length - 1) {
+
+//             if (paper.equal == "true" && j == 0) {
+//                 pubInfo.append("span").text(" ~ ").style("font-size", "16px");
+//             } else {
+//                 pubInfo.append("span").text(", ").style("font-size", "16px");
+//             }
+
+//         } else {
+//             pubInfo.append("span").html("<br/>");
+//         }
+//     });
+
+//     if (paper.equal == "true") {
+//         pubInfo.append("span").html("<b>" + "The first two authors contributed equally to this work." + "</b><br/>").style("font-size", "11px");
+//     }
+
+//     // if (firstAuthor) {
+//     //     // grey background for first author paper
+//     //     pub.style("background-color", "#f0f0f0").style("border", "2px solid #FFF");
+//     // }
+
+//     pubInfo.append("span").html(paper.venue + ", " + paper.year +"<br/>").style("font-size", "16px");
+
+//     if (paper.pdf != "") {
+//         pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.pdf + '">[pdf]</a>').style("font-size", "16px");
+//     }
+
+//     if (paper.video != "") {
+//         pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.video + '">[demo video]</a>  ').style("font-size", "16px");
+//     }
+
+//     if (paper.presentation != "") {
+//         pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.presentation + '">[talk video]</a>  ').style("font-size", "16px");
+//     }
+
+//     if (paper.slides != "") {
+//         pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.slides + '">[slides]</a>  ').style("font-size", "16px");
+//     }
+
+//     if (paper.doi != "") {
+//         pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.doi + '">[doi]</a>  ').style("font-size", "16px");
+//     }
+
+//      if ("award" in paper) {
+//         var award = pubInfo.append("div").style("float", "right").style("height", "auto");
+//         award.append("span").html("<b>" + paper["award"].toUpperCase() + "</b>").style("font-size", "12px").style("margin-right", "3px");
+//         // award.append("img").attr("src", "/assets/images/badge.png").style("height", "25px").style("margin-right", "3px");
+//     }
+//     //
+//     // if (paper.bibtex != "") {
+//     //     pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.bibtex + '">(bibtex)</a> ').style("font-size", "12px");
+//     // }
+// }
+
+function showPublication (publicationsContent, paper, i) {
+    var pub = publicationsContent.append("div")
+        .attr("class", "publication-item")
+        .append("div")
+        .attr("class", "pub-container");
+
+    pub.append("a")
+        .attr("href", paper.pdf)
+        .attr("target", "_blank")
+        .append("div")
+        .attr("class", "pub-thumbnail")
+        .style("background-image", "url(/assets/images/" + paper.name + ".png)");
+
+    var pubInfo = pub.append("div")
+        .attr("class", "pub-info");
+
+    if ("award" in paper) {
+        var award = pubInfo.append("div")
+            .attr("class", "pub-award")
+            .style("float", "right");
+        award.append("img")
+            .attr("src", "/assets/images/badge.png");
     }
 
-    pubInfo.append("span").html(paper.title+"<br/>")
-        .style("font-size", "16px")
-        .style("font-style", "italic");
+    pubInfo.append("span")
+        .attr("class", "pub-title")
+        .html(paper.title + "<br/>");
 
     var firstAuthor = false;
-
 
     paper.authors.forEach(function (author, j) {
         var mainAuthor = false;
         if (author == "Jieqiong Zhao" || author == "Jieqiong(Helen) Zhao") {
-            author = "" + author + "";
             mainAuthor = true;
-            if (j == 0)
-                firstAuthor = true;
+            if (j == 0) firstAuthor = true;
         }
 
-        // if (j != paper.authors.length - 1) {
-        //     author = author + ", ";
-        // } else {
-        //     author = author + "<br/>";
-        // }
-
-        pubInfo.append("span").html(function ()
-        {
-            return mainAuthor? "<b>" + author + "</b>" : author;
-        }
-        ).style("font-size", "16px")
-            // .style("background-color", mainAuthor?"#f0e8ff":"transparent");
+        pubInfo.append("span").html(function () {
+            return mainAuthor ? "<b>" + author + "</b>" : author;
+        });
 
         if (j != paper.authors.length - 1) {
-
             if (paper.equal == "true" && j == 0) {
-                pubInfo.append("span").text(" ~ ").style("font-size", "16px");
+                pubInfo.append("span").text(" ~ ");
             } else {
-                pubInfo.append("span").text(", ").style("font-size", "16px");
+                pubInfo.append("span").text(", ");
             }
-
         } else {
             pubInfo.append("span").html("<br/>");
         }
     });
 
     if (paper.equal == "true") {
-        pubInfo.append("span").html("<b>" + "The first two authors contributed equally to this work." + "</b><br/>").style("font-size", "11px");
+        pubInfo.append("span")
+            .attr("class", "equal-contribution")
+            .html("<b>The first two authors contributed equally to this work.</b><br/>");
     }
 
-    // if (firstAuthor) {
-    //     // grey background for first author paper
-    //     pub.style("background-color", "#f0f0f0").style("border", "2px solid #FFF");
-    // }
-
-    pubInfo.append("span").html(paper.venue + ", " + paper.year +"<br/>").style("font-size", "16px");
+    pubInfo.append("span")
+        .attr("class", "pub-venue")
+        .html(paper.venue + ", " + paper.year + "<br/>");
 
     if (paper.pdf != "") {
-        pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.pdf + '">[pdf]</a>').style("font-size", "16px");
+        pubInfo.append("span").attr("class", "textlink")
+            .html('<a target="_blank" href="' + paper.pdf + '">[pdf]</a>');
     }
 
     if (paper.video != "") {
-        pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.video + '">[demo video]</a>  ').style("font-size", "16px");
+        pubInfo.append("span").attr("class", "textlink")
+            .html('<a target="_blank" href="' + paper.video + '">[demo video]</a>');
     }
 
     if (paper.presentation != "") {
-        pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.presentation + '">[talk video]</a>  ').style("font-size", "16px");
+        pubInfo.append("span").attr("class", "textlink")
+            .html('<a target="_blank" href="' + paper.presentation + '">[talk video]</a>');
     }
 
     if (paper.slides != "") {
-        pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.slides + '">[slides]</a>  ').style("font-size", "16px");
+        pubInfo.append("span").attr("class", "textlink")
+            .html('<a target="_blank" href="' + paper.slides + '">[slides]</a>');
     }
 
     if (paper.doi != "") {
-        pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.doi + '">[doi]</a>  ').style("font-size", "16px");
+        pubInfo.append("span").attr("class", "textlink")
+            .html('<a target="_blank" href="' + paper.doi + '">[doi]</a>');
     }
 
-     if ("award" in paper) {
-        var award = pubInfo.append("div").style("float", "right").style("height", "auto");
-        award.append("span").html("<b>" + paper["award"].toUpperCase() + "</b>").style("font-size", "12px").style("margin-right", "3px");
-        // award.append("img").attr("src", "/assets/images/badge.png").style("height", "25px").style("margin-right", "3px");
+    if ("award" in paper) {
+        pubInfo.append("div")
+            .attr("class", "award-text")
+            .html("<b>" + paper["award"].toUpperCase() + "</b>");
     }
-    //
-    // if (paper.bibtex != "") {
-    //     pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.bibtex + '">(bibtex)</a> ').style("font-size", "12px");
-    // }
 }
-
