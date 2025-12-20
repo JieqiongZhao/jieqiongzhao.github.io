@@ -297,6 +297,11 @@ function showPublication (publicationsContent, paper, i) {
             .html('<a target="_blank" href="' + paper.pdf + '">[pdf]</a>');
     }
 
+    if (paper.fastvideo != "") {
+        pubInfo.append("span").attr("class", "textlink")
+            .html('<a target="_blank" href="' + paper.fastvideo + '">[Fast Forward]</a>');
+    }
+
     if (paper.video != "") {
         pubInfo.append("span").attr("class", "textlink")
             .html('<a target="_blank" href="' + paper.video + '">[demo video]</a>');
