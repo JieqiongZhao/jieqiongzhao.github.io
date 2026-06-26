@@ -2,8 +2,8 @@ import json
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-EVENT_PATH = "/Users/yangqi/Downloads/VAST_Challenge_2026_MC2/MC2 data_with_datetime.json"
-ORG_PATH = "/Users/yangqi/Downloads/VAST_Challenge_2026_MC2/org_chart.json"
+EVENT_PATH = "./MC2 data_with_datetime.json"
+ORG_PATH = "./org_chart.json"
 
 OUT_LEVEL1 = "level1_department_pairs.json"
 OUT_LEVEL2 = "level2_receiver_sets.json"

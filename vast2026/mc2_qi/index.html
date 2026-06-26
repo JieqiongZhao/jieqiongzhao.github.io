@@ -310,9 +310,9 @@ function resize() {
 window.addEventListener("resize", resize);
 
 Promise.all([
-  d3.json("level1_department_pairs.json"),
-  d3.json("level2_receiver_sets.json"),
-  d3.json("events_for_trace.json")
+  d3.json("./level1_department_pairs.json"),
+  d3.json("./level2_receiver_sets.json"),
+  d3.json("./events_for_trace.json")
 ]).then(([l1, l2, events]) => {
   level1Data = l1.map(d => ({
     ...d,
