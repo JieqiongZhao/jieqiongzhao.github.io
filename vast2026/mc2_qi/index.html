@@ -1,0 +1,2392 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Multi-agent Interaction Overview</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+#toolbar {
+  padding: 10px 14px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+}
+
+#container {
+  position: relative;
+  width: 100vw;
+  height: calc(100vh - 48px);
+  overflow: auto;
+}
+
+canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+}
+
+svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.event-dot,
+.daily-node,
+.daily-upstream-node {
+  pointer-events: all;
+}
+
+#tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: white;
+  border: 1px solid #aaa;
+  padding: 8px;
+  font-size: 12px;
+  display: none;
+  max-width: 380px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  z-index: 99999;
+}
+
+select, input {
+  font-size: 12px;
+}
+
+.check-filter {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.check-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 320px;
+}
+
+.check-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  background: #f4f4f4;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 2px 6px;
+}
+
+.check-item input {
+  margin: 0;
+}
+
+.tab-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#dailyGraphControls {
+  display: none;
+}
+</style>
+</head>
+
+<body>
+<div id="toolbar">
+  <button id="overviewTabBtn">Overview</button>
+  <button id="dailyGraphTabBtn">Daily graph</button>
+
+  <div class="check-filter">
+    <span>Sender department:</span>
+    <div id="senderDeptFilter" class="check-list"></div>
+  </div>
+
+  <div class="check-filter">
+    <span>Receiver department:</span>
+    <div id="receiverDeptFilter" class="check-list"></div>
+  </div>
+
+  <div class="check-filter">
+    <span>Action:</span>
+    <div id="actionFilter" class="check-list"></div>
+  </div>
+
+  <div id="overviewControls" class="tab-controls">
+    <label>
+      Start:
+      <input id="startDateFilter" type="date" min="2046-01-01" max="2046-12-31">
+      <input id="startClock" type="time">
+    </label>
+
+    <label>
+      End:
+      <input id="endDateFilter" type="date" min="2046-01-01" max="2046-12-31">
+      <input id="endClock" type="time">
+    </label>
+
+    <button id="clearTimeBtn">Clear time</button>
+
+    <label>
+      Person trace:
+      <input id="overviewPersonInput" placeholder="person:xxx or name">
+    </label>
+
+    <button id="overviewTraceBtn">Trace</button>
+  </div>
+
+  <div id="dailyGraphControls" class="tab-controls">
+    <label>
+      File trace:
+      <input id="fileInput" placeholder="file id or file name">
+    </label>
+    <label>
+      File start:
+        <input id="fileStartDateFilter" type="date" min="2046-01-01" max="2046-12-31">
+    </label>
+    <label>
+      File end:
+      <input id="fileEndDateFilter" type="date" min="2046-01-01" max="2046-12-31">
+    </label>
+    <button id="fileTraceBtn">
+      Trace File
+    </button>
+    <label>
+      Person trace:
+      <input id="personInput" placeholder="person:xxx or name">
+    </label>
+
+    <label>
+      Trace date:
+      <input id="traceDateFilter" type="date" min="2046-01-01" max="2046-12-31">
+    </label>
+
+    <label>
+      Hours before:
+      <input id="hoursBackFilter" type="number" min="1" max="72" value="6" style="width:55px">
+    </label>
+
+    <button id="traceBtn">Trace</button>
+  </div>
+</div>
+
+<div id="container">
+  <canvas id="canvas"></canvas>
+  <svg id="svg"></svg>
+  <div id="tooltip"></div>
+</div>
+
+<script>
+const margin = {top: 230, right: 40, bottom: 45, left: 230};
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const svg = d3.select("#svg");
+const tooltip = d3.select("#tooltip");
+
+const DAILY_INNER_RADIUS = 30;
+const DAILY_OUTER_RADIUS = 95;
+const DAILY_LAYOUT_PADDING = 120;
+const DAILY_TITLE_SAFE_TOP = 90;
+const TRACE_ACTIVE_COLOR = "#c04fb3";
+const TRACE_INACTIVE_COLOR = "#eeeeee";
+const TRACE_ACTIVE_OPACITY = 0.75;
+const TRACE_INACTIVE_OPACITY = 0.75;
+
+let width, height;
+
+let level1Data = [];
+let level2Data = [];
+let eventsData = [];
+
+let currentTab = "overview";
+let currentLevel = 1;
+let currentData = [];
+let visibleData = [];
+
+let dailyGraphFocusStack = [];
+let dailyGraphExpansions = [];
+let dailyGraphLastRootKey = "";
+let dailyGraphRootQuery = "";
+let dailyGraphAnchorWindows = [];
+let dailyGraphBaseEvents = [];
+let dailyGraphFilteredEvents = [];
+let dailyGraphMode = "person"; // "person" or "file"
+let dailyGraphFileQuery = "";
+
+let xScale, yScale, yMap;
+let colorScale;
+let quadtree;
+
+const actionColorMap = {
+
+// ---------- Social (Red) ----------
+post_flex:        "#ef5350",
+flex_post:        "#f26d6b",
+post_saidit:      "#d32f2f",
+saidit_post:      "#c62828",
+saidit_post_check:"#ffcdd2",
+
+// ---------- Email (Blue) ----------
+check_email:      "#90caf9",
+access_email:     "#64b5f6",
+send_email:       "#42a5f5",
+sent:             "#1e88e5",
+received:         "#bbdefb",
+
+// ---------- Meeting (Orange) ----------
+propose_meeting:  "#fb8c00",
+
+// ---------- Agent Task (Purple) ----------
+assign_agent_task:      "#7e57c2",
+queue_subordinate_task: "#9575cd",
+ask_agent:              "#5e35b1",
+give_advice:            "#b39ddb",
+suggest_contacts:       "#d1c4e9",
+
+// ---------- File (Green) ----------
+read_file:        "#81c784",
+access_files:     "#66bb6a",
+list_files:       "#43a047",
+create_file:      "#00C853",
+delete_file:      "#E53935",
+
+// ---------- Access (Gray) ----------
+check_access:     "#9e9e9e",
+check_in:         "#bdbdbd",
+enter_room:       "#757575",
+
+unknown:          "#d0d0d0"
+};
+
+function actionColor(action) {
+  return actionColorMap[action] || actionColorMap.unknown;
+}
+
+const departmentColor = {
+  "Executive Suite": "#e41a1c",
+  "Products": "#377eb8",
+  "Human Resources": "#4daf4a",
+  "Legal": "#984ea3",
+  "Information Technologies": "#ff7f00",
+  "Customer Support": "#D9A54A",
+  "World": "#111111",
+  "Unknown Department": "#777777"
+};
+
+function deptColor(dept) {
+  return departmentColor[dept] || "#777777";
+}
+
+function parseTime(t) {
+  return d3.timeParse("%Y-%m-%d %H:%M:%S")(t);
+}
+
+function resize() {
+  width = document.getElementById("container").clientWidth;
+  height = document.getElementById("container").clientHeight;
+
+  if (currentTab === "dailyGraph") {
+    renderDailyGraphTab();
+  } else {
+    render();
+  }
+}
+
+window.addEventListener("resize", resize);
+
+Promise.all([
+  d3.json("level1_department_pairs.json"),
+  d3.json("level2_receiver_sets.json"),
+  d3.json("events_for_trace.json")
+]).then(([l1, l2, events]) => {
+  level1Data = l1.map(d => ({
+    ...d,
+    date: parseTime(d.first_time || d.time_bin)
+  }));
+
+  level2Data = l2.map(d => ({
+    ...d,
+    date: parseTime(d.first_time || d.time_bin)
+  }));
+
+  eventsData = events.map(d => ({
+    ...d,
+    date: parseTime(d.time || d.time_bin)
+  }));
+
+  // ===== DEBUG =====
+
+  console.log(eventsData.find(e =>
+
+JSON.stringify(e).includes("Swift")
+
+));
+
+console.log(
+
+eventsData.filter(e =>
+
+  JSON.stringify(e).includes("Swift")
+
+).length
+
+);
+
+// =================
+
+  colorScale = actionColor;
+
+  initFilters();
+  currentLevel = 1;
+  currentData = level1Data;
+
+  resize();
+});
+
+function initFilters() {
+  const senderDepts = Array.from(new Set([
+    ...level1Data.map(d => d.sender_department),
+    ...level2Data.map(d => d.sender_department)
+  ])).sort();
+
+  const receiverDepts = Array.from(new Set([
+    ...level1Data.map(d => d.receiver_department),
+    ...level2Data.flatMap(d => d.receiver_departments || [])
+  ])).sort();
+
+  const actions = Array.from(new Set([
+    ...level1Data.map(d => d.action),
+    ...level2Data.map(d => d.action)
+  ])).sort();
+
+  fillCheckboxGroup("#senderDeptFilter", senderDepts);
+  fillCheckboxGroup("#receiverDeptFilter", receiverDepts);
+  fillCheckboxGroup("#actionFilter", actions);
+
+  d3.select("#overviewTabBtn").on("click", () => {
+    currentTab = "overview";
+    updateToolbarByTab();
+    render();
+  });
+
+  d3.select("#dailyGraphTabBtn").on("click", () => {
+    currentTab = "dailyGraph";
+    dailyGraphFocusStack = [];
+    dailyGraphExpansions = [];
+    dailyGraphLastRootKey = "";
+    updateToolbarByTab();
+    renderDailyGraphTab();
+  });
+
+  d3.select("#overviewTraceBtn").on("click", renderTrace);
+
+  d3.select("#traceBtn").on("click", () => {
+
+dailyGraphMode = "person";
+
+dailyGraphFocusStack = [];
+
+dailyGraphExpansions = [];
+
+dailyGraphLastRootKey = "";
+
+renderDailyGraphTab();
+
+});
+
+d3.select("#fileTraceBtn").on("click", () => {
+
+dailyGraphMode = "file";
+
+dailyGraphFileQuery = d3.select("#fileInput")
+
+  .property("value")
+
+  .trim()
+
+  .toLowerCase();
+
+dailyGraphFocusStack = [];
+
+dailyGraphExpansions = [];
+
+dailyGraphLastRootKey = "";
+
+renderDailyGraphTab();
+
+});
+
+  d3.select("#fileStartDateFilter").on("change", rerenderCurrentTab);
+  d3.select("#fileEndDateFilter").on("change", rerenderCurrentTab);
+  d3.select("#startDateFilter").on("change", rerenderCurrentTab);
+  d3.select("#startClock").on("change", rerenderCurrentTab);
+  d3.select("#endDateFilter").on("change", rerenderCurrentTab);
+  d3.select("#endClock").on("change", rerenderCurrentTab);
+  d3.select("#traceDateFilter").on("change", rerenderCurrentTab);
+  d3.select("#hoursBackFilter").on("change", rerenderCurrentTab);
+
+  d3.select("#clearTimeBtn").on("click", () => {
+    d3.select("#startDateFilter").property("value", "");
+    d3.select("#startClock").property("value", "");
+    d3.select("#endDateFilter").property("value", "");
+    d3.select("#endClock").property("value", "");
+    rerenderCurrentTab();
+  });
+
+  updateToolbarByTab();
+}
+
+function updateToolbarByTab() {
+  d3.select("#overviewControls")
+    .style("display", currentTab === "overview" ? "flex" : "none");
+
+  d3.select("#dailyGraphControls")
+    .style("display", currentTab === "dailyGraph" ? "flex" : "none");
+}
+
+function rerenderCurrentTab() {
+  if (currentTab === "dailyGraph") {
+    renderDailyGraphTab();
+  } else {
+    render();
+  }
+}
+
+function fillCheckboxGroup(selector, values) {
+  const box = d3.select(selector);
+  box.selectAll("*").remove();
+
+  box.append("label")
+    .attr("class", "check-item")
+    .html(`<input type="checkbox" value="ALL" checked> ALL`);
+
+  const items = box.selectAll("label.extra")
+    .data(values)
+    .enter()
+    .append("label")
+    .attr("class", "check-item extra");
+
+  items.html(d => `<input type="checkbox" value="${d}"> ${d}`);
+
+  box.selectAll("input").on("change", function() {
+    const value = this.value;
+
+    if (value === "ALL" && this.checked) {
+      box.selectAll("input").property("checked", false);
+      d3.select(this).property("checked", true);
+    } else if (value !== "ALL" && this.checked) {
+      box.select('input[value="ALL"]').property("checked", false);
+    }
+
+    const checked = box.selectAll("input:checked").nodes();
+
+    if (checked.length === 0) {
+      box.select('input[value="ALL"]').property("checked", true);
+    }
+
+    rerenderCurrentTab();
+  });
+}
+
+function getCheckedValues(selector) {
+  const values = d3.select(selector)
+    .selectAll("input:checked")
+    .nodes()
+    .map(n => n.value);
+
+  if (values.includes("ALL") || values.length === 0) {
+    return null;
+  }
+
+  return new Set(values);
+}
+
+function getDateFilters() {
+  const startDateValue = d3.select("#startDateFilter").property("value");
+  const startClock = d3.select("#startClock").property("value");
+
+  const endDateValue = d3.select("#endDateFilter").property("value");
+  const endClock = d3.select("#endClock").property("value");
+
+  const startDate = startDateValue
+    ? new Date(`${startDateValue}T${startClock || "00:00"}`)
+    : null;
+
+  const endDate = endDateValue
+    ? new Date(`${endDateValue}T${endClock || "23:59"}`)
+    : null;
+
+  return {startDate, endDate};
+}
+
+function getFilteredData() {
+  const senderDeptSet = getCheckedValues("#senderDeptFilter");
+  const receiverDeptSet = getCheckedValues("#receiverDeptFilter");
+  const actionSet = getCheckedValues("#actionFilter");
+  const {startDate, endDate} = getDateFilters();
+
+  return currentData.filter(d => {
+    if (senderDeptSet && !senderDeptSet.has(d.sender_department)) return false;
+    if (actionSet && !actionSet.has(d.action)) return false;
+
+    if (receiverDeptSet) {
+      if (currentLevel === 1) {
+        if (!receiverDeptSet.has(d.receiver_department)) return false;
+      } else {
+        const depts = d.receiver_departments || [];
+        if (!depts.some(dep => receiverDeptSet.has(dep))) return false;
+      }
+    }
+
+    if (startDate && d.date < startDate) return false;
+    if (endDate && d.date > endDate) return false;
+
+    return true;
+  });
+}
+
+function getFileDateWindow() {
+  const startValue = d3.select("#fileStartDateFilter").property("value");
+  const endValue = d3.select("#fileEndDateFilter").property("value");
+
+  const start = startValue
+    ? new Date(`${startValue}T00:00:00`)
+    : null;
+
+  const end = endValue
+    ? new Date(`${endValue}T23:59:59`)
+    : null;
+
+  return { start, end };
+}
+
+function eventPassesFileDateWindow(e) {
+  const { start, end } = getFileDateWindow();
+
+  if (start && e.date < start) return false;
+  if (end && e.date > end) return false;
+
+  return true;
+}
+
+function getConcreteFileWindow(events) {
+  const { start, end } = getFileDateWindow();
+
+  const minDate = d3.min(events, d => d.date);
+  const maxDate = d3.max(events, d => d.date);
+
+  return {
+    start: start || minDate || new Date("2046-01-01T00:00:00"),
+    end: end || maxDate || new Date("2046-12-31T23:59:59")
+  };
+}
+
+function isAgentEntity(type) {
+  return (type || "").toLowerCase() === "agent";
+}
+
+function isEventFileRelated(e) {
+  if (dailyGraphMode !== "file") return false;
+  if (!dailyGraphFileQuery) return false;
+  return isFileEvent(e, dailyGraphFileQuery);
+}
+
+function getEntityTypeForFocus(e, focusQuery) {
+  const q = focusQuery.toLowerCase();
+
+  if ((e.sender_id || "").toLowerCase().includes(q)) {
+    return e.sender_type || "";
+  }
+
+  for (const r of (e.receivers || [])) {
+    if ((r.id || "").toLowerCase().includes(q)) {
+      return r.type || "";
+    }
+  }
+
+  return "";
+}
+
+function eventPassesCurrentFilters(e) {
+  const senderDeptSet = getCheckedValues("#senderDeptFilter");
+  const receiverDeptSet = getCheckedValues("#receiverDeptFilter");
+  const actionSet = getCheckedValues("#actionFilter");
+  const {startDate, endDate} = getDateFilters();
+
+  if (senderDeptSet && !senderDeptSet.has(e.sender_department)) return false;
+  if (actionSet && !actionSet.has(e.action)) return false;
+
+  if (receiverDeptSet) {
+    const depts = e.receiver_departments || [];
+    if (!depts.some(dep => receiverDeptSet.has(dep))) return false;
+  }
+
+  if (startDate && e.date < startDate) return false;
+  if (endDate && e.date > endDate) return false;
+
+  return true;
+}
+
+function eventPassesDailyGraphBaseFilters(e) {
+  const senderDeptSet = getCheckedValues("#senderDeptFilter");
+  const receiverDeptSet = getCheckedValues("#receiverDeptFilter");
+  const actionSet = getCheckedValues("#actionFilter");
+
+  if (senderDeptSet && !senderDeptSet.has(e.sender_department)) return false;
+  if (actionSet && !actionSet.has(e.action)) return false;
+
+  if (receiverDeptSet) {
+    const depts = e.receiver_departments || [];
+    if (!depts.some(dep => receiverDeptSet.has(dep))) return false;
+  }
+
+  return true;
+}
+
+/* ---------- Overview ---------- */
+
+function render() {
+  currentTab = "overview";
+  currentLevel = 1;
+  currentData = level1Data;
+
+  if (!currentData.length || !width) return;
+
+  visibleData = getFilteredData();
+
+  if (!visibleData.length) {
+    clearCanvasAndSvg(document.getElementById("container").clientHeight);
+    return;
+  }
+
+  const times = d3.extent(visibleData, d => d.date);
+  const yDomain = Array.from(new Set(visibleData.map(d => d.pair))).sort();
+
+  xScale = d3.scaleTime()
+    .domain(times)
+    .range([margin.left, width - margin.right]);
+
+  const chartHeight = buildGroupedYMap(yDomain);
+
+  height = Math.max(
+    document.getElementById("container").clientHeight,
+    chartHeight
+  );
+
+  setupCanvasSvg(height);
+  clearCanvasAndSvg(height);
+
+  yScale = key => yMap.get(key);
+  colorScale = actionColor;
+
+  drawAxes(yDomain);
+  drawCanvasPoints();
+  buildQuadtree();
+}
+
+function buildGroupedYMap(yDomain) {
+  yMap = new Map();
+
+  const innerGap = 11;
+  const groupGap = 26;
+
+  const groups = d3.group(yDomain, d => {
+    if (d.includes(" → ")) return d.split(" → ")[0];
+    return d;
+  });
+
+  let y = margin.top;
+  const senderGroups = Array.from(groups.keys()).sort();
+
+  for (const sender of senderGroups) {
+    const rows = groups.get(sender).sort();
+
+    for (const row of rows) {
+      yMap.set(row, y);
+      y += innerGap;
+    }
+
+    y += groupGap;
+  }
+
+  return y + margin.bottom + 30;
+}
+
+function setupCanvasSvg(h) {
+  canvas.width = width * window.devicePixelRatio;
+  canvas.height = h * window.devicePixelRatio;
+
+  canvas.style.width = width + "px";
+  canvas.style.height = h + "px";
+
+  ctx.setTransform(
+    window.devicePixelRatio,
+    0,
+    0,
+    window.devicePixelRatio,
+    0,
+    0
+  );
+
+  svg.attr("width", width).attr("height", h);
+}
+
+function clearCanvasAndSvg(h) {
+  ctx.clearRect(0, 0, width, h);
+  svg.selectAll("*").remove();
+}
+
+function drawAxes(yDomain) {
+  const xAxis = d3.axisBottom(xScale)
+    .ticks(8)
+    .tickFormat(d3.timeFormat("%m-%d %H:%M"));
+
+  svg.append("g")
+    .attr("transform", `translate(0, ${height - margin.bottom})`)
+    .call(xAxis);
+
+  const yLabelG = svg.append("g")
+    .attr("transform", `translate(${margin.left}, 0)`);
+
+  for (const label of yDomain) {
+    const y = yScale(label);
+    if (y === undefined) continue;
+
+    yLabelG.append("text")
+      .attr("x", -8)
+      .attr("y", y)
+      .attr("text-anchor", "end")
+      .attr("dominant-baseline", "middle")
+      .attr("font-size", "10px")
+      .text(label);
+  }
+
+  svg.append("text")
+    .attr("x", margin.left)
+    .attr("y", margin.top - 12)
+    .attr("font-size", 14)
+    .attr("font-weight", "bold")
+    .text("Department-to-department interaction overview");
+}
+
+function drawCanvasPoints() {
+  const maxCount = d3.max(visibleData, d => d.count || 1);
+
+  const hScale = d3.scaleSqrt()
+    .domain([1, maxCount])
+    .range([2, 8]);
+
+  for (const d of visibleData) {
+    const x = xScale(d.date);
+    const y = yScale(d.pair);
+
+    d._x = x;
+    d._y = y;
+
+    const segW = 2;
+    const segH = hScale(d.count || 1);
+
+    d._segW = segW;
+    d._segH = segH;
+
+    drawLineNodeGlyph(x, y, segW, segH, colorScale(d.action));
+
+    if (d._highlightPerson) {
+      drawSelectedPersonTailsOnSegment(x, y, segW, segH, d);
+    }
+  }
+}
+
+function drawLineNodeGlyph(x, y, w, h, color) {
+  const radius = h / 2;
+
+  ctx.save();
+  ctx.globalAlpha = 0.78;
+  ctx.fillStyle = color;
+
+  roundRect(ctx, x - w / 2, y - h / 2, w, h, radius);
+
+  ctx.fill();
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
+
+const FILE_EXT_RE = /\.(md|txt|csv|json|xlsx?|docx?|pdf|png|jpg|jpeg|log|yaml|yml|html|xml)$/i;
+
+function collectStringsDeep(obj, result = []) {
+  if (obj == null) return result;
+
+  if (typeof obj === "string") {
+    result.push(obj);
+    return result;
+  }
+
+  if (Array.isArray(obj)) {
+    obj.forEach(v => collectStringsDeep(v, result));
+    return result;
+  }
+
+  if (typeof obj === "object") {
+    Object.values(obj).forEach(v => collectStringsDeep(v, result));
+  }
+
+  return result;
+}
+
+function looksLikeFileName(s) {
+  if (!s || typeof s !== "string") return false;
+
+  const v = s.trim();
+
+  // 排除明显的 person / agent / system id
+  if (v.startsWith("person:")) return false;
+  if (v.startsWith("Agent/person:")) return false;
+  if (v.startsWith("system:")) return false;
+  if (v.startsWith("world:")) return false;
+
+  // path/to/file.ext 或 file.ext
+  const lastPart = v.split("/").pop();
+
+  return FILE_EXT_RE.test(lastPart);
+}
+
+function extractFileNames(e) {
+  const strings = collectStringsDeep(e);
+  const files = strings.filter(looksLikeFileName);
+
+  return Array.from(new Set(files));
+}
+
+function containsFileKeyword(obj, keyword) {
+
+if (!obj) return false;
+
+if (typeof obj === "string") {
+  return obj.toLowerCase().includes(
+    keyword.toLowerCase()
+  );
+}
+
+if (Array.isArray(obj)) {
+  return obj.some(v =>
+    containsFileKeyword(v, keyword)
+  );
+}
+
+if (typeof obj === "object") {
+  return Object.values(obj).some(v =>
+    containsFileKeyword(v, keyword)
+  );
+}
+
+return false;
+}
+
+function isFileEvent(e, query) {
+
+return containsFileKeyword(
+  e.details,
+  query
+);
+}
+
+function getPeopleForFile(fileQuery, events) {
+  const people = new Map();
+
+  events.forEach(e => {
+    if (!isFileEvent(e, fileQuery)) return;
+
+    // 1. 从 parties 里抽 person
+    (e.parties || []).forEach(p => {
+      if (!p || !p.includes("person:")) return;
+
+      const id = p.replace(/^Agent\//, "");
+
+      people.set(id.toLowerCase(), {
+        id,
+        name: id.replace("person:", "").replace(/_/g, " "),
+        department: "Unknown Department"
+      });
+    });
+
+    // 2. 从 sender_id 里抽 person
+    if (e.sender_id && e.sender_id.includes("person:")) {
+      const id = e.sender_id;
+
+      people.set(id.toLowerCase(), {
+        id,
+        name: e.sender_name || id.replace("person:", "").replace(/_/g, " "),
+        department: e.sender_department || "Unknown Department"
+      });
+    }
+
+    // 3. 从 receivers 里抽 person
+    (e.receivers || []).forEach(r => {
+      if (!r || !r.id || !r.id.includes("person:")) return;
+
+      const id = r.id;
+
+      people.set(id.toLowerCase(), {
+        id,
+        name: r.name || id.replace("person:", "").replace(/_/g, " "),
+        department: r.department || "Unknown Department"
+      });
+    });
+  });
+
+  return Array.from(people.values());
+}
+
+function drawSelectedPersonTailsOnSegment(x, y, w, h, d) {
+  if (d._isSenderTrace) {
+    drawSenderTailOnSegment(x, y, w, h, deptColor(d.sender_department));
+  }
+
+  if (d._isReceiverTrace) {
+    drawReceiverTailOnSegment(x, y, w, h, deptColor(d.receiver_department));
+  }
+}
+
+function getTraceArrowColor(isSelectedTrace) {
+  return isSelectedTrace ? "#c04fb3" : "#b8b8b8";
+}
+
+function isExpandedTraceNode(sender, day, x, y, rootWindow) {
+  if (!rootWindow) return false;
+
+  const focusId = (sender.id || sender.name || "").toLowerCase();
+
+  const key = [
+    focusId,
+    day,
+    x.toFixed(1),
+    y.toFixed(1),
+    rootWindow.start.toISOString(),
+    rootWindow.end.toISOString()
+  ].join("||");
+
+  return dailyGraphExpansions.some(exp => exp.key === key);
+}
+
+function drawSenderTailOnSegment(x, y, w, h, color) {
+  const left = x - w / 2;
+  const top = y - h / 2;
+  const r = Math.max(h, 4);
+
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.78;
+
+  ctx.beginPath();
+  ctx.moveTo(left, top);
+  ctx.bezierCurveTo(left - r * 0.3, top - r * 0.6, left - r * 0.15, top - r * 1.4, left + r * 0.35, top - r * 2.0);
+  ctx.bezierCurveTo(left + r * 0.65, top - r * 1.2, left + r * 0.55, top - r * 0.45, left + r * 0.15, top);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawReceiverTailOnSegment(x, y, w, h, color) {
+  const right = x + w / 2;
+  const bottom = y + h / 2;
+  const r = Math.max(h, 4);
+
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.78;
+
+  ctx.beginPath();
+  ctx.moveTo(right, bottom);
+  ctx.bezierCurveTo(right + r * 0.35, bottom + r * 0.8, right + r * 0.25, bottom + r * 1.8, right - r * 0.25, bottom + r * 2.8);
+  ctx.bezierCurveTo(right - r * 0.65, bottom + r * 1.8, right - r * 0.45, bottom + r * 0.65, right - r * 0.05, bottom);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function buildQuadtree() {
+  quadtree = d3.quadtree()
+    .x(d => d._x)
+    .y(d => d._y)
+    .addAll(visibleData);
+}
+
+canvas.addEventListener("mousemove", event => {
+  if (currentTab !== "overview") return;
+  if (!quadtree) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = event.clientX - rect.left;
+  const my = event.clientY - rect.top;
+
+  const d = quadtree.find(mx, my, 12);
+
+  if (!d) {
+    tooltip.style("display", "none");
+    return;
+  }
+
+  tooltip
+    .style("display", "block")
+    .style("left", `${event.clientX + 16}px`)
+    .style("top", `${event.clientY + 16}px`)
+    .html(makeTooltip(d));
+});
+
+function makeTooltip(d) {
+  const eventType = d.action || "unknown";
+  const dateTime = d.first_time || d.time || d.time_bin || "";
+
+  const sender =
+    d.sender_name ||
+    d.sender_id ||
+    d.sender_department ||
+    "Unknown sender";
+
+  let receivers = "Unknown receiver";
+
+  if (d.receiver_names && d.receiver_names.length) {
+    receivers = d.receiver_names.join(", ");
+  } else if (d.receivers && d.receivers.length) {
+    receivers = d.receivers.map(r => r.name || r.id || r).join(", ");
+  } else if (d.receiver_ids && d.receiver_ids.length) {
+    receivers = d.receiver_ids.join(", ");
+  } else if (d.receiver_department) {
+    receivers = d.receiver_department;
+  } else if (d.receiver_departments && d.receiver_departments.length) {
+    receivers = d.receiver_departments.join(", ");
+  }
+
+  return `
+    <b>Event type:</b> ${eventType}<br>
+    <b>Sender:</b> ${sender}<br>
+    <b>Receiver:</b> ${receivers}<br>
+    <b>Date & time:</b> ${dateTime}<br>
+    <b>Count:</b> ${d.count || 1}
+  `;
+}
+
+/* ---------- Person matching ---------- */
+
+function isPersonSender(d, query) {
+  const q = query.toLowerCase();
+
+  return (
+    (d.sender_id || "").toLowerCase().includes(q) ||
+    (d.sender_name || "").toLowerCase().includes(q)
+  );
+}
+
+function isPersonReceiver(d, query) {
+  const q = query.toLowerCase();
+
+  return (
+    (d.receiver_ids || []).some(id =>
+      id.toLowerCase().includes(q)
+    ) ||
+    (d.receivers || []).some(r =>
+      (r.id || "").toLowerCase().includes(q) ||
+      (r.name || "").toLowerCase().includes(q)
+    )
+  );
+}
+
+/* ---------- Overview person trace ---------- */
+
+function getPersonAnchorLevel1(d) {
+  const w = d._segW || 2;
+  const h = d._segH || 4;
+  const r = Math.max(h, 4);
+
+  if (d._isSenderTrace && !d._isReceiverTrace) {
+    return {
+      x: d._x - w / 2 + r * 0.35,
+      y: d._y - h / 2 - r * 2.0
+    };
+  }
+
+  if (d._isReceiverTrace && !d._isSenderTrace) {
+    return {
+      x: d._x + w / 2 - r * 0.25,
+      y: d._y + h / 2 + r * 2.8
+    };
+  }
+
+  return {
+    x: d._x,
+    y: d._y
+  };
+}
+
+function makeLevel1Key(d) {
+  return [
+    d.time_bin,
+    d.sender_department,
+    d.receiver_department,
+    d.action
+  ].join("||");
+}
+
+function makeEventToLevel1Key(e, receiverDepartment) {
+  return [
+    e.time_bin,
+    e.sender_department,
+    receiverDepartment,
+    e.action
+  ].join("||");
+}
+
+function renderTrace() {
+  currentTab = "overview";
+  currentLevel = 1;
+  currentData = level1Data;
+
+  level1Data.forEach(d => {
+    d._highlightPerson = false;
+    d._isSenderTrace = false;
+    d._isReceiverTrace = false;
+  });
+
+  render();
+
+  const query = d3.select("#overviewPersonInput")
+    .property("value")
+    .trim()
+    .toLowerCase();
+
+  if (!query) return;
+
+  const nodeByKey = new Map();
+
+  visibleData.forEach(d => {
+    nodeByKey.set(makeLevel1Key(d), d);
+  });
+
+  const matchedEvents = eventsData
+    .filter(e => isPersonSender(e, query) || isPersonReceiver(e, query))
+    .filter(eventPassesCurrentFilters)
+    .sort((a, b) => a.date - b.date);
+
+  const traceNodes = [];
+
+  matchedEvents.forEach(e => {
+    const senderMatch = isPersonSender(e, query);
+    const receiverMatch = isPersonReceiver(e, query);
+
+    const receiverDepartments =
+      e.receiver_departments && e.receiver_departments.length
+        ? e.receiver_departments
+        : ["Unknown Receiver Department"];
+
+    receiverDepartments.forEach(receiverDept => {
+      const key = makeEventToLevel1Key(e, receiverDept);
+      const node = nodeByKey.get(key);
+
+      if (!node) return;
+
+      node._highlightPerson = true;
+      if (senderMatch) node._isSenderTrace = true;
+      if (receiverMatch) node._isReceiverTrace = true;
+
+      if (!traceNodes.includes(node)) {
+        traceNodes.push(node);
+      }
+    });
+  });
+
+  traceNodes.sort((a, b) => a.date - b.date);
+
+  ctx.clearRect(0, 0, width, height);
+  drawCanvasPoints();
+
+  svg.selectAll(".trace-layer").remove();
+
+  const g = svg.append("g")
+    .attr("class", "trace-layer");
+
+  if (!traceNodes.length) return;
+
+  const tracePoints = traceNodes.map(d => {
+    const anchor = getPersonAnchorLevel1(d);
+    return {
+      ...d,
+      anchorX: anchor.x,
+      anchorY: anchor.y
+    };
+  });
+
+  const line = d3.line()
+    .x(d => d.anchorX)
+    .y(d => d.anchorY)
+    .curve(d3.curveMonotoneX);
+
+  g.append("path")
+    .datum(tracePoints)
+    .attr("d", line)
+    .attr("fill", "none")
+    .attr("stroke", "#9aa0a6")
+    .attr("stroke-width", 1.2)
+    .attr("opacity", 0.45)
+    .attr("stroke-linecap", "round")
+    .attr("stroke-linejoin", "round");
+
+  drawPersonEventTimeline(matchedEvents, query);
+}
+
+function makeEventTimelineTooltip(d, query) {
+  const personName = getDisplayPersonNameFromEvent(d, query);
+
+  const role = isPersonSender(d, query) && !isPersonReceiver(d, query)
+    ? "sender"
+    : isPersonReceiver(d, query) && !isPersonSender(d, query)
+      ? "receiver"
+      : "self / both";
+
+  const sender =
+    d.sender_name ||
+    d.sender_id ||
+    d.sender_department ||
+    "Unknown sender";
+  
+  const files = extractFileNames(d);
+  const fileHtml = files.length
+  ? `<b>File:</b> ${files.join(", ")}<br>`
+  : "";
+
+  let receivers = "Unknown receiver";
+
+  if (d.receivers && d.receivers.length) {
+    receivers = d.receivers.map(r => r.name || r.id || r).join(", ");
+  } else if (d.receiver_ids && d.receiver_ids.length) {
+    receivers = d.receiver_ids.join(", ");
+  } else if (d.receiver_departments && d.receiver_departments.length) {
+    receivers = d.receiver_departments.join(", ");
+  }
+
+  return `
+    <b>Person:</b> <b>${personName}</b><br>
+    ${fileHtml}
+    <b>Event type:</b> ${d.action || "unknown"}<br>
+    <b>Date & time:</b> ${d.time || d.first_time || d.time_bin || ""}
+  `;
+}
+
+function getDisplayPersonNameFromEvent(e, query) {
+  const q = query.toLowerCase();
+
+  if (
+    (e.sender_id || "").toLowerCase().includes(q) ||
+    (e.sender_name || "").toLowerCase().includes(q)
+  ) {
+    return e.sender_name || e.sender_id || query;
+  }
+
+  for (const r of (e.receivers || [])) {
+    if (
+      (r.id || "").toLowerCase().includes(q) ||
+      (r.name || "").toLowerCase().includes(q)
+    ) {
+      return r.name || r.id || query;
+    }
+  }
+
+  return query;
+}
+
+function drawPersonEventTimeline(events, query) {
+  svg.selectAll(".person-event-timeline").remove();
+
+  if (!events || !events.length) return;
+
+  const g = svg.append("g")
+    .attr("class", "person-event-timeline");
+
+  const y = 62;
+  const tickY = y + 18;
+
+  g.append("text")
+    .attr("x", margin.left)
+    .attr("y", 22)
+    .attr("font-size", 13)
+    .attr("font-weight", "bold")
+    .attr("fill", "#111")
+    .text(`Person event timeline: ${query}`);
+
+  g.append("line")
+    .attr("x1", margin.left)
+    .attr("x2", width - margin.right)
+    .attr("y1", y)
+    .attr("y2", y)
+    .attr("stroke", "#777")
+    .attr("stroke-width", 1)
+    .attr("opacity", 0.5);
+
+  g.selectAll("circle.event-dot")
+    .data(events)
+    .enter()
+    .append("circle")
+    .attr("class", "event-dot")
+    .attr("cx", d => xScale(d.date))
+    .attr("cy", d => {
+      const sender = isPersonSender(d, query);
+      const receiver = isPersonReceiver(d, query);
+
+      if (sender && !receiver) return y - 12;
+      if (receiver && !sender) return y + 12;
+      return y;
+    })
+    .attr("r", 3.2)
+    .attr("fill", d => colorScale(d.action))
+    .attr("opacity", 0.9)
+    .on("mousemove", function(event, d) {
+      d3.select(this)
+        .attr("r", 5)
+        .attr("stroke", "#111")
+        .attr("stroke-width", 1.2);
+
+      tooltip
+        .style("display", "block")
+        .style("left", `${event.clientX + 16}px`)
+        .style("top", `${event.clientY + 16}px`)
+        .html(makeEventTimelineTooltip(d, query));
+    })
+    .on("mouseleave", function() {
+      d3.select(this)
+        .attr("r", 3.2)
+        .attr("stroke", "none");
+
+      tooltip.style("display", "none");
+    });
+
+  g.selectAll("line.event-stem")
+    .data(events)
+    .enter()
+    .append("line")
+    .attr("class", "event-stem")
+    .attr("x1", d => xScale(d.date))
+    .attr("x2", d => xScale(d.date))
+    .attr("y1", y)
+    .attr("y2", d => {
+      const sender = isPersonSender(d, query);
+      const receiver = isPersonReceiver(d, query);
+
+      if (sender && !receiver) return y - 12;
+      if (receiver && !sender) return y + 12;
+      return y;
+    })
+    .attr("stroke", "#aaa")
+    .attr("stroke-width", 0.6)
+    .attr("opacity", 0.45);
+
+  const grouped = d3.group(events, d => d.action);
+
+  const actionSummary = Array.from(grouped, ([action, arr]) => ({
+    action,
+    count: arr.length
+  }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  const legend = g.append("g")
+    .attr("transform", `translate(${margin.left}, ${tickY + 22})`);
+
+  const legendItems = legend.selectAll("g.legend-item")
+    .data(actionSummary)
+    .enter()
+    .append("g")
+    .attr("class", "legend-item")
+    .attr("transform", (d, i) => {
+      const col = i % 5;
+      const row = Math.floor(i / 5);
+      return `translate(${col * 170}, ${row * 16})`;
+    });
+
+  legendItems.append("circle")
+    .attr("cx", 0)
+    .attr("cy", -3)
+    .attr("r", 4)
+    .attr("fill", d => colorScale(d.action))
+    .attr("opacity", 0.9);
+
+  legendItems.append("text")
+    .attr("x", 8)
+    .attr("y", 0)
+    .attr("font-size", 10)
+    .attr("fill", "#111")
+    .text(d => `${d.action} (${d.count})`);
+
+  g.append("text")
+    .attr("x", margin.left - 8)
+    .attr("y", y - 12)
+    .attr("text-anchor", "end")
+    .attr("font-size", 10)
+    .attr("fill", "#aaa")
+    .text("sender");
+
+  g.append("text")
+    .attr("x", margin.left - 8)
+    .attr("y", y + 15)
+    .attr("text-anchor", "end")
+    .attr("font-size", 10)
+    .attr("fill", "#aaa")
+    .text("receiver");
+}
+
+/* ---------- Daily graph filtering ---------- */
+
+function getTraceWindow() {
+  const dateValue = d3.select("#traceDateFilter").property("value");
+  const hoursBack = Number(d3.select("#hoursBackFilter").property("value") || 6);
+
+  if (!dateValue) return null;
+
+  return {
+    dateValue,
+    hoursBack
+  };
+}
+
+function buildAnchorWindowsForRoot(events, rootQuery, traceDate, hoursBack) {
+  const q = rootQuery.toLowerCase();
+
+  const dayStart = new Date(`${traceDate}T00:00:00`);
+  const dayEnd = new Date(`${traceDate}T23:59:59`);
+
+  const rootDayEvents = events
+    .filter(e => {
+      if (e.date < dayStart || e.date > dayEnd) return false;
+      return isPersonSender(e, q) || isPersonReceiver(e, q);
+    })
+    .sort((a, b) => a.date - b.date);
+
+  return rootDayEvents.map(e => {
+    const rawStart = new Date(
+      e.date.getTime() - hoursBack * 60 * 60 * 1000
+    );
+
+    return {
+      anchorEventId: e.id,
+      anchorDate: e.date,
+
+      // 关键：最多只能回溯到当天 00:00
+      start: rawStart < dayStart ? dayStart : rawStart,
+
+      end: e.date
+    };
+  });
+}
+
+function eventInAnyAnchorWindow(e, windows) {
+  return windows.some(w => e.date >= w.start && e.date <= w.end);
+}
+
+function getAnchorWindowForEvent(e) {
+  return dailyGraphAnchorWindows.find(w => w.anchorEventId === e.id) || null;
+}
+
+function eventInWindow(e, windowObj) {
+  if (!windowObj) return false;
+  return e.date >= windowObj.start && e.date <= windowObj.end;
+}
+
+function getEventsForPersonWithinOneRootWindow(personQuery, windowObj, events) {
+
+const q = personQuery.toLowerCase();
+
+return events.filter(e => {
+
+  if (
+    dailyGraphMode === "person" &&
+    !eventInWindow(e, windowObj)
+  ) {
+    return false;
+  }
+
+  return (
+    isPersonSender(e, q) ||
+    isPersonReceiver(e, q)
+  );
+
+});
+
+}
+
+function getEventsForPersonWithinRootWindows(personQuery) {
+  const q = personQuery.toLowerCase();
+
+  return dailyGraphBaseEvents.filter(e => {
+    if (!eventInAnyAnchorWindow(e, dailyGraphAnchorWindows)) return false;
+    return isPersonSender(e, q) || isPersonReceiver(e, q);
+  });
+}
+
+/* ---------- Daily graph rendering ---------- */
+
+function renderDailyGraphTab() {
+  currentTab = "dailyGraph";
+  updateToolbarByTab();
+
+  const personQuery = d3.select("#personInput")
+    .property("value")
+    .trim()
+    .toLowerCase();
+
+  const fileQuery = d3.select("#fileInput")
+    .property("value")
+    .trim()
+    .toLowerCase();
+
+  dailyGraphBaseEvents = eventsData
+    .filter(eventPassesDailyGraphBaseFilters);
+
+  let filteredEvents = [];
+  let rootKey = "";
+
+  if (dailyGraphMode === "person") {
+    if (!personQuery) {
+      drawDailyMessage("Enter a person name or id, select a trace date and hours before, then click Trace.");
+      return;
+    }
+
+    const traceWindow = getTraceWindow();
+
+    if (!traceWindow) {
+      drawDailyMessage("Select a trace date first.");
+      return;
+    }
+
+    dailyGraphRootQuery = personQuery;
+
+    dailyGraphAnchorWindows = buildAnchorWindowsForRoot(
+      dailyGraphBaseEvents,
+      personQuery,
+      traceWindow.dateValue,
+      traceWindow.hoursBack
+    );
+
+    dailyGraphFocusStack = [personQuery];
+
+    filteredEvents = getEventsForPersonWithinRootWindows(personQuery)
+      .sort((a, b) => a.date - b.date);
+
+    rootKey = [
+      "person",
+      personQuery,
+      traceWindow.dateValue,
+      traceWindow.hoursBack
+    ].join("||");
+  } else {
+    if (!fileQuery) {
+      drawDailyMessage("Enter a file name.");
+      return;
+    }
+
+    dailyGraphFileQuery = fileQuery;
+    dailyGraphRootQuery = fileQuery;
+
+    const fileEvents = dailyGraphBaseEvents.filter(e =>
+      isFileEvent(e, fileQuery) &&
+      eventPassesFileDateWindow(e)
+    );
+
+    if (!fileEvents.length) {
+      drawDailyMessage("No file-related events in this date range.");
+      return;
+    }
+
+    const people = getPeopleForFile(fileQuery, fileEvents);
+
+    dailyGraphFocusStack = people
+      .map(p => (p.id || "").replace(/^Agent\//, "").toLowerCase())
+      .filter(Boolean);
+
+    if (!dailyGraphFocusStack.length) {
+      drawDailyMessage("Found file events, but no related people.");
+      return;
+    }
+
+    filteredEvents = dailyGraphBaseEvents
+      .filter(e =>
+        eventPassesFileDateWindow(e) &&
+        dailyGraphFocusStack.some(personId =>
+          isPersonSender(e, personId) ||
+          isPersonReceiver(e, personId)
+        )
+      )
+      .sort((a, b) => a.date - b.date);
+
+    if (!filteredEvents.length) {
+      drawDailyMessage("Found related people, but no activity events in this date range.");
+      return;
+    }
+
+    dailyGraphAnchorWindows = [];
+
+    const fileWindow = getConcreteFileWindow(filteredEvents);
+
+    rootKey = [
+      "file",
+      fileQuery,
+      fileWindow.start.toISOString(),
+      fileWindow.end.toISOString()
+    ].join("||");
+  }
+
+  dailyGraphFilteredEvents = filteredEvents;
+
+  if (rootKey !== dailyGraphLastRootKey) {
+    dailyGraphLastRootKey = rootKey;
+    dailyGraphExpansions = [];
+  }
+
+  const container = document.getElementById("container");
+  const oldScrollTop = container.scrollTop;
+  const oldScrollLeft = container.scrollLeft;
+
+  const initialH = Math.max(container.clientHeight, 900);
+
+  height = initialH;
+  width = container.clientWidth;
+
+  setupCanvasSvg(height);
+  clearCanvasAndSvg(height);
+
+  const g = drawExpandableDailyGraph(filteredEvents, dailyGraphFocusStack);
+  autoFitDailyGraph(g);
+
+  container.scrollTop = oldScrollTop;
+  container.scrollLeft = oldScrollLeft;
+}
+
+function drawDailyMessage(message) {
+  const h = Math.max(document.getElementById("container").clientHeight, 900);
+
+  height = h;
+  setupCanvasSvg(h);
+  clearCanvasAndSvg(h);
+
+  svg.append("text")
+    .attr("x", margin.left)
+    .attr("y", 50)
+    .attr("font-size", 14)
+    .attr("fill", "#111")
+    .text(message);
+}
+
+function drawExpandableDailyGraph(events, focusStack) {
+  const g = svg.append("g")
+    .attr("class", "expandable-daily-graph");
+
+  const eventsByDay = d3.group(events, d => d3.timeFormat("%m-%d")(d.date));
+  const days = Array.from(eventsByDay.keys()).sort();
+
+  if (!days.length) {
+    g.append("text")
+      .attr("x", margin.left)
+      .attr("y", 50)
+      .attr("font-size", 14)
+      .attr("fill", "#111")
+      .text("No events match the root-person hour windows.");
+    return g;
+  }
+
+  const dayX = d3.scalePoint()
+    .domain(days)
+    .range([margin.left, width - margin.right])
+    .padding(0.7);
+
+  const innerRadius = DAILY_INNER_RADIUS;
+  const outerRadius = DAILY_OUTER_RADIUS;
+  const rowGap = 160;
+
+  g.append("text")
+    .attr("x", margin.left)
+    .attr("y", 32)
+    .attr("font-size", 15)
+    .attr("font-weight", "bold")
+    .attr("fill", "#111")
+    .text("Root-window upstream trace graph");
+
+  g.append("text")
+    .attr("x", margin.left)
+    .attr("y", 54)
+    .attr("font-size", 11)
+    .attr("fill", "#555")
+    .text("All layers are filtered by the root person's activity-time windows.");
+
+  focusStack.forEach((rootQuery, i) => {
+    const centerY = height * 0.5 + i * rowGap;
+
+    days.forEach(day => {
+      const dayEvents = eventsByDay.get(day).sort((a, b) => a.date - b.date);
+      const cx = dayX(day);
+
+      drawRootDailyLayer(
+        g,
+        dayEvents,
+        rootQuery,
+        day,
+        cx,
+        centerY,
+        innerRadius,
+        outerRadius
+      );
+    });
+  });
+
+  dailyGraphExpansions.forEach(exp => {
+    drawNodeExpansion(g, exp);
+  });
+
+  return g;
+}
+
+function autoFitDailyGraph(g) {
+  const node = g.node();
+  if (!node) return;
+
+  let box;
+
+  try {
+    box = node.getBBox();
+  } catch (err) {
+    return;
+  }
+
+  const viewportW = document.getElementById("container").clientWidth;
+  const viewportH = document.getElementById("container").clientHeight;
+
+  let offsetX = 0;
+  let offsetY = 0;
+
+  const safeLeft = DAILY_LAYOUT_PADDING;
+  const safeTop = DAILY_TITLE_SAFE_TOP + DAILY_LAYOUT_PADDING;
+
+  if (box.x < safeLeft) {
+    offsetX = safeLeft - box.x;
+  }
+
+  if (box.y < safeTop) {
+    offsetY = safeTop - box.y;
+  }
+
+  const contentW = box.x + offsetX + box.width + DAILY_LAYOUT_PADDING;
+  const contentH = box.y + offsetY + box.height + DAILY_LAYOUT_PADDING;
+
+  const newWidth = Math.max(viewportW, contentW);
+  const newHeight = Math.max(viewportH, contentH);
+
+  width = newWidth;
+  height = newHeight;
+
+  setupCanvasSvg(height);
+  svg.attr("width", width).attr("height", height);
+
+  ctx.clearRect(0, 0, width, height);
+
+  g.attr("transform", `translate(${offsetX}, ${offsetY})`);
+
+  canvas.style.width = width + "px";
+  svg.style.width = width + "px";
+}
+
+function drawRootDailyLayer(
+  g,
+  dayEvents,
+  focusQuery,
+  day,
+  cx,
+  cy,
+  innerRadius,
+  outerRadius
+) {
+  const focusEvents = dayEvents.filter(e => {
+  if (
+    dailyGraphMode === "person" &&
+    !eventInAnyAnchorWindow(e, dailyGraphAnchorWindows)
+  ) {
+    return false;
+  }
+
+  if (
+    dailyGraphMode === "file" &&
+    !eventPassesFileDateWindow(e)
+  ) {
+    return false;
+  }
+
+  return isPersonSender(e, focusQuery) || isPersonReceiver(e, focusQuery);
+});
+
+  if (!focusEvents.length) return;
+
+  const outerEventsForArc = focusEvents.filter(e =>
+    getExternalSendersForFocus(e, focusQuery).length > 0
+  );
+
+  g.append("text")
+  .attr("x", cx)
+  .attr("y", cy)
+  .attr("text-anchor", "middle")
+  .attr("dominant-baseline", "middle")
+  .attr("font-size", 7)      // 原来 10~11 改小
+  .attr("fill", "#666")
+  .attr("pointer-events", "none")
+  .text(
+    focusQuery
+      .replace("person:", "")
+      .replace(/_/g, " ")
+  );
+
+  g.append("text")
+    .attr("x", cx)
+    .attr("y", cy - outerRadius - 28)
+    .attr("text-anchor", "middle")
+    .attr("font-size", 11)
+    .attr("fill", "#111")
+    .text(day);
+
+  drawActivityArc(g, cx, cy, innerRadius, focusEvents, "#eeeeee");
+  drawOuterActivityArc(g, cx, cy, outerRadius, outerEventsForArc, "#eeeeee");
+
+  focusEvents.forEach(e => {
+    const angle = dateToDayAngle(e.date);
+    const innerP = polar(cx, cy, innerRadius, angle);
+
+    drawDailyActivityNode(g, innerP.x, innerP.y, e, focusQuery);
+
+    const rootWindow =
+  dailyGraphMode === "person"
+    ? getAnchorWindowForEvent(e)
+    : getFileDateWindow();
+    const upstreamSenders = getExternalSendersForFocus(e, focusQuery);
+
+    upstreamSenders.forEach(sender => {
+      const outerP = polar(cx, cy, outerRadius, angle);
+
+      drawClickableUpstreamNode(
+        g,
+        outerP.x,
+        outerP.y,
+        sender,
+        e,
+        focusQuery,
+        angle,
+        1,
+        rootWindow
+      );
+
+      const dayLabel = d3.timeFormat("%m-%d")(e.date);
+const isSelectedTrace = isExpandedTraceNode(
+  sender,
+  dayLabel,
+  outerP.x,
+  outerP.y,
+  rootWindow
+);
+
+drawTinyArrow(
+  g,
+  outerP.x,
+  outerP.y,
+  innerP.x,
+  innerP.y,
+  isSelectedTrace ? TRACE_ACTIVE_COLOR : TRACE_INACTIVE_COLOR,
+  isSelectedTrace ? TRACE_ACTIVE_OPACITY : TRACE_INACTIVE_OPACITY
+);
+    });
+  });
+}
+
+function drawNodeExpansion(g, exp) {
+  const focusQuery = exp.personId;
+  const day = exp.day;
+  const depth = exp.depth || 1;
+
+  const rootWindow =
+    dailyGraphMode === "person"
+      ? {
+          start: new Date(exp.windowStart),
+          end: new Date(exp.windowEnd)
+        }
+      : getConcreteFileWindow(dailyGraphFilteredEvents);
+
+  const sourceEvents =
+    dailyGraphMode === "person"
+      ? dailyGraphBaseEvents
+      : dailyGraphBaseEvents.filter(eventPassesFileDateWindow);
+
+  const focusEvents = getEventsForPersonWithinOneRootWindow(
+    focusQuery,
+    rootWindow,
+    sourceEvents
+  );
+
+  const dayEvents = focusEvents.filter(e =>
+    d3.timeFormat("%m-%d")(e.date) === day
+  );
+
+  if (!dayEvents.length) return;
+
+  const innerRadius = DAILY_INNER_RADIUS;
+  const outerRadius = DAILY_OUTER_RADIUS;
+
+  const center = centerFromPointOnCircle(
+    exp.clickedX,
+    exp.clickedY,
+    innerRadius,
+    exp.clickedAngle
+  );
+
+  const outerEventsForArc = dayEvents.filter(e =>
+    getExternalSendersForFocus(e, focusQuery).length > 0
+  );
+
+  drawActivityArc(g, center.x, center.y, innerRadius, dayEvents, "#eeeeee");
+  drawOuterActivityArc(g, center.x, center.y, outerRadius, outerEventsForArc, "#eeeeee");
+
+  g.append("text")
+    .attr("x", center.x)
+    .attr("y", center.y)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("font-size", 7)
+    .attr("fill", "#666")
+    .attr("pointer-events", "none")
+    .text((exp.personName || focusQuery).replace("person:", "").replace(/_/g, " "));
+
+  dayEvents.forEach(e => {
+    const angle = dateToDayAngle(e.date);
+    const innerP = polar(center.x, center.y, innerRadius, angle);
+
+    drawDailyActivityNode(g, innerP.x, innerP.y, e, focusQuery);
+
+    const upstreamSenders = getExternalSendersForFocus(e, focusQuery);
+
+    upstreamSenders.forEach(sender => {
+      const outerP = polar(center.x, center.y, outerRadius, angle);
+
+      drawClickableUpstreamNode(
+        g,
+        outerP.x,
+        outerP.y,
+        sender,
+        e,
+        focusQuery,
+        angle,
+        depth + 1,
+        rootWindow
+      );
+
+      const dayLabel = d3.timeFormat("%m-%d")(e.date);
+      const isSelectedTrace = isExpandedTraceNode(
+        sender,
+        dayLabel,
+        outerP.x,
+        outerP.y,
+        rootWindow
+      );
+
+      drawTinyArrow(
+        g,
+        outerP.x,
+        outerP.y,
+        innerP.x,
+        innerP.y,
+        isSelectedTrace ? TRACE_ACTIVE_COLOR : TRACE_INACTIVE_COLOR,
+        isSelectedTrace ? TRACE_ACTIVE_OPACITY : TRACE_INACTIVE_OPACITY
+      );
+    });
+  });
+}
+
+function drawPersonCenterLabel(g, cx, cy, label) {
+  g.append("text")
+    .attr("x", cx)
+    .attr("y", cy)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("font-size", 9)
+    .attr("font-weight", "bold")
+    .attr("fill", "#555")
+    .text((label || "").replace("person:", ""));
+}
+
+function drawDailyActivityNode(g, x, y, e, focusQuery) {
+  const dept = getPersonDepartmentFromEvent(e, focusQuery);
+  const isAgent = isAgentEntity(getEntityTypeForFocus(e, focusQuery));
+  const isFileRelated = isEventFileRelated(e);
+  const size = isFileRelated ? 5 : 3;
+
+  const node = isAgent
+    ? g.append("path")
+        .attr("class", "daily-node")
+        .attr("d", d3.symbol().type(d3.symbolTriangle).size(size * size * 5))
+        .attr("transform", `translate(${x}, ${y})`)
+    : g.append("circle")
+        .attr("class", "daily-node")
+        .attr("cx", x)
+        .attr("cy", y)
+        .attr("r", size);
+
+  node
+    .attr("fill", actionColor(e.action))
+    .attr("opacity", isFileRelated ? 1 : 0.9)
+    .on("mousemove", function(event) {
+      if (!isAgent) d3.select(this).attr("r", size + 2);
+
+      tooltip
+        .style("display", "block")
+        .style("left", `${event.clientX + 16}px`)
+        .style("top", `${event.clientY + 16}px`)
+        .html(makeEventTimelineTooltip(e, focusQuery));
+    })
+    .on("mouseleave", function() {
+      if (!isAgent) d3.select(this).attr("r", size);
+
+      tooltip.style("display", "none");
+    });
+}
+
+function getPersonDepartmentFromEvent(e, query) {
+  const q = query.toLowerCase();
+
+  if (
+    (e.sender_id || "").toLowerCase().includes(q) ||
+    (e.sender_name || "").toLowerCase().includes(q)
+  ) {
+    return e.sender_department || "Unknown Department";
+  }
+
+  for (const r of (e.receivers || [])) {
+    if (
+      (r.id || "").toLowerCase().includes(q) ||
+      (r.name || "").toLowerCase().includes(q)
+    ) {
+      return r.department || "Unknown Department";
+    }
+  }
+
+  return "Unknown Department";
+}
+
+function drawClickableUpstreamNode(
+  g,
+  x,
+  y,
+  sender,
+  e,
+  focusQuery,
+  angle,
+  depth,
+  rootWindow
+) {
+  const isAgent = isAgentEntity(sender.type);
+  const isFileRelated = isEventFileRelated(e);
+  const size = isFileRelated ? 5 : 3;
+
+  const node = isAgent
+    ? g.append("path")
+        .attr("class", "daily-upstream-node")
+        .attr("d", d3.symbol().type(d3.symbolTriangle).size(size * size * 5))
+        .attr("transform", `translate(${x}, ${y})`)
+    : g.append("circle")
+        .attr("class", "daily-upstream-node")
+        .attr("cx", x)
+        .attr("cy", y)
+        .attr("r", size);
+
+  node
+    .attr("fill", deptColor(sender.department))
+    .attr("opacity", 0.92)
+    .style("cursor", "pointer")
+    .on("click", function() {
+      const day = d3.timeFormat("%m-%d")(e.date);
+      const focusId = (sender.id || sender.name || "").replace(/^Agent\//, "").toLowerCase();
+
+      if (!focusId || !rootWindow) return;
+
+      const key = [
+        focusId,
+        day,
+        x.toFixed(1),
+        y.toFixed(1),
+        rootWindow.start.toISOString(),
+        rootWindow.end.toISOString()
+      ].join("||");
+
+      const sameClicked = dailyGraphExpansions.some(exp => exp.key === key);
+
+      dailyGraphExpansions = dailyGraphExpansions.filter(exp => exp.depth < depth);
+
+      if (sameClicked) {
+        renderDailyGraphTab();
+        return;
+      }
+
+      dailyGraphExpansions.push({
+        key,
+        personId: focusId,
+        personName: sender.name || sender.id,
+        day,
+        clickedX: x,
+        clickedY: y,
+        clickedAngle: angle,
+        depth,
+        windowStart: rootWindow.start.toISOString(),
+        windowEnd: rootWindow.end.toISOString()
+      });
+
+      renderDailyGraphTab();
+    })
+    .on("mousemove", function(event) {
+
+      if (!isAgent) d3.select(this).attr("r", size + 2);
+
+      const files = extractFileNames(e);
+      const fileHtml = files.length ? `<b>File:</b> ${files.join(", ")}<br>` : "";
+
+      tooltip
+        .style("display", "block")
+        .style("left", `${event.clientX + 16}px`)
+        .style("top", `${event.clientY + 16}px`)
+        .html(`
+          <b>Click to expand upstream sender</b><br>
+          <b>Sender:</b> ${sender.name || sender.id}<br>
+          <b>Department:</b> ${sender.department || "Unknown"}<br>
+          ${fileHtml}
+          <b>Event:</b> ${e.action}<br>
+          <b>Time:</b> ${e.time || e.time_bin || ""}
+        `);
+    })
+    .on("mouseleave", function() {
+
+      if (!isAgent) d3.select(this).attr("r", size);
+
+      tooltip.style("display", "none");
+    });
+}
+
+function getExternalSendersForFocus(e, focusQuery) {
+  const q = focusQuery.toLowerCase();
+
+  const focusIsReceiver =
+    (e.receivers || []).some(r =>
+      (r.id || "").toLowerCase().includes(q) ||
+      (r.name || "").toLowerCase().includes(q)
+    );
+
+  if (!focusIsReceiver) return [];
+
+  const senderIsFocus =
+    (e.sender_id || "").toLowerCase().includes(q) ||
+    (e.sender_name || "").toLowerCase().includes(q);
+
+  if (senderIsFocus) return [];
+
+  return [{
+    id: e.sender_id,
+    name: e.sender_name,
+    type: e.sender_type,
+    department: e.sender_department
+  }];
+}
+
+function hourToAngle(hour) {
+  const h12 = hour % 12;
+  return -Math.PI / 2 + (h12 / 12) * Math.PI * 2;
+}
+
+function dateToDayAngle(date) {
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+  const second = date.getSeconds();
+
+  const t = hour + minute / 60 + second / 3600;
+
+  return hourToAngle(t);
+}
+
+function polar(cx, cy, r, angle) {
+  return {
+    x: cx + r * Math.cos(angle),
+    y: cy + r * Math.sin(angle)
+  };
+}
+
+function normalizeAngle(a) {
+  const twoPi = Math.PI * 2;
+  return ((a % twoPi) + twoPi) % twoPi;
+}
+
+function makeArcPath(cx, cy, r, startAngle, endAngle) {
+  const twoPi = Math.PI * 2;
+
+  let start = normalizeAngle(startAngle);
+  let end = normalizeAngle(endAngle);
+
+  if (end < start) end += twoPi;
+
+  const largeArc = end - start > Math.PI ? 1 : 0;
+
+  const p1 = polar(cx, cy, r, start);
+  const p2 = polar(cx, cy, r, end);
+
+  return `
+    M ${p1.x} ${p1.y}
+    A ${r} ${r} 0 ${largeArc} 1 ${p2.x} ${p2.y}
+  `;
+}
+
+function getActivityArcAngles(events) {
+  const pad = 0.14; // 单点时的小弧长度，可调大/小
+
+  if (!events || !events.length) return null;
+
+  const angles = events
+    .map(e => normalizeAngle(dateToDayAngle(e.date)))
+    .sort((a, b) => a - b);
+
+  if (angles.length === 1) {
+    return {
+      start: angles[0] - pad,
+      end: angles[0] + pad
+    };
+  }
+
+  // 找最大空档，然后画它的反面：也就是覆盖所有节点的连续弧
+  let maxGap = -1;
+  let gapStartIndex = 0;
+
+  for (let i = 0; i < angles.length; i++) {
+    const a1 = angles[i];
+    const a2 = angles[(i + 1) % angles.length] + (i === angles.length - 1 ? Math.PI * 2 : 0);
+    const gap = a2 - a1;
+
+    if (gap > maxGap) {
+      maxGap = gap;
+      gapStartIndex = i;
+    }
+  }
+
+  const start = angles[(gapStartIndex + 1) % angles.length];
+  let end = angles[gapStartIndex];
+
+  if (end < start) end += Math.PI * 2;
+
+  return { start, end };
+}
+
+function drawActivityArc(g, cx, cy, r, events, color = "#eeeeee") {
+  const arc = getActivityArcAngles(events);
+  if (!arc) return;
+
+  g.append("path")
+    .attr("d", makeArcPath(cx, cy, r, arc.start, arc.end))
+    .attr("fill", "none")
+    .attr("stroke", color)
+    .attr("stroke-width", 1.4)
+    .attr("stroke-linecap", "round")
+    .attr("opacity", 0.9);
+}
+
+function drawOuterActivityArc(g, cx, cy, r, outerEvents, color = "#eeeeee") {
+  const arc = getActivityArcAngles(outerEvents);
+  if (!arc) return;
+
+  const OUTER_ARC_PADDING = Math.PI / 8; // 22.5度，想更大就改成 Math.PI / 6
+
+  g.append("path")
+    .attr(
+      "d",
+      makeArcPath(
+        cx,
+        cy,
+        r,
+        arc.start - OUTER_ARC_PADDING,
+        arc.end + OUTER_ARC_PADDING
+      )
+    )
+    .attr("fill", "none")
+    .attr("stroke", color)
+    .attr("stroke-width", 1.1)
+    .attr("stroke-linecap", "round")
+    .attr("opacity", 0.75);
+}
+
+function centerFromPointOnCircle(px, py, r, angle) {
+  return {
+    x: px - r * Math.cos(angle),
+    y: py - r * Math.sin(angle)
+  };
+}
+
+function drawTinyArrow(g, x1, y1, x2, y2, color, opacity = 0.75) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+
+  if (len === 0) return;
+
+  const ux = dx / len;
+  const uy = dy / len;
+
+  const endX = x2 - ux * 4;
+  const endY = y2 - uy * 4;
+
+  g.append("line")
+    .attr("x1", x1)
+    .attr("y1", y1)
+    .attr("x2", endX)
+    .attr("y2", endY)
+    .attr("stroke", color)
+    .attr("stroke-width", 0.9)
+    .attr("opacity", opacity);
+
+  const arrowSize = 4;
+
+  const leftX = endX - ux * arrowSize - uy * arrowSize * 0.6;
+  const leftY = endY - uy * arrowSize + ux * arrowSize * 0.6;
+  const rightX = endX - ux * arrowSize + uy * arrowSize * 0.6;
+  const rightY = endY - uy * arrowSize - ux * arrowSize * 0.6;
+
+  g.append("path")
+    .attr("d", `M ${endX} ${endY} L ${leftX} ${leftY} L ${rightX} ${rightY} Z`)
+    .attr("fill", color)
+    .attr("opacity", opacity);
+}
+</script>
+</body>
+</html>
