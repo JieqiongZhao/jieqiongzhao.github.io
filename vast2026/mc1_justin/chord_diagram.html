@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>MC1 — Agent Communication Chord Diagram</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root {
+    --bg: #101319;
+    --panel: #171b24;
+    --text: #e7e9ee;
+    --muted: #9aa3b2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 20px 28px 8px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px;
+    font-weight: 600;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 780px;
+  }
+  #layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 8px 28px 28px;
+    flex-wrap: wrap;
+  }
+  #chart-wrap {
+    position: relative;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  #sidebar {
+    width: 300px;
+    flex: 0 0 300px;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-sizing: border-box;
+  }
+  #sidebar h2 {
+    font-size: 14px;
+    margin: 0 0 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .legend-item:hover { background: rgba(255,255,255,0.05); }
+  .legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex: none;
+  }
+  .legend-item.dimmed { opacity: 0.35; }
+  .legend-item.pinned {
+    background: rgba(255,255,255,0.08);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+  }
+  #detail {
+    margin-top: 16px;
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.5;
+    min-height: 90px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 12px;
+    width: 100%;
+    overflow: hidden;
+  }
+  #detail b { color: var(--text); }
+  #detail-title { color: var(--text); font-size: 13px; margin-bottom: 8px; }
+  #detail-hint { color: var(--muted); }
+  #detail table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  #detail th {
+    text-align: right;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 3px 0 5px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  #detail th:first-child, #detail td:first-child { text-align: left; }
+  #detail td {
+    padding: 4px 0;
+    text-align: right;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #detail .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .group-arc, .ribbon { cursor: pointer; }
+  .group-label { font-size: 11.5px; fill: var(--text); }
+  .ribbon { transition: opacity 150ms ease; }
+  #tooltip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    background: #20242f;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    opacity: 0;
+    transform: translate(-9999px, -9999px);
+    transition: opacity 100ms ease;
+    z-index: 10;
+    max-width: 260px;
+  }
+  footer {
+    padding: 0 28px 28px;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>MC1 — Directed Agent Communication Chord Diagram</h1>
+  <div class="subtitle">
+    Each ribbon represents messages sent from one agent to another (arrowhead points to the recipient).
+    Ribbon thickness at the source arc is proportional to how many messages that agent sent to the target.
+    Hover an arc, ribbon, or legend entry to isolate that traffic — click it to pin the highlight in place.
+  </div>
+</header>
+
+<div id="layout">
+  <div id="chart-wrap"></div>
+  <div id="sidebar">
+    <h2>Agents</h2>
+    <div id="legend"></div>
+    <div id="detail"><span id="detail-hint">Hover an arc or ribbon for details. Click to pin.</span></div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<footer id="meta-footer"></footer>
+
+<script>
+// ---- Data extracted by build_agent_matrix.py from MC1_final_00.json ----
+// matrix[i][j] = number of messages sent from agents[i] to agents[j].
+const agents = ["legal_agent", "quality_agent", "pr_agent", "social_media_agent", "pr_intern_agent", "intern_agent", "judge_agent"];
+const labels = ["Legal-Agent", "Platform-Trust-Agent", "PR-Agent", "Social-Manager-Agent", "PR-Intern-Agent", "Intern-Agent", "Judge-Agent"];
+const matrix = [
+  [0, 194, 193, 183, 136, 129, 131],
+  [137, 0, 139, 134, 126, 119, 119],
+  [66, 68, 0, 72, 60, 62, 60],
+  [144, 146, 162, 0, 112, 105, 105],
+  [48, 44, 50, 47, 0, 45, 42],
+  [19, 19, 27, 19, 19, 0, 19],
+  [16, 15, 17, 16, 15, 15, 0]
+];
+const meta = { total_messages: 912, resolved_edges: 3394, unresolved_messages: 138 };
+
+document.getElementById("meta-footer").textContent =
+  `Source: MC1_final_00.json — ${meta.total_messages} raw messages → ${meta.resolved_edges} resolved directed agent-to-agent edges ` +
+  `(${meta.unresolved_messages} public/unaddressed messages excluded, see build_agent_matrix.py).`;
+
+// ---- Layout ----
+const width = 640, height = 640;
+const outerRadius = Math.min(width, height) * 0.5 - 90;
+const innerRadius = outerRadius - 18;
+
+const color = d3.scaleOrdinal()
+  .domain(agents)
+  .range(d3.schemeSet2.concat(d3.schemeSet3));
+
+const chord = d3.chordDirected()
+  .padAngle(0.06)
+  .sortSubgroups(d3.descending)
+  .sortChords(d3.descending);
+
+const chords = chord(matrix);
+
+const arcGen = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
+
+const ribbonGen = d3.ribbonArrow()
+  .radius(innerRadius - 1)
+  .padAngle(1 / innerRadius);
+
+const svg = d3.select("#chart-wrap")
+  .append("svg")
+  .attr("width", width)
+  .attr("height", height)
+  .attr("viewBox", [-width / 2, -height / 2, width, height])
+  .attr("font-family", "inherit");
+
+const ribbonLayer = svg.append("g").attr("fill-opacity", 0.75);
+const groupLayer = svg.append("g");
+
+const tooltip = d3.select("#tooltip");
+
+function showTooltip(html, event) {
+  tooltip.html(html)
+    .style("opacity", 1)
+    .style("transform", `translate(${event.clientX + 14}px, ${event.clientY + 10}px)`);
+}
+function hideTooltip() {
+  tooltip.style("opacity", 0).style("transform", "translate(-9999px, -9999px)");
+}
+
+function outMessageTotal(i) { return matrix[i].reduce((a, b) => a + b, 0); }
+function inMessageTotal(j) { return matrix.reduce((sum, row) => sum + row[j], 0); }
+
+// ---- Selection state: `pinned` persists a highlight through a click; ----
+// ---- hover always previews on top of it and reverts to `pinned` on mouseleave. ----
+let pinned = null;
+
+function sameSelection(a, b) {
+  if (!a || !b) return false;
+  if (a.type !== b.type) return false;
+  if (a.type === "node") return a.index === b.index;
+  return a.source === b.source && a.target === b.target;
+}
+
+function togglePin(sel) {
+  pinned = sameSelection(pinned, sel) ? null : sel;
+  updateLegendPinnedClasses();
+  applyHighlight(pinned);
+}
+
+function updateLegendPinnedClasses() {
+  d3.selectAll(".legend-item").classed("pinned", (_, i, nodes) => {
+    const idx = +d3.select(nodes[i]).attr("data-index");
+    if (!pinned) return false;
+    if (pinned.type === "node") return pinned.index === idx;
+    return pinned.source === idx || pinned.target === idx;
+  });
+}
+
+// ---- Ribbons ----
+const ribbons = ribbonLayer.selectAll("path.ribbon")
+  .data(chords)
+  .join("path")
+  .attr("class", "ribbon")
+  .attr("d", ribbonGen)
+  .attr("fill", d => color(agents[d.source.index]))
+  .attr("stroke", d => d3.rgb(color(agents[d.source.index])).darker(0.6))
+  .attr("stroke-width", 0.4)
+  .on("mouseenter", (event, d) => {
+    applyHighlight({ type: "edge", source: d.source.index, target: d.target.index });
+  })
+  .on("mousemove", (event, d) => {
+    const from = labels[d.source.index];
+    const to = labels[d.target.index];
+    showTooltip(`<b>${from}</b> → <b>${to}</b><br/>${d.source.value} message${d.source.value === 1 ? "" : "s"}`, event);
+  })
+  .on("mouseleave", () => { hideTooltip(); applyHighlight(pinned); })
+  .on("click", (event, d) => {
+    togglePin({ type: "edge", source: d.source.index, target: d.target.index });
+  });
+
+// ---- Group arcs ----
+const groups = groupLayer.selectAll("g.group")
+  .data(chords.groups)
+  .join("g")
+  .attr("class", "group");
+
+const groupArcs = groups.append("path")
+  .attr("class", "group-arc")
+  .attr("d", arcGen)
+  .attr("fill", d => color(agents[d.index]))
+  .attr("stroke", d => d3.rgb(color(agents[d.index])).darker(0.8));
+
+groups.append("text")
+  .attr("class", "group-label")
+  .each(d => { d.angle = (d.startAngle + d.endAngle) / 2; })
+  .attr("dy", "0.35em")
+  .attr("transform", d => `
+    rotate(${(d.angle * 180 / Math.PI - 90)})
+    translate(${outerRadius + 8})
+    ${d.angle > Math.PI ? "rotate(180)" : ""}
+  `)
+  .attr("text-anchor", d => d.angle > Math.PI ? "end" : "start")
+  .text(d => labels[d.index]);
+
+groups
+  .on("mouseenter", (event, d) => applyHighlight({ type: "node", index: d.index }))
+  .on("mousemove", (event, d) => {
+    showTooltip(
+      `<b>${labels[d.index]}</b><br/>Sent: ${outMessageTotal(d.index)}<br/>Received: ${inMessageTotal(d.index)}`,
+      event
+    );
+  })
+  .on("mouseleave", () => { hideTooltip(); applyHighlight(pinned); })
+  .on("click", (event, d) => togglePin({ type: "node", index: d.index }));
+
+function applyHighlight(sel) {
+  if (!sel) {
+    ribbons.style("opacity", 1);
+    groupArcs.style("opacity", 1);
+    renderDetail(null);
+    return;
+  }
+  if (sel.type === "node") {
+    const idx = sel.index;
+    ribbons.style("opacity", d => (d.source.index === idx || d.target.index === idx) ? 1 : 0.08);
+    groupArcs.style("opacity", d => d.index === idx ? 1 : 0.35);
+  } else {
+    const { source, target } = sel;
+    ribbons.style("opacity", d => (d.source.index === source && d.target.index === target) ? 1 : 0.08);
+    groupArcs.style("opacity", d => (d.index === source || d.index === target) ? 1 : 0.35);
+  }
+  renderDetail(sel);
+}
+
+function colorDot(i) {
+  return `<span class="dot" style="background:${color(agents[i])}"></span>`;
+}
+
+function renderDetail(sel) {
+  const detail = document.getElementById("detail");
+  if (!sel) {
+    detail.innerHTML = `<span id="detail-hint">Hover an arc or ribbon for details. Click to pin.</span>`;
+    return;
+  }
+
+  if (sel.type === "node") {
+    const i = sel.index;
+    let rows = "";
+    agents.forEach((a, j) => {
+      if (j === i) return;
+      rows += `<tr>
+        <td class="agent-cell">${colorDot(j)}${labels[j]}</td>
+        <td>${matrix[i][j]}</td>
+        <td>${matrix[j][i]}</td>
+      </tr>`;
+    });
+    detail.innerHTML = `
+      <div id="detail-title">${colorDot(i)}<b>${labels[i]}</b> — sent ${outMessageTotal(i)}, received ${inMessageTotal(i)}</div>
+      <table>
+        <thead><tr><th>Agent</th><th>Sent</th><th>Recv</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } else {
+    const { source, target } = sel;
+    detail.innerHTML = `
+      <div id="detail-title">${colorDot(source)}<b>${labels[source]}</b> ⇄ ${colorDot(target)}<b>${labels[target]}</b></div>
+      <table>
+        <thead><tr><th>Agent</th><th>Sent</th><th>Recv</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="agent-cell">${colorDot(source)}${labels[source]}</td>
+            <td>${matrix[source][target]}</td>
+            <td>${matrix[target][source]}</td>
+          </tr>
+          <tr>
+            <td class="agent-cell">${colorDot(target)}${labels[target]}</td>
+            <td>${matrix[target][source]}</td>
+            <td>${matrix[source][target]}</td>
+          </tr>
+        </tbody>
+      </table>`;
+  }
+}
+
+// ---- Clicking anywhere that isn't a pinnable element clears the pin ----
+document.addEventListener("click", (event) => {
+  if (event.target.closest(".ribbon, .group, .legend-item")) return;
+  pinned = null;
+  updateLegendPinnedClasses();
+  applyHighlight(null);
+});
+
+// ---- Legend (also drives highlight + pin) ----
+const legend = d3.select("#legend");
+agents.forEach((a, i) => {
+  const item = legend.append("div")
+    .attr("class", "legend-item")
+    .attr("data-index", i)
+    .on("mouseenter", () => applyHighlight({ type: "node", index: i }))
+    .on("mouseleave", () => applyHighlight(pinned))
+    .on("click", () => togglePin({ type: "node", index: i }));
+  item.append("div")
+    .attr("class", "legend-swatch")
+    .style("background", color(a));
+  item.append("div").text(labels[i]);
+});
+</script>
+</body>
+</html>
