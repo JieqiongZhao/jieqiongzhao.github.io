@@ -1,5 +1,15 @@
 """
-Extract a directed agent-to-agent communication matrix from the MC1 dataset.
+Extract directed agent-to-agent communication matrices from the MC1 dataset.
+
+Two distinct kinds of directed agent-to-agent links are extracted:
+
+  1. Direct replies — resolved from the structured "recipients" /
+     "responding_to" fields (who a message was actually addressed to).
+  2. @ mentions — agents also reference each other inline in message
+     "content" using short role tags (e.g. "@legal", "@pr_intern"), which
+     may name agents beyond the formal recipients list. These are found by
+     regex-scanning content for "@<role>" tokens and mapping them through
+     the same ROLE_TO_AGENT table used for recipients.
 
 Data quirks handled (discovered by inspecting MC1_final_00.json):
   - Each round has a top-level "communications" list (not nested under
@@ -11,6 +21,8 @@ Data quirks handled (discovered by inspecting MC1_final_00.json):
   - The sender's own role is called "social_media" in agent_role, but the
     *recipient* alias for that same agent is spelled "social_manager" in
     other messages' recipients lists. Both are mapped to social_media_agent.
+    The same alias quirk shows up in @ mention tags too (content uses
+    "@social_manager", never "@social_media").
   - Some one_on_one_chat messages have an empty "recipients" list but a
     "responding_to" field that references another message's message_id.
     For those, the recipient is inferred as the sender of the message being
@@ -19,18 +31,27 @@ Data quirks handled (discovered by inspecting MC1_final_00.json):
     residual set of one_on_one_chat "conversation starters" have no
     resolvable agent recipient at all (they target the public, or the data
     simply never specifies a counterpart). These are counted but excluded
-    from the agent-to-agent matrix, since a chord diagram needs a closed
-    node set.
+    from the reply matrix, since a chord diagram needs a closed node set.
+  - Message content also mentions plenty of non-agent @handles (external
+    orgs, journalists, personal accounts like "@PropTechWatcher" or
+    "@ElenaMarquez"). Only tokens that match a known agent role are kept;
+    everything else is ignored. A mention of an agent's own role within its
+    own message (rare, but occurs when a sender re-quotes a tag) is dropped
+    since it isn't a cross-agent edge. Repeated tags of the same agent
+    within a single message are also collapsed to one edge, so a message
+    that says "@pr ... following up, @pr" still only counts once — the
+    matrix counts *messages that mention*, not raw tag occurrences.
 
-Output: agent_connections.json, containing the ordered agent list and the
-directed weight matrix matrix[i][j] = number of messages sent from agent i
-to agent j, plus a flat edge list for convenience.
+Output: agent_connections.json, containing the ordered agent list and three
+directed weight matrices — reply_matrix, mention_matrix, and combined_matrix
+(their elementwise sum) — plus flat edge lists for each of the two kinds.
 """
 
 import json
+import re
 from pathlib import Path
 
-DATA_PATH = Path(__file__).parent.parent.parent / "VAST_Challenge_2026_MC1" / "MC1_final_00.json"
+DATA_PATH = Path(__file__).parent / "MC1_final_00.json"
 OUTPUT_PATH = Path(__file__).parent / "agent_connections.json"
 
 AGENTS = [
@@ -64,6 +85,11 @@ ROLE_TO_AGENT = {
     "intern": "intern_agent",
     "judge": "judge_agent",
 }
+
+# Matches "@<token>" tags in free-text message content. Only tokens that
+# resolve through ROLE_TO_AGENT are kept; unrelated @handles (external orgs,
+# journalists, personal Flex accounts, etc.) are ignored.
+MENTION_TAG_RE = re.compile(r"@(\w+)")
 
 
 def load_messages():
@@ -113,6 +139,34 @@ def extract_edges(messages):
     return edges, unresolved
 
 
+def extract_mentions(messages):
+    """Find agent-to-agent @ mentions inside message content.
+
+    Tags are deduped per message: a message that tags the same agent
+    multiple times ("@pr ... @pr") still only produces one edge for that
+    pair, since we're counting messages-that-mention, not raw tag counts.
+    Self-mentions (an agent's own role tag appearing in its own message) are
+    dropped since they aren't a cross-agent edge.
+    """
+    edges = []  # list of (sender, mentioned_agent, message_id)
+    mentioning_messages = 0
+
+    for m in messages:
+        sender = m["agent_id"]
+        content = m.get("content") or ""
+        tagged_roles = MENTION_TAG_RE.findall(content)
+        mentioned = {
+            ROLE_TO_AGENT[role] for role in tagged_roles if role in ROLE_TO_AGENT
+        }
+        mentioned.discard(sender)
+        if mentioned:
+            mentioning_messages += 1
+        for agent in mentioned:
+            edges.append((sender, agent, m["message_id"]))
+
+    return edges, mentioning_messages
+
+
 def build_matrix(edges):
     index = {a: i for i, a in enumerate(AGENTS)}
     matrix = [[0] * len(AGENTS) for _ in AGENTS]
@@ -121,33 +175,60 @@ def build_matrix(edges):
     return matrix
 
 
-def main():
-    messages = load_messages()
-    edges, unresolved = extract_edges(messages)
-    matrix = build_matrix(edges)
+def add_matrices(a, b):
+    return [[a[i][j] + b[i][j] for j in range(len(AGENTS))] for i in range(len(AGENTS))]
 
-    print(f"Total messages in dataset: {len(messages)}")
-    print(f"Resolved agent-to-agent edges: {len(edges)}")
-    print(f"Unresolved (public posts / unaddressed DMs, excluded): {unresolved}")
-    print()
+
+def print_matrix(title, matrix):
+    print(title)
     header = "".join(f"{AGENT_LABELS[a]:>24}" for a in AGENTS)
     row_label = "from / to"
     print(f"{row_label:>24}{header}")
     for i, a in enumerate(AGENTS):
         row = "".join(f"{matrix[i][j]:>24}" for j in range(len(AGENTS)))
         print(f"{AGENT_LABELS[a]:>24}{row}")
+    print()
+
+
+def main():
+    messages = load_messages()
+
+    reply_edges, unresolved = extract_edges(messages)
+    reply_matrix = build_matrix(reply_edges)
+
+    mention_edges, mentioning_messages = extract_mentions(messages)
+    mention_matrix = build_matrix(mention_edges)
+
+    combined_matrix = add_matrices(reply_matrix, mention_matrix)
+
+    print(f"Total messages in dataset: {len(messages)}")
+    print(f"Resolved direct-reply edges: {len(reply_edges)}")
+    print(f"Unresolved (public posts / unaddressed DMs, excluded): {unresolved}")
+    print(f"Messages containing an @ mention of another agent: {mentioning_messages}")
+    print(f"Resolved @ mention edges: {len(mention_edges)}")
+    print()
+    print_matrix("-- Direct replies --", reply_matrix)
+    print_matrix("-- @ Mentions --", mention_matrix)
+    print_matrix("-- Combined --", combined_matrix)
 
     output = {
         "agents": AGENTS,
         "labels": [AGENT_LABELS[a] for a in AGENTS],
-        "matrix": matrix,
-        "edges": [
-            {"source": s, "target": t, "message_id": mid} for s, t, mid in edges
+        "reply_matrix": reply_matrix,
+        "mention_matrix": mention_matrix,
+        "combined_matrix": combined_matrix,
+        "reply_edges": [
+            {"source": s, "target": t, "message_id": mid} for s, t, mid in reply_edges
+        ],
+        "mention_edges": [
+            {"source": s, "target": t, "message_id": mid} for s, t, mid in mention_edges
         ],
         "meta": {
             "total_messages": len(messages),
-            "resolved_edges": len(edges),
+            "resolved_reply_edges": len(reply_edges),
             "unresolved_messages": unresolved,
+            "mentioning_messages": mentioning_messages,
+            "resolved_mention_edges": len(mention_edges),
         },
     }
     with open(OUTPUT_PATH, "w") as f:

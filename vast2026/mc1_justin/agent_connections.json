@@ -17,7 +17,7 @@
     "Intern-Agent",
     "Judge-Agent"
   ],
-  "matrix": [
+  "reply_matrix": [
     [
       0,
       194,
@@ -82,7 +82,137 @@
       0
     ]
   ],
-  "edges": [
+  "mention_matrix": [
+    [
+      0,
+      73,
+      73,
+      70,
+      18,
+      0,
+      3
+    ],
+    [
+      13,
+      0,
+      19,
+      19,
+      9,
+      0,
+      1
+    ],
+    [
+      14,
+      8,
+      0,
+      7,
+      2,
+      3,
+      0
+    ],
+    [
+      49,
+      47,
+      53,
+      0,
+      7,
+      1,
+      13
+    ],
+    [
+      16,
+      5,
+      14,
+      6,
+      0,
+      7,
+      1
+    ],
+    [
+      1,
+      0,
+      9,
+      0,
+      3,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ]
+  ],
+  "combined_matrix": [
+    [
+      0,
+      267,
+      266,
+      253,
+      154,
+      129,
+      134
+    ],
+    [
+      150,
+      0,
+      158,
+      153,
+      135,
+      119,
+      120
+    ],
+    [
+      80,
+      76,
+      0,
+      79,
+      62,
+      65,
+      60
+    ],
+    [
+      193,
+      193,
+      215,
+      0,
+      119,
+      106,
+      118
+    ],
+    [
+      64,
+      49,
+      64,
+      53,
+      0,
+      52,
+      43
+    ],
+    [
+      20,
+      19,
+      36,
+      19,
+      22,
+      0,
+      19
+    ],
+    [
+      17,
+      15,
+      17,
+      16,
+      16,
+      15,
+      0
+    ]
+  ],
+  "reply_edges": [
     {
       "source": "legal_agent",
       "target": "quality_agent",
@@ -17054,9 +17184,2843 @@
       "message_id": "20460605_22_054"
     }
   ],
+  "mention_edges": [
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_001"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_001"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_002"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_002"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_003"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_003"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_004"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_004"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_004"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_005"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_006"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_006"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_006"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_007"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_009"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_011"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_011"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_011"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_013"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_013"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_013"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_014"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_015"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_015"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_015"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_017"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_018"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_018"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_020"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_13_021"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_021"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_023"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_023"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_024"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_024"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_025"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_026"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_029"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_029"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_030"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_030"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_031"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_031"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_032"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_033"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_036"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_037"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_13_037"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_037"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_13_038"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_039"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_039"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_041"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_043"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_13_043"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_043"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_044"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_044"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_045"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_047"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_13_047"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_047"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_13_048"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_13_048"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_048"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_13_049"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_14_001"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_002"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_14_003"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_003"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_004"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_14_005"
+    },
+    {
+      "source": "pr_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_006"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_006"
+    },
+    {
+      "source": "pr_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_14_006"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_14_007"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_007"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_14_007"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_008"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_14_008"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_010"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_14_013"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_14_013"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_015"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_015"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_14_017"
+    },
+    {
+      "source": "intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_017"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_14_017"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_018"
+    },
+    {
+      "source": "pr_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_018"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_14_019"
+    },
+    {
+      "source": "pr_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_021"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_021"
+    },
+    {
+      "source": "pr_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_14_021"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_024"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_14_024"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_14_026"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_027"
+    },
+    {
+      "source": "pr_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_029"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_029"
+    },
+    {
+      "source": "pr_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_14_029"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_14_030"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_14_032"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_035"
+    },
+    {
+      "source": "pr_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_036"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_036"
+    },
+    {
+      "source": "pr_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_14_036"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_039"
+    },
+    {
+      "source": "pr_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_040"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_040"
+    },
+    {
+      "source": "pr_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_14_040"
+    },
+    {
+      "source": "pr_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_14_041"
+    },
+    {
+      "source": "pr_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_14_043"
+    },
+    {
+      "source": "pr_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_14_043"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_043"
+    },
+    {
+      "source": "pr_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_044"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_044"
+    },
+    {
+      "source": "pr_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_14_044"
+    },
+    {
+      "source": "pr_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_14_045"
+    },
+    {
+      "source": "pr_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_14_045"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_047"
+    },
+    {
+      "source": "pr_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_14_048"
+    },
+    {
+      "source": "pr_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_14_048"
+    },
+    {
+      "source": "pr_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_14_048"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_15_002"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_003"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_003"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_003"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_004"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_004"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_004"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_005"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_006"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_15_010"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_011"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_011"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_011"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_012"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_012"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_012"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_013"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_014"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_15_018"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_019"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_019"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_019"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_020"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_020"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_020"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_021"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_022"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_025"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_15_026"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_027"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_027"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_027"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_028"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_028"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_028"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_029"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_030"
+    },
+    {
+      "source": "legal_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_15_033"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_033"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_15_034"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_035"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_035"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_035"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_036"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_036"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_036"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_037"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_038"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_041"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_15_042"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_042"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_043"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_043"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_043"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_044"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_044"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_044"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_045"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_046"
+    },
+    {
+      "source": "legal_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_15_049"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_15_050"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_051"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_051"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_051"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_052"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_15_052"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_15_052"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_15_053"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_15_054"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_001"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_001"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_16_002"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_002"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_003"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_003"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_003"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_16_004"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_004"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_004"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_005"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_006"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_009"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_16_010"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_010"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_011"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_011"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_011"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_16_012"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_012"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_012"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_013"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_014"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_16_017"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_017"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_16_018"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_019"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_019"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_019"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_16_020"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_020"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_020"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_16_021"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_16_022"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_025"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_026"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_027"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_027"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_027"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_16_028"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_028"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_028"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_029"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_030"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_033"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_034"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_035"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_035"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_035"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_16_036"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_036"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_036"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_037"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_16_038"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_041"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_042"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_043"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_043"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_043"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_16_044"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_044"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_044"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_045"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_046"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_049"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_049"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_050"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_051"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_16_051"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_051"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_16_052"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_16_052"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_052"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_16_053"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_16_054"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_17_002"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_17_004"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_17_005"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_17_006"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_17_008"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_17_009"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_17_013"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_17_014"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_17_015"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_17_017"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_17_018"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_17_019"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_17_020"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_17_023"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_17_024"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_17_025"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_17_027"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_17_028"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_17_029"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_004"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_18_005"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_18_007"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_007"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_007"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_007"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_008"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_18_008"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_18_008"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_008"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_009"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_18_010"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_010"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_010"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_012"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_012"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_013"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_015"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_017"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_021"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_022"
+    },
+    {
+      "source": "quality_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_18_022"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_18_023"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_024"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_024"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_024"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_025"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_18_025"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_18_025"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_025"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_18_026"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_026"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_026"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_028"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_028"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_029"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_030"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_18_034"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_18_035"
+    },
+    {
+      "source": "quality_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_18_036"
+    },
+    {
+      "source": "quality_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_18_036"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_036"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_18_037"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_037"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_037"
+    },
+    {
+      "source": "quality_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_038"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_039"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_18_042"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_042"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_18_043"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_18_043"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_18_043"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_18_044"
+    },
+    {
+      "source": "judge_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_19_001"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_19_002"
+    },
+    {
+      "source": "judge_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_19_005"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_19_006"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_006"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_006"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_007"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_19_008"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_008"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_008"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_010"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_012"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_017"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_19_018"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_19_019"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_019"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_19_019"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_019"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_19_020"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_020"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_020"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_022"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_19_023"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_024"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_026"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_19_028"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_028"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_19_030"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_031"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_19_031"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_031"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_19_032"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_032"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_033"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_034"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_19_039"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_039"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_039"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_19_040"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_040"
+    },
+    {
+      "source": "legal_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_19_041"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_19_042"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_19_047"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_047"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_19_048"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_048"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_048"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_19_049"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_19_050"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_20_005"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_20_006"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_20_006"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_20_007"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_20_007"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_20_007"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_20_007"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_20_008"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_20_008"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_20_008"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_20_010"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_20_012"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_20_015"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_20_017"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_20_018"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_20_018"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_20_022"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_20_022"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_20_022"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_20_022"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_20_025"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_20_026"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_20_027"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_20_033"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_20_034"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_20_038"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_20_039"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_20_040"
+    },
+    {
+      "source": "pr_intern_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_20_044"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_21_002"
+    },
+    {
+      "source": "intern_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_004"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_21_005"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_21_005"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_005"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_005"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_21_006"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_006"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_006"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_008"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_009"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_21_012"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_21_014"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_21_014"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_014"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_014"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_21_015"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_015"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_015"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_016"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "intern_agent",
+      "message_id": "20460605_21_017"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_017"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_21_020"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_21_021"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_21_022"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_intern_agent",
+      "message_id": "20460605_21_022"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_022"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_022"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_21_023"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_023"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_023"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_024"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_025"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "judge_agent",
+      "message_id": "20460605_21_029"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_029"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_030"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_21_030"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_030"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_21_031"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_031"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_031"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_032"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_033"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_036"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_21_036"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_037"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_038"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_21_038"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_038"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_21_039"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_039"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_040"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_041"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_044"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_045"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_21_046"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_046"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_21_047"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_047"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_048"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_049"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_052"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_053"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_21_053"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_21_053"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_21_054"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_001"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_001"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_002"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_003"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_003"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_003"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_004"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_004"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_004"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_005"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_006"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_009"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_009"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_009"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_010"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_010"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_011"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_011"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_011"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_012"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_012"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_012"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_013"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_014"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_017"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_017"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_017"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_018"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_019"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_019"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_019"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_020"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_020"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_020"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_021"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_022"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_025"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_025"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_026"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_027"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_027"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_027"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_028"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_028"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_028"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_029"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_030"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_033"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_033"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_034"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_034"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_035"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_035"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_035"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_036"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_036"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_036"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_037"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_038"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_041"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_041"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_042"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_042"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_043"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_043"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_043"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_044"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_044"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_044"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_045"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_046"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_049"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_050"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_051"
+    },
+    {
+      "source": "legal_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_051"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_051"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "legal_agent",
+      "message_id": "20460605_22_052"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "quality_agent",
+      "message_id": "20460605_22_052"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_052"
+    },
+    {
+      "source": "legal_agent",
+      "target": "social_media_agent",
+      "message_id": "20460605_22_053"
+    },
+    {
+      "source": "legal_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_053"
+    },
+    {
+      "source": "social_media_agent",
+      "target": "pr_agent",
+      "message_id": "20460605_22_054"
+    }
+  ],
   "meta": {
     "total_messages": 912,
-    "resolved_edges": 3394,
-    "unresolved_messages": 138
+    "resolved_reply_edges": 3394,
+    "unresolved_messages": 138,
+    "mentioning_messages": 323,
+    "resolved_mention_edges": 566
   }
 }

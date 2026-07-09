@@ -32,6 +32,33 @@
     line-height: 1.5;
     max-width: 780px;
   }
+  #mode-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  #mode-control label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  #mode-select {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  #mode-select:hover { border-color: rgba(255,255,255,0.3); }
+  #mode-hint {
+    font-size: 12px;
+    color: var(--muted);
+  }
   #layout {
     display: flex;
     align-items: flex-start;
@@ -157,10 +184,19 @@
 
 <header>
   <h1>MC1 — Directed Agent Communication Chord Diagram</h1>
-  <div class="subtitle">
+  <div class="subtitle" id="subtitle">
     Each ribbon represents messages sent from one agent to another (arrowhead points to the recipient).
     Ribbon thickness at the source arc is proportional to how many messages that agent sent to the target.
     Hover an arc, ribbon, or legend entry to isolate that traffic — click it to pin the highlight in place.
+  </div>
+  <div id="mode-control">
+    <label for="mode-select">Link type</label>
+    <select id="mode-select">
+      <option value="replies">Direct replies</option>
+      <option value="mentions">@ Mentions</option>
+      <option value="both">Both</option>
+    </select>
+    <span id="mode-hint"></span>
   </div>
 </header>
 
@@ -179,10 +215,15 @@
 
 <script>
 // ---- Data extracted by build_agent_matrix.py from MC1_final_00.json ----
-// matrix[i][j] = number of messages sent from agents[i] to agents[j].
+// REPLY_MATRIX[i][j] = number of messages sent from agents[i] directly to agents[j]
+// (resolved from the "recipients" / "responding_to" fields).
+// MENTION_MATRIX[i][j] = number of messages from agents[i] that @ mention agents[j]
+// inline in the message content (e.g. "@pr", "@legal"), independent of who the
+// message was formally addressed to.
 const agents = ["legal_agent", "quality_agent", "pr_agent", "social_media_agent", "pr_intern_agent", "intern_agent", "judge_agent"];
 const labels = ["Legal-Agent", "Platform-Trust-Agent", "PR-Agent", "Social-Manager-Agent", "PR-Intern-Agent", "Intern-Agent", "Judge-Agent"];
-const matrix = [
+
+const REPLY_MATRIX = [
   [0, 194, 193, 183, 136, 129, 131],
   [137, 0, 139, 134, 126, 119, 119],
   [66, 68, 0, 72, 60, 62, 60],
@@ -191,11 +232,64 @@ const matrix = [
   [19, 19, 27, 19, 19, 0, 19],
   [16, 15, 17, 16, 15, 15, 0]
 ];
-const meta = { total_messages: 912, resolved_edges: 3394, unresolved_messages: 138 };
+const MENTION_MATRIX = [
+  [0, 73, 73, 70, 18, 0, 3],
+  [13, 0, 19, 19, 9, 0, 1],
+  [14, 8, 0, 7, 2, 3, 0],
+  [49, 47, 53, 0, 7, 1, 13],
+  [16, 5, 14, 6, 0, 7, 1],
+  [1, 0, 9, 0, 3, 0, 0],
+  [1, 0, 0, 0, 1, 0, 0]
+];
+const COMBINED_MATRIX = agents.map((_, i) =>
+  agents.map((_, j) => REPLY_MATRIX[i][j] + MENTION_MATRIX[i][j])
+);
 
-document.getElementById("meta-footer").textContent =
-  `Source: MC1_final_00.json — ${meta.total_messages} raw messages → ${meta.resolved_edges} resolved directed agent-to-agent edges ` +
-  `(${meta.unresolved_messages} public/unaddressed messages excluded, see build_agent_matrix.py).`;
+const meta = {
+  total_messages: 912,
+  resolved_reply_edges: 3394,
+  unresolved_messages: 138,
+  mentioning_messages: 323,
+  resolved_mention_edges: 566
+};
+
+const MODES = {
+  replies: {
+    label: "direct replies",
+    unit: "reply",
+    matrix: REPLY_MATRIX,
+    subtitle: "Each ribbon represents messages sent from one agent directly to another (arrowhead points to the recipient). Ribbon thickness at the source arc is proportional to how many messages that agent sent to the target.",
+    footer: `Source: MC1_final_00.json — ${meta.total_messages} raw messages → ${meta.resolved_reply_edges} resolved directed reply edges ` +
+      `(${meta.unresolved_messages} public/unaddressed messages excluded, see build_agent_matrix.py).`
+  },
+  mentions: {
+    label: "@ mentions",
+    unit: "mention",
+    matrix: MENTION_MATRIX,
+    subtitle: "Each ribbon represents messages in which one agent @ mentions another inline in the message content (e.g. “@pr”), regardless of who the message was formally addressed to.",
+    footer: `Source: MC1_final_00.json — ${meta.mentioning_messages} messages contained an @ mention of another agent → ${meta.resolved_mention_edges} resolved mention edges ` +
+      `(see build_agent_matrix.py).`
+  },
+  both: {
+    label: "direct replies + @ mentions",
+    unit: "link",
+    matrix: COMBINED_MATRIX,
+    subtitle: "Each ribbon combines direct replies and @ mentions from one agent to another. Hover a ribbon for the reply/mention breakdown.",
+    footer: `Source: MC1_final_00.json — ${meta.resolved_reply_edges} reply edges + ${meta.resolved_mention_edges} mention edges = ` +
+      `${meta.resolved_reply_edges + meta.resolved_mention_edges} combined directed edges (see build_agent_matrix.py).`
+  }
+};
+
+let currentMode = "replies";
+let matrix = MODES[currentMode].matrix;
+
+function updateChrome() {
+  const m = MODES[currentMode];
+  document.getElementById("subtitle").textContent = m.subtitle;
+  document.getElementById("meta-footer").textContent = m.footer;
+  const totalEdges = m.matrix.reduce((sum, row) => sum + row.reduce((a, b) => a + b, 0), 0);
+  document.getElementById("mode-hint").textContent = `Showing ${m.label} — ${totalEdges} directed edges`;
+}
 
 // ---- Layout ----
 const width = 640, height = 640;
@@ -211,7 +305,7 @@ const chord = d3.chordDirected()
   .sortSubgroups(d3.descending)
   .sortChords(d3.descending);
 
-const chords = chord(matrix);
+let chords = chord(matrix);
 
 const arcGen = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
 
@@ -243,6 +337,18 @@ function hideTooltip() {
 function outMessageTotal(i) { return matrix[i].reduce((a, b) => a + b, 0); }
 function inMessageTotal(j) { return matrix.reduce((sum, row) => sum + row[j], 0); }
 
+function pluralize(n, unit) { return `${n} ${unit}${n === 1 ? "" : "s"}`; }
+
+function ribbonTooltipHtml(from, to, source, target) {
+  if (currentMode === "both") {
+    const total = REPLY_MATRIX[source][target] + MENTION_MATRIX[source][target];
+    return `<b>${from}</b> → <b>${to}</b><br/>${pluralize(total, "link")} ` +
+      `(${pluralize(REPLY_MATRIX[source][target], "reply")}, ${pluralize(MENTION_MATRIX[source][target], "mention")})`;
+  }
+  const unit = MODES[currentMode].unit;
+  return `<b>${from}</b> → <b>${to}</b><br/>${pluralize(matrix[source][target], unit)}`;
+}
+
 // ---- Selection state: `pinned` persists a highlight through a click; ----
 // ---- hover always previews on top of it and reverts to `pinned` on mouseleave. ----
 let pinned = null;
@@ -270,61 +376,74 @@ function updateLegendPinnedClasses() {
 }
 
 // ---- Ribbons ----
-const ribbons = ribbonLayer.selectAll("path.ribbon")
-  .data(chords)
-  .join("path")
-  .attr("class", "ribbon")
-  .attr("d", ribbonGen)
-  .attr("fill", d => color(agents[d.source.index]))
-  .attr("stroke", d => d3.rgb(color(agents[d.source.index])).darker(0.6))
-  .attr("stroke-width", 0.4)
-  .on("mouseenter", (event, d) => {
-    applyHighlight({ type: "edge", source: d.source.index, target: d.target.index });
-  })
-  .on("mousemove", (event, d) => {
-    const from = labels[d.source.index];
-    const to = labels[d.target.index];
-    showTooltip(`<b>${from}</b> → <b>${to}</b><br/>${d.source.value} message${d.source.value === 1 ? "" : "s"}`, event);
-  })
-  .on("mouseleave", () => { hideTooltip(); applyHighlight(pinned); })
-  .on("click", (event, d) => {
-    togglePin({ type: "edge", source: d.source.index, target: d.target.index });
-  });
+let ribbons;
+
+function renderRibbons() {
+  ribbons = ribbonLayer.selectAll("path.ribbon")
+    .data(chords, d => `${d.source.index}-${d.target.index}`)
+    .join(
+      enter => enter.append("path")
+        .attr("class", "ribbon")
+        .on("mouseenter", (event, d) => {
+          applyHighlight({ type: "edge", source: d.source.index, target: d.target.index });
+        })
+        .on("mousemove", (event, d) => {
+          const from = labels[d.source.index];
+          const to = labels[d.target.index];
+          showTooltip(ribbonTooltipHtml(from, to, d.source.index, d.target.index), event);
+        })
+        .on("mouseleave", () => { hideTooltip(); applyHighlight(pinned); })
+        .on("click", (event, d) => {
+          togglePin({ type: "edge", source: d.source.index, target: d.target.index });
+        }),
+      update => update,
+      exit => exit.remove()
+    )
+    .attr("d", ribbonGen)
+    .attr("fill", d => color(agents[d.source.index]))
+    .attr("stroke", d => d3.rgb(color(agents[d.source.index])).darker(0.6))
+    .attr("stroke-width", 0.4);
+}
 
 // ---- Group arcs ----
-const groups = groupLayer.selectAll("g.group")
-  .data(chords.groups)
-  .join("g")
-  .attr("class", "group");
+let groups, groupArcs;
 
-const groupArcs = groups.append("path")
-  .attr("class", "group-arc")
-  .attr("d", arcGen)
-  .attr("fill", d => color(agents[d.index]))
-  .attr("stroke", d => d3.rgb(color(agents[d.index])).darker(0.8));
+function renderGroups() {
+  groups = groupLayer.selectAll("g.group")
+    .data(chords.groups, d => d.index)
+    .join(enter => {
+      const g = enter.append("g").attr("class", "group");
+      g.append("path").attr("class", "group-arc");
+      g.append("text").attr("class", "group-label").attr("dy", "0.35em");
+      return g;
+    });
 
-groups.append("text")
-  .attr("class", "group-label")
-  .each(d => { d.angle = (d.startAngle + d.endAngle) / 2; })
-  .attr("dy", "0.35em")
-  .attr("transform", d => `
-    rotate(${(d.angle * 180 / Math.PI - 90)})
-    translate(${outerRadius + 8})
-    ${d.angle > Math.PI ? "rotate(180)" : ""}
-  `)
-  .attr("text-anchor", d => d.angle > Math.PI ? "end" : "start")
-  .text(d => labels[d.index]);
+  groupArcs = groups.select("path.group-arc")
+    .attr("d", arcGen)
+    .attr("fill", d => color(agents[d.index]))
+    .attr("stroke", d => d3.rgb(color(agents[d.index])).darker(0.8));
 
-groups
-  .on("mouseenter", (event, d) => applyHighlight({ type: "node", index: d.index }))
-  .on("mousemove", (event, d) => {
-    showTooltip(
-      `<b>${labels[d.index]}</b><br/>Sent: ${outMessageTotal(d.index)}<br/>Received: ${inMessageTotal(d.index)}`,
-      event
-    );
-  })
-  .on("mouseleave", () => { hideTooltip(); applyHighlight(pinned); })
-  .on("click", (event, d) => togglePin({ type: "node", index: d.index }));
+  groups.select("text.group-label")
+    .each(d => { d.angle = (d.startAngle + d.endAngle) / 2; })
+    .attr("transform", d => `
+      rotate(${(d.angle * 180 / Math.PI - 90)})
+      translate(${outerRadius + 8})
+      ${d.angle > Math.PI ? "rotate(180)" : ""}
+    `)
+    .attr("text-anchor", d => d.angle > Math.PI ? "end" : "start")
+    .text(d => labels[d.index]);
+
+  groups
+    .on("mouseenter", (event, d) => applyHighlight({ type: "node", index: d.index }))
+    .on("mousemove", (event, d) => {
+      showTooltip(
+        `<b>${labels[d.index]}</b><br/>Sent: ${outMessageTotal(d.index)}<br/>Received: ${inMessageTotal(d.index)}`,
+        event
+      );
+    })
+    .on("mouseleave", () => { hideTooltip(); applyHighlight(pinned); })
+    .on("click", (event, d) => togglePin({ type: "node", index: d.index }));
+}
 
 function applyHighlight(sel) {
   if (!sel) {
@@ -417,6 +536,26 @@ agents.forEach((a, i) => {
     .style("background", color(a));
   item.append("div").text(labels[i]);
 });
+
+// ---- Mode switch: rebuild chords from the selected matrix and redraw ----
+function setMode(mode) {
+  currentMode = mode;
+  matrix = MODES[currentMode].matrix;
+  chords = chord(matrix);
+  pinned = null;
+  updateChrome();
+  renderRibbons();
+  renderGroups();
+  updateLegendPinnedClasses();
+  hideTooltip();
+  applyHighlight(null);
+}
+
+d3.select("#mode-select").on("change", function () {
+  setMode(this.value);
+});
+
+setMode(currentMode);
 </script>
 </body>
 </html>
