@@ -8,6 +8,9 @@ ORG_PATH = "./org_chart.json"
 OUT_LEVEL1 = "level1_department_pairs.json"
 OUT_LEVEL2 = "level2_receiver_sets.json"
 OUT_EVENTS = "events_for_trace.json"
+OUT_EVENTS_PART1 = "events_for_trace_part1.json"
+OUT_EVENTS_PART2 = "events_for_trace_part2.json"
+OUT_EVENTS_PART3 = "events_for_trace_part3.json"
 
 BIN_MINUTES = 10
 
@@ -20,6 +23,23 @@ def load_json(path):
 def save_json(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+
+def save_json_split_into_3(path1, path2, path3, data):
+    n = len(data)
+    one_third = n // 3
+    two_third = (n * 2) // 3
+
+    part1 = data[:one_third]
+    part2 = data[one_third:two_third]
+    part3 = data[two_third:]
+
+    save_json(path1, part1)
+    save_json(path2, part2)
+    save_json(path3, part3)
+
+    print(f"Saved {path1}: {len(part1)} rows")
+    print(f"Saved {path2}: {len(part2)} rows")
+    print(f"Saved {path3}: {len(part3)} rows")
 
 
 def normalize_id(x, label_to_id=None):
@@ -411,6 +431,12 @@ def main():
     save_json(OUT_LEVEL1, level1)
     save_json(OUT_LEVEL2, level2)
     save_json(OUT_EVENTS, rows)
+    save_json_split_into_3(
+    OUT_EVENTS_PART1,
+    OUT_EVENTS_PART2,
+    OUT_EVENTS_PART3,
+    rows
+)
 
     print("raw parsed events:", len(rows))
     print("level1 points:", len(level1))

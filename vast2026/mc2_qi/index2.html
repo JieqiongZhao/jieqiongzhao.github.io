@@ -1,41 +1,24 @@
 <!DOCTYPE html>
-
 <html>
-
 <head>
-
 <meta charset="utf-8">
-
 <title>Multi-agent Interaction Overview</title>
-
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
 <style>
-
 body {
-
   margin: 0;
-
   font-family: Arial, sans-serif;
-
 }
 
 #toolbar {
-
   padding: 10px 14px;
-
   border-bottom: 1px solid #ddd;
-
   display: flex;
-
   flex-wrap: wrap;
-
   gap: 12px;
-
   align-items: center;
-
   font-size: 13px;
-
 }
 
 #container {
@@ -46,169 +29,101 @@ body {
 }
 
 canvas {
-
   position: absolute;
-
   left: 0;
-
   top: 0;
-
   z-index: 1;
-
 }
 
 svg {
-
   position: absolute;
-
   left: 0;
-
   top: 0;
-
   z-index: 2;
-
-  pointer-events: none;
-
+  pointer-events: all;
 }
 
 .event-dot,
-
 .daily-node,
-
 .daily-upstream-node {
-
   pointer-events: all;
-
 }
 
 #tooltip {
-
   position: fixed;
-
   pointer-events: none;
-
   background: white;
-
   border: 1px solid #aaa;
-
   padding: 8px;
-
   font-size: 12px;
-
   display: none;
-
   max-width: 380px;
-
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-
   z-index: 99999;
-
 }
 
 select, input {
-
   font-size: 12px;
-
 }
 
 .check-filter {
-
   display: flex;
-
   align-items: flex-start;
-
   gap: 6px;
-
 }
 
 .check-list {
-
   display: flex;
-
   flex-wrap: wrap;
-
   gap: 4px;
-
   max-width: 320px;
-
 }
 
 .check-item {
-
   display: inline-flex;
-
   align-items: center;
-
   gap: 3px;
-
   font-size: 11px;
-
   background: #f4f4f4;
-
   border: 1px solid #ddd;
-
   border-radius: 12px;
-
   padding: 2px 6px;
-
 }
 
 .check-item input {
-
   margin: 0;
-
 }
 
 .tab-controls {
-
-display: flex;
-
-align-items: center;
-
-gap: 12px;
-
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 #dailyGraphControls {
-
-display: none;
-
+  display: none;
 }
-
 </style>
-
 </head>
 
 <body>
-
 <div id="toolbar">
-
   <button id="overviewTabBtn">Overview</button>
-
   <button id="dailyGraphTabBtn">Daily graph</button>
 
   <div class="check-filter">
-
     <span>Sender department:</span>
-
     <div id="senderDeptFilter" class="check-list"></div>
-
   </div>
 
   <div class="check-filter">
-
     <span>Receiver department:</span>
-
     <div id="receiverDeptFilter" class="check-list"></div>
-
   </div>
 
   <div class="check-filter">
-
     <span>Action:</span>
-
     <div id="actionFilter" class="check-list"></div>
-
   </div>
 
   <div id="overviewControls" class="tab-controls">
@@ -217,365 +132,1440 @@ display: none;
       <input id="startDateFilter" type="date" min="2046-01-01" max="2046-12-31">
       <input id="startClock" type="time">
     </label>
-  
+
     <label>
       End:
       <input id="endDateFilter" type="date" min="2046-01-01" max="2046-12-31">
       <input id="endClock" type="time">
     </label>
-  
+
     <button id="clearTimeBtn">Clear time</button>
-  
+
     <label>
       Person trace:
       <input id="overviewPersonInput" placeholder="person:xxx or name">
     </label>
-  
+
     <button id="overviewTraceBtn">Trace</button>
   </div>
 
   <div id="dailyGraphControls" class="tab-controls">
     <label>
+      File trace:
+      <input id="fileInput" placeholder="file id or file name">
+    </label>
+    <label>
+      File start:
+        <input id="fileStartDateFilter" type="date" min="2046-01-01" max="2046-12-31">
+    </label>
+    <label>
+      File end:
+      <input id="fileEndDateFilter" type="date" min="2046-01-01" max="2046-12-31">
+    </label>
+    <button id="fileTraceBtn">
+      Trace File
+    </button>
+    <label>
       Person trace:
       <input id="personInput" placeholder="person:xxx or name">
     </label>
-  
+
     <label>
       Trace date:
       <input id="traceDateFilter" type="date" min="2046-01-01" max="2046-12-31">
     </label>
-  
+
     <label>
       Hours before:
       <input id="hoursBackFilter" type="number" min="1" max="72" value="6" style="width:55px">
     </label>
-  
-    <button id="traceBtn">Trace</button>
-  </div>
 
+    <button id="traceBtn">Trace</button>
+    <button id="clearDailyTraceBtn">Clear traces</button>
+  </div>
 </div>
 
 <div id="container">
-
   <canvas id="canvas"></canvas>
-
   <svg id="svg"></svg>
-
   <div id="tooltip"></div>
-
 </div>
 
 <script>
-
 const margin = {top: 230, right: 40, bottom: 45, left: 230};
 
 const canvas = document.getElementById("canvas");
-
 const ctx = canvas.getContext("2d");
-
 const svg = d3.select("#svg");
-
 const tooltip = d3.select("#tooltip");
 
-const DAILY_INNER_RADIUS = 5;
-const DAILY_OUTER_RADIUS = 68;
+const DAILY_INNER_RADIUS = 30;
+const DAILY_OUTER_RADIUS = 120;
 const DAILY_LAYOUT_PADDING = 120;
 const DAILY_TITLE_SAFE_TOP = 90;
+const TRACE_ACTIVE_COLOR = "#c04fb3";
+const TRACE_INACTIVE_COLOR = "#eeeeee";
+const TRACE_ACTIVE_OPACITY = 0.75;
+const TRACE_INACTIVE_OPACITY = 0.75;
+const FILE_FIELD_PATHS = [
+  "details.target",
+  "details.file",
+  "details.file_saved",
+  "details.args.path",
+  "details.question",
+  "details.response",
+  "details.topic",
+  "details.advice",
+  "details.content_source",
+];
 
 let width, height;
 
 let level1Data = [];
-
 let level2Data = [];
-
 let eventsData = [];
 
 let currentTab = "overview";
-
 let currentLevel = 1;
-
 let currentData = [];
-
 let visibleData = [];
 
 let dailyGraphFocusStack = [];
+let dailyGraphFileFocusByDay = new Map();
+let dailyGraphFileChainsByDay = new Map();
+let dailyGraphFileRootPeopleByDay = new Map();
+let dailyGraphFilePlannedEdgeKeys = new Set();
+let dailyGraphFileAutoExpandedKeys = new Set();
+
 let dailyGraphExpansions = [];
 let dailyGraphLastRootKey = "";
 let dailyGraphRootQuery = "";
 let dailyGraphAnchorWindows = [];
 let dailyGraphBaseEvents = [];
+let dailyGraphFilteredEvents = [];
+let dailyGraphMode = "person"; // "person" or "file"
+let dailyGraphFileQuery = "";
+let dailyGraphConcreteFileWindow = null;
+let zoomLayer = null;
+let svgZoom = null;
+let dailyGraphZoomTransform = d3.zoomIdentity;
+let keepDailyGraphZoom = false;
+let keepDailyGraphView = false;
+let savedDailyGraphViewCenter = null;
 
 let xScale, yScale, yMap;
-
 let colorScale;
-
 let quadtree;
 
-// ---------- Action category ----------
+const actionColorMap = {
 
-const actionCategory = {
+// ---------- Social (Red) ----------
+post_flex:        "#ef5350",
+flex_post:        "#f26d6b",
+post_saidit:      "#d32f2f",
+saidit_post:      "#c62828",
+saidit_post_check:"#ffcdd2",
 
-  post_flex: "POST",
+// ---------- Email (Blue) ----------
+check_email:      "#90caf9",
+access_email:     "#64b5f6",
+send_email:       "#42a5f5",
+sent:             "#1e88e5",
+received:         "#bbdefb",
 
-  flex_post: "POST",
+// ---------- Meeting (Orange) ----------
+propose_meeting:  "#fb8c00",
 
-  post_saidit: "POST",
+// ---------- Agent Task (Purple) ----------
+assign_agent_task:      "#7e57c2",
+queue_subordinate_task: "#9575cd",
+ask_agent:              "#5e35b1",
+give_advice:            "#b39ddb",
+suggest_contacts:       "#d1c4e9",
 
-  saidit_post: "POST",
+// ---------- File (Green) ----------
+read_file:        "#81c784",
+access_files:     "#66bb6a",
+list_files:       "#43a047",
+create_file:      "#00C853",
+delete_file:      "#E53935",
 
-  saidit_post_check: "POST",
+// ---------- Access (Gray) ----------
+check_access:     "#9e9e9e",
+check_in:         "#bdbdbd",
+enter_room:       "#757575",
 
-  check_email: "EMAIL",
-
-  access_email: "EMAIL",
-
-  send_email: "EMAIL",
-
-  sent: "EMAIL",
-
-  received: "EMAIL",
-
-  propose_meeting: "MEETING",
-
-  assign_agent_task: "AGENT",
-
-  queue_subordinate_task: "AGENT",
-
-  ask_agent: "AGENT",
-
-  give_advice: "AGENT",
-
-  suggest_contacts: "AGENT",
-
-  read_file: "FILE",
-
-  create_file: "FILE",
-
-  delete_file: "FILE",
-
-  list_files: "FILE",
-
-  access_files: "FILE",
-
-  check_access: "ACCESS",
-
-  check_in: "ACCESS",
-
-  enter_room: "ACCESS"
-
+unknown:          "#d0d0d0"
 };
 
-function getActionCategory(action) {
+function getValuesByPath(obj, path) {
+  const parts = path.split(".");
 
-  return actionCategory[action] || "OTHER";
+  function step(current, idx) {
+    if (current == null) return [];
 
+    if (idx >= parts.length) {
+      return [current];
+    }
+
+    const part = parts[idx];
+
+    if (part.endsWith("[]")) {
+      const key = part.slice(0, -2);
+      const arr = current[key];
+
+      if (!Array.isArray(arr)) return [];
+
+      return arr.flatMap(item =>
+        step(item, idx + 1)
+      );
+    }
+
+    return step(current[part], idx + 1);
+  }
+
+  return step(obj, 0);
 }
 
-const actionColorMap = {
-  // POST: red family
-  post_flex: "#ff4d4d",
-  flex_post: "#ff6666",
-  post_saidit: "#e63946",
-  saidit_post: "#cc2f3a",
-  saidit_post_check: "#ff8a8a",
 
-  // EMAIL: blue family
-  check_email: "#7ec8ff",
-  access_email: "#5bb6f2",
-  send_email: "#3399dd",
-  sent: "#1f7fbf",
-  received: "#9bd6ff",
+function getDailyGraphDayKey(e) {
+  if (!e || !e.date) return "";
+  return d3.timeFormat("%m-%d")(e.date);
+}
 
-  // MEETING: orange family
-  propose_meeting: "#f4a340",
+function normalizeTracePersonId(id) {
+  return (id || "")
+    .replace(/^Agent\//, "")
+    .toLowerCase()
+    .trim();
+}
 
-  // AGENT: purple family
-  assign_agent_task: "#8f7cff",
-  queue_subordinate_task: "#a78bfa",
-  ask_agent: "#7c5cff",
-  give_advice: "#b39ddb",
-  suggest_contacts: "#9575cd",
+function getEventTimeMs(e) {
+  if (!e || !e.date) return NaN;
 
-  // FILE: green family
-  read_file: "#65c96f",
-  create_file: "#43b85c",
-  delete_file: "#2f9e44",
-  list_files: "#8bdc96",
-  access_files: "#4caf50",
+  const t = e.date instanceof Date
+    ? e.date
+    : new Date(e.date);
 
-  // ACCESS: gray family
-  check_access: "#9e9e9e",
-  check_in: "#bdbdbd",
-  enter_room: "#757575",
+  return t.getTime();
+}
 
-  // fallback
-  unknown: "#c9c9c9"
-};
+function getPeopleIdsFromEvent(e) {
+  const ids = [];
+
+  if (e.sender_id) {
+    const senderId = normalizeTracePersonId(e.sender_id);
+    if (senderId) ids.push(senderId);
+  }
+
+  (e.receivers || []).forEach(r => {
+    const rid = normalizeTracePersonId(r.id);
+    if (rid) ids.push(rid);
+  });
+
+  return Array.from(new Set(ids));
+}
+
+function eventHasPersonId(e, personId) {
+  const q = normalizeTracePersonId(personId);
+  if (!q) return false;
+
+  return getPeopleIdsFromEvent(e).includes(q);
+}
+
+function getExternalSenderIdsForFocus(e, focusPersonId) {
+  return getExternalSendersForFocus(e, focusPersonId)
+    .map(s => normalizeTracePersonId(s.id || s.name))
+    .filter(Boolean);
+}
+
+function buildFileOccurrenceRecords(fileEvents) {
+  const startRecords = [];
+  const edgeRecords = [];
+
+  fileEvents.forEach(e => {
+    const day = getDailyGraphDayKey(e);
+    const timeMs = getEventTimeMs(e);
+
+    if (!day || Number.isNaN(timeMs)) return;
+
+    const people = getPeopleIdsFromEvent(e);
+
+    people.forEach(focusId => {
+      // 这个 person 自己的 inner circle 上有 file-related event
+      startRecords.push({
+        day,
+        focusId,
+        event: e,
+        eventId: e.id,
+        timeMs,
+        role: "inner",
+        key: ["start", day, focusId, e.id, "inner"].join("||")
+      });
+
+      const upstreamIds = getExternalSenderIdsForFocus(e, focusId);
+
+      upstreamIds.forEach(upstreamId => {
+        // 这个 focus graph 的 outer circle 上有 file-related upstream node
+        edgeRecords.push({
+          day,
+          focusId,
+          upstreamId,
+          event: e,
+          eventId: e.id,
+          timeMs,
+          key: ["edge", day, upstreamId, focusId, e.id].join("||")
+        });
+
+        startRecords.push({
+          day,
+          focusId,
+          upstreamId,
+          event: e,
+          eventId: e.id,
+          timeMs,
+          role: "outer",
+          key: ["start", day, focusId, upstreamId, e.id, "outer"].join("||")
+        });
+      });
+    });
+  });
+
+  return {
+    startRecords,
+    edgeRecords
+  };
+}
+
+function findNearestFileUpstreamEdges({
+  personId,
+  currentTimeMs,
+  day,
+  edgeRecords,
+  pathNodeKeys
+}) {
+  const q = normalizeTracePersonId(personId);
+
+  if (!q || Number.isNaN(currentTimeMs)) return [];
+
+  function makePathNodeKey(personId, timeMs) {
+    return [
+      day,
+      normalizeTracePersonId(personId),
+      Math.floor(timeMs / 1000) * 1000
+    ].join("||");
+  }
+
+  const candidates = edgeRecords
+    .filter(edge => {
+      if (!edge) return false;
+      if (edge.day !== day) return false;
+
+      // 找 upstream -> 当前 person
+      if (normalizeTracePersonId(edge.focusId) !== q) return false;
+
+      // 允许同一时刻，只排除未来
+      if (edge.timeMs > currentTimeMs) return false;
+
+      const upstreamId = normalizeTracePersonId(edge.upstreamId);
+      if (!upstreamId) return false;
+
+      // 关键：只禁止同一个 person + 同一个 time 重复
+      // 不禁止同一个 person 在不同时间再次出现
+      const upstreamNodeKey = makePathNodeKey(upstreamId, edge.timeMs);
+
+      if (pathNodeKeys && pathNodeKeys.has(upstreamNodeKey)) {
+        return false;
+      }
+
+      return true;
+    })
+    .map(edge => ({
+      edge,
+      timeDiff: Math.abs(currentTimeMs - edge.timeMs)
+    }))
+    .sort((a, b) => {
+      if (a.timeDiff !== b.timeDiff) {
+        return a.timeDiff - b.timeDiff;
+      }
+
+      return b.edge.timeMs - a.edge.timeMs;
+    });
+
+  if (!candidates.length) return [];
+
+  // 每层只取最近时间的一组
+  const bestTimeMs = candidates[0].edge.timeMs;
+
+  return candidates.filter(d =>
+    d.edge.timeMs === bestTimeMs
+  );
+}
+
+function expandFileUpstreamFromEvent({
+  rootPersonId,
+  startEvent,
+  startEdge,
+  day,
+  edgeRecords,
+  usedEdgeKeys,
+  usedOuterNodeKeys,
+  chainPeople,
+  chainEdges,
+  maxDepth = 12
+}) {
+  const rootId = normalizeTracePersonId(rootPersonId);
+  if (!rootId) return;
+
+  function normTime(timeMs) {
+    return Math.floor(timeMs / 1000) * 1000;
+  }
+
+  function makeNodeKey(personId, timeMs) {
+    return [
+      day,
+      normalizeTracePersonId(personId),
+      normTime(timeMs)
+    ].join("||");
+  }
+
+  function addChainEdge(edge, depth, timeDiff) {
+    if (!edge || !edge.upstreamId) return false;
+
+    const upstreamId = normalizeTracePersonId(edge.upstreamId);
+    const focusId = normalizeTracePersonId(edge.focusId);
+
+    if (!upstreamId || !focusId) return false;
+
+    // 这个 outer node 已经出现在当前 chain 上
+    usedOuterNodeKeys.add(
+      makeNodeKey(upstreamId, edge.timeMs)
+    );
+
+    const edgeKey = edge.key;
+    let added = false;
+
+    if (!usedEdgeKeys.has(edgeKey)) {
+      usedEdgeKeys.add(edgeKey);
+
+      chainEdges.push({
+        day,
+        from: upstreamId,
+        to: focusId,
+        event: edge.event,
+        eventId: edge.eventId,
+        eventTimeMs: edge.timeMs,
+        timeDiff,
+        depth,
+        key: edgeKey
+      });
+
+      added = true;
+    }
+
+    chainPeople.add(upstreamId);
+    chainPeople.add(focusId);
+
+    return added;
+  }
+
+  function expand(currentPersonId, currentTimeMs, depth, pathNodeKeys) {
+    const currentId = normalizeTracePersonId(currentPersonId);
+
+    if (!currentId) return;
+    if (depth >= maxDepth) return;
+
+    const currentNodeKey = makeNodeKey(currentId, currentTimeMs);
+    const nextPathNodeKeys = new Set(pathNodeKeys || []);
+    nextPathNodeKeys.add(currentNodeKey);
+
+    const nearestEdges = findNearestFileUpstreamEdges({
+      personId: currentId,
+      currentTimeMs,
+      day,
+      edgeRecords,
+      pathNodeKeys: nextPathNodeKeys
+    });
+
+    console.log("EXPAND STEP", {
+      day,
+      currentPersonId: currentId,
+      currentTime: new Date(currentTimeMs).toISOString(),
+      depth,
+      nearestEdges: nearestEdges.map(d => ({
+        from: d.edge.upstreamId,
+        to: d.edge.focusId,
+        eventId: d.edge.eventId,
+        time: d.edge.event?.date,
+        timeMs: d.edge.timeMs,
+        timeDiff: d.timeDiff
+      })),
+      pathNodeKeys: Array.from(nextPathNodeKeys)
+    });
+
+    nearestEdges.forEach(({ edge, timeDiff }) => {
+      const upstreamId = normalizeTracePersonId(edge.upstreamId);
+      if (!upstreamId) return;
+
+      const upstreamNodeKey = makeNodeKey(upstreamId, edge.timeMs);
+
+      // 只防止同一个 person + 同一个 time 回环
+      if (nextPathNodeKeys.has(upstreamNodeKey)) return;
+
+      addChainEdge(edge, depth + 1, timeDiff);
+
+      // 关键：继续往上展开
+      // henry 可以在更早时间再次出现
+      expand(
+        upstreamId,
+        edge.timeMs,
+        depth + 1,
+        nextPathNodeKeys
+      );
+    });
+  }
+
+  chainPeople.add(rootId);
+
+  if (startEdge) {
+    const upstreamId = normalizeTracePersonId(startEdge.upstreamId);
+    const focusId = normalizeTracePersonId(startEdge.focusId);
+
+    if (!upstreamId || !focusId) return;
+
+    addChainEdge(startEdge, 1, 0);
+
+    const startPathNodeKeys = new Set();
+
+    // root henry at 03:52
+    startPathNodeKeys.add(
+      makeNodeKey(focusId, startEdge.timeMs)
+    );
+
+    // evelyn at 03:52
+    startPathNodeKeys.add(
+      makeNodeKey(upstreamId, startEdge.timeMs)
+    );
+
+    expand(
+      upstreamId,
+      startEdge.timeMs,
+      1,
+      startPathNodeKeys
+    );
+
+    return;
+  }
+
+  if (!startEvent) return;
+
+  const startTimeMs = getEventTimeMs(startEvent);
+  if (Number.isNaN(startTimeMs)) return;
+
+  expand(
+    rootId,
+    startTimeMs,
+    0,
+    new Set()
+  );
+}
+
+function buildFileTemporalChainsByDay(fileEvents) {
+  const {
+    startRecords,
+    edgeRecords
+  } = buildFileOccurrenceRecords(fileEvents);
+
+  const startByDay = d3.group(startRecords, d => d.day);
+  const edgeByDay = d3.group(edgeRecords, d => d.day);
+
+  const chainsByDay = new Map();
+
+  function normTimeMs(timeMs) {
+    return Math.floor(Number(timeMs) / 1000) * 1000;
+  }
+
+  function getEdgeTask(edge) {
+    return (
+      edge?.event?.action ||
+      edge?.event?.short_name ||
+      edge?.event?.type ||
+      ""
+    );
+  }
+
+  function makeEventNodeKey(dayValue, personId, timeMs, task) {
+    return [
+      dayValue,
+      normalizeTracePersonId(personId),
+      normTimeMs(timeMs),
+      task || ""
+    ].join("||");
+  }
+
+  // 同一个 person+time+task 到另一个 person+time+task 视为同一条 event-event 子链
+  function makeSubchainEdgeKey(edge) {
+    if (!edge) return "";
+
+    const fromId = normalizeTracePersonId(edge.from || edge.upstreamId);
+    const toId = normalizeTracePersonId(edge.to || edge.focusId);
+    const t = normTimeMs(edge.eventTimeMs || edge.timeMs);
+    const task = getEdgeTask(edge);
+
+    const fromNodeKey = makeEventNodeKey(edge.day, fromId, t, task);
+    const toNodeKey = makeEventNodeKey(edge.day, toId, t, task);
+
+    return [
+      fromNodeKey,
+      "->",
+      toNodeKey
+    ].join("||");
+  }
+
+  function findNearestPreviousReceivingEdge({
+    personId,
+    currentTimeMs,
+    day,
+    dayEdges,
+    pathSubchainKeys,
+    pathNodeKeys
+  }) {
+    const currentId = normalizeTracePersonId(personId);
+    if (!currentId || Number.isNaN(currentTimeMs)) return null;
+
+    const candidates = dayEdges
+      .filter(edge => {
+        if (!edge) return false;
+        if (edge.day !== day) return false;
+
+        // 找 upstream -> currentId
+        // 也就是 currentId 在更早/同一时刻接收了谁
+        if (normalizeTracePersonId(edge.focusId) !== currentId) {
+          return false;
+        }
+
+        // 只允许当前时间之前或同一时刻
+        if (edge.timeMs > currentTimeMs) {
+          return false;
+        }
+
+        const upstreamId = normalizeTracePersonId(edge.upstreamId);
+        if (!upstreamId) return false;
+
+        const task = getEdgeTask(edge);
+
+        const fromNodeKey = makeEventNodeKey(
+          day,
+          upstreamId,
+          edge.timeMs,
+          task
+        );
+
+        const toNodeKey = makeEventNodeKey(
+          day,
+          currentId,
+          edge.timeMs,
+          task
+        );
+
+        const tempSubchainKey = [
+          fromNodeKey,
+          "->",
+          toNodeKey
+        ].join("||");
+
+        // 只防止当前 single chain 内部重复同一条 event-event 子链
+        if (pathSubchainKeys.has(tempSubchainKey)) {
+          return false;
+        }
+
+        // 防止同一个 person+time+task node 在当前 single chain 里反复循环
+        // 但是同一个 person 不同时间可以重复出现
+        if (pathNodeKeys.has(fromNodeKey)) {
+          return false;
+        }
+
+        return true;
+      })
+      .map(edge => ({
+        edge,
+        timeDiff: Math.abs(currentTimeMs - edge.timeMs)
+      }))
+      .sort((a, b) => {
+        if (a.timeDiff !== b.timeDiff) {
+          return a.timeDiff - b.timeDiff;
+        }
+
+        // 同样近时，晚的优先
+        if (a.edge.timeMs !== b.edge.timeMs) {
+          return b.edge.timeMs - a.edge.timeMs;
+        }
+
+        return String(b.edge.eventId).localeCompare(String(a.edge.eventId));
+      });
+
+    return candidates.length ? candidates[0].edge : null;
+  }
+
+  function buildSingleChainFromRootOuterEdge({
+    startEdge,
+    day,
+    dayEdges,
+    maxDepth = 30
+  }) {
+    const singleChain = [];
+
+    const pathSubchainKeys = new Set();
+    const pathNodeKeys = new Set();
+
+    let currentEdge = startEdge;
+    let depth = 1;
+
+    while (currentEdge && depth <= maxDepth) {
+      const upstreamId = normalizeTracePersonId(currentEdge.upstreamId);
+      const focusId = normalizeTracePersonId(currentEdge.focusId);
+
+      if (!upstreamId || !focusId) break;
+
+      const task = getEdgeTask(currentEdge);
+
+      const fromNodeKey = makeEventNodeKey(
+        day,
+        upstreamId,
+        currentEdge.timeMs,
+        task
+      );
+
+      const toNodeKey = makeEventNodeKey(
+        day,
+        focusId,
+        currentEdge.timeMs,
+        task
+      );
+
+      const currentSubchainKey = [
+        fromNodeKey,
+        "->",
+        toNodeKey
+      ].join("||");
+
+      if (pathSubchainKeys.has(currentSubchainKey)) {
+        break;
+      }
+
+      singleChain.push({
+        day,
+        from: upstreamId,
+        to: focusId,
+        event: currentEdge.event,
+        eventId: currentEdge.eventId,
+        eventTimeMs: currentEdge.timeMs,
+        timeDiff: 0,
+        depth,
+        key: currentEdge.key,
+        subchainKey: currentSubchainKey
+      });
+
+      pathSubchainKeys.add(currentSubchainKey);
+      pathNodeKeys.add(fromNodeKey);
+      pathNodeKeys.add(toNodeKey);
+
+      // 关键：
+      // 当前 edge 是 upstream -> focus。
+      // 下一步要看 upstream 这个 person 在更早/同一时刻接收了谁。
+      // 例如：
+      // evelyn -> henry 03:52
+      // 下一步找 henry -> evelyn 03:45
+      currentEdge = findNearestPreviousReceivingEdge({
+        personId: upstreamId,
+        currentTimeMs: currentEdge.timeMs,
+        day,
+        dayEdges,
+        pathSubchainKeys,
+        pathNodeKeys
+      });
+
+      depth += 1;
+    }
+
+    return singleChain;
+  }
+
+  startByDay.forEach((dayStartsRaw, day) => {
+    const dayStarts = dayStartsRaw
+      .slice()
+      .sort((a, b) => a.timeMs - b.timeMs);
+
+    const dayEdges = (edgeByDay.get(day) || [])
+      .slice()
+      .sort((a, b) => b.timeMs - a.timeMs);
+
+    const chains = [];
+
+    // 跨 root person 的去重。
+    // 注意：不是 person 去重，而是 event-event subchain 去重。
+    const globalUsedSubchainKeys = new Set();
+
+    // root person:
+    // 从所有 receiving outer file event 的 receiver/focusId 中选。
+    // 谁的最新 receiving event 最晚，谁先作为 root。
+    const rootCandidates = Array.from(
+      d3.rollup(
+        dayEdges,
+        edges => ({
+          latestOuterTime: d3.max(edges, edge => edge.timeMs),
+          edgeCount: edges.length
+        }),
+        edge => normalizeTracePersonId(edge.focusId)
+      ),
+      ([personId, info]) => ({
+        personId,
+        latestOuterTime: info.latestOuterTime,
+        edgeCount: info.edgeCount
+      })
+    )
+      .filter(d => d.personId)
+      .sort((a, b) => {
+        if (a.latestOuterTime !== b.latestOuterTime) {
+          return b.latestOuterTime - a.latestOuterTime;
+        }
+
+        return b.edgeCount - a.edgeCount;
+      });
+
+    console.log("ROOT CANDIDATES ORDER", {
+      day,
+      roots: rootCandidates.map(d => ({
+        rootPersonId: d.personId,
+        latestOuterTime: d.latestOuterTime,
+        latestOuterDate: Number.isFinite(d.latestOuterTime)
+          ? new Date(d.latestOuterTime)
+          : null,
+        edgeCount: d.edgeCount
+      }))
+    });
+
+    rootCandidates.forEach(rootCandidate => {
+      const rootPersonId = rootCandidate.personId;
+
+      const rootStarts = dayStarts.filter(s =>
+        normalizeTracePersonId(s.focusId) === rootPersonId
+      );
+
+      // 当前 root person 独立建 chain
+      const chainPeople = new Set([rootPersonId]);
+      const chainEdges = [];
+
+      // 当前 root 内部已经画过的 subchain
+      const localUsedSubchainKeys = new Set();
+
+      // 当前 root 的所有 outer nodes：
+      // 例如 henry 的 outer nodes:
+      // evelyn 03:52, zoey 03:05, david 00:12
+      const rootOuterEdges = dayEdges
+        .filter(edge =>
+          normalizeTracePersonId(edge.focusId) === rootPersonId
+        )
+        .sort((a, b) => {
+          if (a.timeMs !== b.timeMs) {
+            return b.timeMs - a.timeMs;
+          }
+
+          return String(b.eventId).localeCompare(String(a.eventId));
+        });
+
+      console.log("ROOT OUTER EDGES ORDER", {
+        day,
+        rootPersonId,
+        edges: rootOuterEdges.map(edge => ({
+          from: edge.upstreamId,
+          to: edge.focusId,
+          eventId: edge.eventId,
+          time: edge.event?.date,
+          timeMs: edge.timeMs,
+          task: getEdgeTask(edge),
+          key: edge.key
+        }))
+      });
+
+      rootOuterEdges.forEach(startEdge => {
+        if (!startEdge || !startEdge.key) return;
+
+        // 从当前 root 的一个 outer node 开始，追一条完整 single chain
+        const singleChain = buildSingleChainFromRootOuterEdge({
+          startEdge,
+          day,
+          dayEdges
+        });
+
+        if (!singleChain.length) return;
+
+        const singleChainSubKeys = singleChain.map(edge =>
+          edge.subchainKey || makeSubchainEdgeKey(edge)
+        );
+
+        // 如果这条 single chain 完全包含在当前 root 前面已经画过的 chain 中，
+        // 或者完全包含在其他 root 前面已经画过的 chain 中，
+        // 就跳过。
+        const coveredByLocal =
+          singleChainSubKeys.length > 0 &&
+          singleChainSubKeys.every(key => localUsedSubchainKeys.has(key));
+
+        const coveredByGlobal =
+          singleChainSubKeys.length > 0 &&
+          singleChainSubKeys.every(key => globalUsedSubchainKeys.has(key));
+
+        console.log("TRY SINGLE CHAIN FROM ROOT OUTER EDGE", {
+          day,
+          rootPersonId,
+          startFrom: startEdge.upstreamId,
+          startTo: startEdge.focusId,
+          startTime: startEdge.event?.date,
+          singleChain: singleChain.map(edge => ({
+            from: edge.from,
+            to: edge.to,
+            eventId: edge.eventId,
+            time: edge.event?.date,
+            subchainKey: edge.subchainKey
+          })),
+          coveredByLocal,
+          coveredByGlobal
+        });
+
+        if (coveredByLocal || coveredByGlobal) {
+          console.log("SKIP SINGLE CHAIN BECAUSE ALREADY COVERED", {
+            day,
+            rootPersonId,
+            startFrom: startEdge.upstreamId,
+            startTime: startEdge.event?.date,
+            coveredByLocal,
+            coveredByGlobal
+          });
+
+          return;
+        }
+
+        // 不是完全重复的 single chain，保留其中还没画过的 subchain
+        singleChain.forEach(edge => {
+          const subchainKey = edge.subchainKey || makeSubchainEdgeKey(edge);
+
+          if (localUsedSubchainKeys.has(subchainKey)) return;
+          if (globalUsedSubchainKeys.has(subchainKey)) return;
+
+          localUsedSubchainKeys.add(subchainKey);
+          globalUsedSubchainKeys.add(subchainKey);
+
+          chainEdges.push(edge);
+
+          chainPeople.add(normalizeTracePersonId(edge.from));
+          chainPeople.add(normalizeTracePersonId(edge.to));
+        });
+      });
+
+      if (!chainEdges.length) {
+        console.log("SKIP EMPTY ROOT CHAIN", {
+          day,
+          rootPersonId
+        });
+
+        return;
+      }
+
+      chains.push({
+        day,
+        rootPersonId,
+        starts: rootStarts,
+        edges: chainEdges,
+        people: chainPeople
+      });
+    });
+
+    chainsByDay.set(day, chains);
+  });
+
+  console.log("FILE TEMPORAL CHAINS BUILT", {
+    byDay: Array.from(chainsByDay.entries()).map(([day, chains]) => ({
+      day,
+      chainCount: chains.length,
+      roots: chains.map(c => c.rootPersonId),
+      chains: chains.map(c => ({
+        root: c.rootPersonId,
+        edgeCount: c.edges.length,
+        people: Array.from(c.people),
+        edges: c.edges.map(edge => ({
+          from: edge.from,
+          to: edge.to,
+          eventId: edge.eventId,
+          eventTime: edge.event?.date,
+          eventTimeMs: edge.eventTimeMs,
+          task: getEdgeTask(edge),
+          subchainKey: edge.subchainKey || makeSubchainEdgeKey(edge),
+          depth: edge.depth
+        }))
+      }))
+    }))
+  });
+
+  return chainsByDay;
+}
+
+function isPlannedFileTemporalEdge(day, fromId, toId, eventId) {
+  const key = [
+    "edge",
+    day,
+    normalizeTracePersonId(fromId),
+    normalizeTracePersonId(toId),
+    eventId
+  ].join("||");
+
+  return dailyGraphFilePlannedEdgeKeys.has(key);
+}
+
+function maybeAutoAddTemporalFileExpansion({
+  sender,
+  e,
+  focusQuery,
+  x,
+  y,
+  angle,
+  depth,
+  rootWindow
+}) {
+  if (dailyGraphMode !== "file") return;
+  if (!sender || !e || !e.date || !rootWindow) return;
+
+  const day = getDailyGraphDayKey(e);
+
+  const senderId = normalizeTracePersonId(
+    sender.id || sender.name
+  );
+
+  const focusId = normalizeTracePersonId(focusQuery);
+
+  if (!day || !senderId || !focusId) return;
+
+  // 关键：只自动展开 temporal chain planner 里已经决定要画的 edge
+  if (
+    !isPlannedFileTemporalEdge(
+      day,
+      senderId,
+      focusId,
+      e.id
+    )
+  ) {
+    return;
+  }
+
+  const autoKey = [
+    "auto-temporal-file",
+    day,
+    senderId,
+    focusId,
+    e.id
+  ].join("||");
+
+  if (dailyGraphFileAutoExpandedKeys.has(autoKey)) {
+    return;
+  }
+
+  dailyGraphFileAutoExpandedKeys.add(autoKey);
+
+  const outerWindow = buildClickedWindowForExpansion(
+    e.date,
+    rootWindow
+  );
+
+  const innerWindow = buildInnerWindowForExpansion(
+    e.date,
+    rootWindow
+  );
+
+  if (
+    !outerWindow ||
+    !outerWindow.start ||
+    !outerWindow.end ||
+    !innerWindow ||
+    !innerWindow.start ||
+    !innerWindow.end
+  ) {
+    console.warn("AUTO EXPANSION SKIP: invalid window", {
+      day,
+      senderId,
+      focusId,
+      eventId: e.id,
+      outerWindow,
+      innerWindow,
+      rootWindow
+    });
+    return;
+  }
+
+  const clickedTime = e.date instanceof Date
+    ? e.date.toISOString()
+    : new Date(e.date).toISOString();
+
+  const expKey = [
+    senderId,
+    day,
+    x.toFixed(1),
+    y.toFixed(1),
+    rootWindow.start.toISOString(),
+    clickedTime
+  ].join("||");
+
+  const alreadyExists = dailyGraphExpansions.some(exp =>
+    exp.key === expKey
+  );
+
+  if (alreadyExists) {
+    return;
+  }
+
+  dailyGraphExpansions.push({
+    key: expKey,
+    autoFileChain: true,
+
+    personId: senderId,
+    personName: sender.name || sender.id || senderId,
+    day,
+
+    clickedX: x,
+    clickedY: y,
+    clickedAngle: angle,
+    depth: depth + 1,
+    clickedTime,
+
+    // outer circle 用的 window
+    windowStart: outerWindow.start.toISOString(),
+    windowEnd: outerWindow.end.toISOString(),
+
+    // inner circle 用的 window
+    innerWindowStart: innerWindow.start.toISOString(),
+    innerWindowEnd: innerWindow.end.toISOString(),
+
+    // debug 信息
+    parentFocus: focusId,
+    eventId: e.id
+  });
+
+  console.log("AUTO TEMPORAL FILE EXPANSION ADDED", {
+    day,
+    from: senderId,
+    to: focusId,
+    eventId: e.id,
+    eventTime: e.date,
+    expKey
+  });
+}
+
+function normalizeTracePersonId(id) {
+  return (id || "")
+    .replace(/^Agent\//, "")
+    .toLowerCase()
+    .trim();
+}
+
+function getPeopleIdsFromEvent(e) {
+  const ids = [];
+
+  if (e.sender_id) {
+    const senderId = normalizeTracePersonId(e.sender_id);
+    if (senderId) ids.push(senderId);
+  }
+
+  (e.receivers || []).forEach(r => {
+    const rid = normalizeTracePersonId(r.id);
+    if (rid) ids.push(rid);
+  });
+
+  return Array.from(new Set(ids));
+}
+
+function buildFileFocusByDay(fileEvents) {
+  const map = new Map();
+
+  const fileEventsByDay = d3.group(
+    fileEvents,
+    e => getDailyGraphDayKey(e)
+  );
+
+  fileEventsByDay.forEach((eventsOfDay, day) => {
+    if (!day) return;
+
+    const people = getPeopleForFile(
+      dailyGraphFileQuery,
+      eventsOfDay
+    );
+
+    const peopleSet = new Set();
+
+    people.forEach(p => {
+      const id = (p.id || "")
+        .replace(/^Agent\//, "")
+        .toLowerCase()
+        .trim();
+
+      if (id) {
+        peopleSet.add(id);
+      }
+    });
+
+    map.set(day, peopleSet);
+  });
+
+  return map;
+}
+
+function eventTouchesFileFocusPeopleOnSameDay(e) {
+  const day = getDailyGraphDayKey(e);
+  if (!day) return false;
+
+  const peopleSet = dailyGraphFileFocusByDay.get(day);
+
+  if (!peopleSet || !peopleSet.size) {
+    return false;
+  }
+
+  return Array.from(peopleSet).some(personId =>
+    isPersonSender(e, personId) ||
+    isPersonReceiver(e, personId)
+  );
+}
+
+function getAllFileFocusPeople() {
+  const all = new Set();
+
+  dailyGraphFileFocusByDay.forEach(peopleSet => {
+    peopleSet.forEach(id => all.add(id));
+  });
+
+  return Array.from(all);
+}
 
 function actionColor(action) {
   return actionColorMap[action] || actionColorMap.unknown;
 }
 
-// ---------- Department colors ----------
-
 const departmentColor = {
-
   "Executive Suite": "#e41a1c",
-
   "Products": "#377eb8",
-
   "Human Resources": "#4daf4a",
-
   "Legal": "#984ea3",
-
   "Information Technologies": "#ff7f00",
-
   "Customer Support": "#D9A54A",
-
   "World": "#111111",
-
   "Unknown Department": "#777777"
-
 };
 
 function deptColor(dept) {
-
   return departmentColor[dept] || "#777777";
-
 }
 
 function parseTime(t) {
-
   return d3.timeParse("%Y-%m-%d %H:%M:%S")(t);
-
 }
 
 function resize() {
-
   width = document.getElementById("container").clientWidth;
-
   height = document.getElementById("container").clientHeight;
 
   if (currentTab === "dailyGraph") {
-
     renderDailyGraphTab();
-
   } else {
-
     render();
-
   }
+}
 
+function setupDailyGraphZoom() {
+  svgZoom = d3.zoom()
+    .scaleExtent([0.15, 8])
+    .on("zoom", event => {
+      dailyGraphZoomTransform = event.transform;
+
+      if (zoomLayer) {
+        zoomLayer.attr("transform", dailyGraphZoomTransform);
+      }
+    });
+
+  svg.call(svgZoom);
+}
+
+function getCurrentViewCenterInGraphCoords() {
+  const container = document.getElementById("container");
+
+  const screenCenterX = container.clientWidth / 2;
+  const screenCenterY = container.clientHeight / 2;
+
+  const t = dailyGraphZoomTransform || d3.zoomIdentity;
+
+  return {
+    x: (screenCenterX - t.x) / t.k,
+    y: (screenCenterY - t.y) / t.k,
+    k: t.k
+  };
+}
+
+function restoreViewCenterInGraphCoords(center) {
+  if (!center || !svgZoom || !svg) return;
+
+  const container = document.getElementById("container");
+
+  const screenCenterX = container.clientWidth / 2;
+  const screenCenterY = container.clientHeight / 2;
+
+  const k = center.k || dailyGraphZoomTransform.k || 1;
+
+  const t = d3.zoomIdentity
+    .translate(
+      screenCenterX - center.x * k,
+      screenCenterY - center.y * k
+    )
+    .scale(k);
+
+  dailyGraphZoomTransform = t;
+
+  svg.call(svgZoom.transform, t);
 }
 
 window.addEventListener("resize", resize);
 
 Promise.all([
-
   d3.json("level1_department_pairs.json"),
-
   d3.json("level2_receiver_sets.json"),
-
   d3.json("events_for_trace.json")
-
 ]).then(([l1, l2, events]) => {
-
   level1Data = l1.map(d => ({
-
     ...d,
-
     date: parseTime(d.first_time || d.time_bin)
-
   }));
 
   level2Data = l2.map(d => ({
-
     ...d,
-
     date: parseTime(d.first_time || d.time_bin)
-
   }));
 
   eventsData = events.map(d => ({
-
     ...d,
-
     date: parseTime(d.time || d.time_bin)
-
   }));
+
+  // ===== DEBUG =====
+
+  console.log(eventsData.find(e =>
+
+JSON.stringify(e).includes("Swift")
+
+));
+
+console.log(
+
+eventsData.filter(e =>
+
+  JSON.stringify(e).includes("Swift")
+
+).length
+
+);
+
+// =================
 
   colorScale = actionColor;
 
   initFilters();
-
   currentLevel = 1;
-
   currentData = level1Data;
 
   resize();
-
 });
 
 function initFilters() {
-
   const senderDepts = Array.from(new Set([
-
     ...level1Data.map(d => d.sender_department),
-
     ...level2Data.map(d => d.sender_department)
-
   ])).sort();
 
   const receiverDepts = Array.from(new Set([
-
     ...level1Data.map(d => d.receiver_department),
-
     ...level2Data.flatMap(d => d.receiver_departments || [])
-
   ])).sort();
 
   const actions = Array.from(new Set([
-
     ...level1Data.map(d => d.action),
-
     ...level2Data.map(d => d.action)
-
   ])).sort();
 
   fillCheckboxGroup("#senderDeptFilter", senderDepts);
-
   fillCheckboxGroup("#receiverDeptFilter", receiverDepts);
-
   fillCheckboxGroup("#actionFilter", actions);
 
   d3.select("#overviewTabBtn").on("click", () => {
-
     currentTab = "overview";
     updateToolbarByTab();
     render();
-
   });
 
   d3.select("#dailyGraphTabBtn").on("click", () => {
-  currentTab = "dailyGraph";
-  dailyGraphFocusStack = [];
-  dailyGraphExpansions = [];
-  dailyGraphLastRootKey = "";
-  updateToolbarByTab();
-  renderDailyGraphTab();
-});
+    currentTab = "dailyGraph";
+    dailyGraphFocusStack = [];
+    dailyGraphExpansions = [];
+    dailyGraphLastRootKey = "";
+    updateToolbarByTab();
+    renderDailyGraphTab();
+  });
 
   d3.select("#overviewTraceBtn").on("click", renderTrace);
 
-d3.select("#traceBtn").on("click", () => {
-  dailyGraphFocusStack = [];
+  d3.select("#traceBtn").on("click", () => {
+
+dailyGraphMode = "person";
+
+dailyGraphFocusStack = [];
+
+dailyGraphExpansions = [];
+
+dailyGraphLastRootKey = "";
+
+renderDailyGraphTab();
+
+});
+
+d3.select("#fileTraceBtn").on("click", () => {
+
+dailyGraphMode = "file";
+
+dailyGraphFileQuery = d3.select("#fileInput")
+
+  .property("value")
+
+  .trim()
+
+  .toLowerCase();
+
+dailyGraphFocusStack = [];
+
+dailyGraphExpansions = [];
+
+dailyGraphLastRootKey = "";
+
+renderDailyGraphTab();
+
+});
+
+d3.select("#clearDailyTraceBtn").on("click", () => {
   dailyGraphExpansions = [];
-  dailyGraphLastRootKey = "";
+
+  keepDailyGraphZoom = true;
+
+  if (typeof getCurrentViewCenterInGraphCoords === "function") {
+    savedDailyGraphViewCenter = getCurrentViewCenterInGraphCoords();
+  }
+
   renderDailyGraphTab();
 });
 
+  d3.select("#fileStartDateFilter").on("change", rerenderCurrentTab);
+  d3.select("#fileEndDateFilter").on("change", rerenderCurrentTab);
   d3.select("#startDateFilter").on("change", rerenderCurrentTab);
-
   d3.select("#startClock").on("change", rerenderCurrentTab);
   d3.select("#endDateFilter").on("change", rerenderCurrentTab);
   d3.select("#endClock").on("change", rerenderCurrentTab);
@@ -583,206 +1573,239 @@ d3.select("#traceBtn").on("click", () => {
   d3.select("#hoursBackFilter").on("change", rerenderCurrentTab);
 
   d3.select("#clearTimeBtn").on("click", () => {
-
     d3.select("#startDateFilter").property("value", "");
-
     d3.select("#startClock").property("value", "");
-
     d3.select("#endDateFilter").property("value", "");
-
     d3.select("#endClock").property("value", "");
-
     rerenderCurrentTab();
-    updateToolbarByTab();
-
   });
 
+  updateToolbarByTab();
+}
+
+function updateToolbarByTab() {
+  d3.select("#overviewControls")
+    .style("display", currentTab === "overview" ? "flex" : "none");
+
+  d3.select("#dailyGraphControls")
+    .style("display", currentTab === "dailyGraph" ? "flex" : "none");
 }
 
 function rerenderCurrentTab() {
-
   if (currentTab === "dailyGraph") {
-
     renderDailyGraphTab();
-
   } else {
-
     render();
-
   }
-
 }
 
 function fillCheckboxGroup(selector, values) {
-
   const box = d3.select(selector);
-
   box.selectAll("*").remove();
 
   box.append("label")
-
     .attr("class", "check-item")
-
     .html(`<input type="checkbox" value="ALL" checked> ALL`);
 
   const items = box.selectAll("label.extra")
-
     .data(values)
-
     .enter()
-
     .append("label")
-
     .attr("class", "check-item extra");
 
   items.html(d => `<input type="checkbox" value="${d}"> ${d}`);
 
   box.selectAll("input").on("change", function() {
-
     const value = this.value;
 
     if (value === "ALL" && this.checked) {
-
       box.selectAll("input").property("checked", false);
-
       d3.select(this).property("checked", true);
-
     } else if (value !== "ALL" && this.checked) {
-
       box.select('input[value="ALL"]').property("checked", false);
-
     }
 
     const checked = box.selectAll("input:checked").nodes();
 
     if (checked.length === 0) {
-
       box.select('input[value="ALL"]').property("checked", true);
-
     }
 
     rerenderCurrentTab();
-
   });
-
 }
 
 function getCheckedValues(selector) {
-
   const values = d3.select(selector)
-
     .selectAll("input:checked")
-
     .nodes()
-
     .map(n => n.value);
 
   if (values.includes("ALL") || values.length === 0) {
-
     return null;
-
   }
 
   return new Set(values);
-
 }
 
 function getDateFilters() {
-
   const startDateValue = d3.select("#startDateFilter").property("value");
-
   const startClock = d3.select("#startClock").property("value");
 
   const endDateValue = d3.select("#endDateFilter").property("value");
-
   const endClock = d3.select("#endClock").property("value");
 
   const startDate = startDateValue
-
     ? new Date(`${startDateValue}T${startClock || "00:00"}`)
-
     : null;
 
   const endDate = endDateValue
-
     ? new Date(`${endDateValue}T${endClock || "23:59"}`)
-
     : null;
 
   return {startDate, endDate};
-
 }
 
 function getFilteredData() {
-
   const senderDeptSet = getCheckedValues("#senderDeptFilter");
-
   const receiverDeptSet = getCheckedValues("#receiverDeptFilter");
-
   const actionSet = getCheckedValues("#actionFilter");
-
   const {startDate, endDate} = getDateFilters();
 
   return currentData.filter(d => {
-
     if (senderDeptSet && !senderDeptSet.has(d.sender_department)) return false;
-
     if (actionSet && !actionSet.has(d.action)) return false;
 
     if (receiverDeptSet) {
-
       if (currentLevel === 1) {
-
         if (!receiverDeptSet.has(d.receiver_department)) return false;
-
       } else {
-
         const depts = d.receiver_departments || [];
-
         if (!depts.some(dep => receiverDeptSet.has(dep))) return false;
-
       }
-
     }
 
     if (startDate && d.date < startDate) return false;
-
     if (endDate && d.date > endDate) return false;
 
     return true;
-
   });
+}
 
+function getFileDateWindow() {
+  const startValue = d3.select("#fileStartDateFilter").property("value");
+  const endValue = d3.select("#fileEndDateFilter").property("value");
+
+  if (!startValue && !endValue) {
+    return {
+      start: null,
+      end: null
+    };
+  }
+
+  const startDate = startValue || endValue;
+  const endDate = endValue || startValue;
+
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T23:59:59`);
+
+  return {
+    start,
+    end
+  };
+}
+
+function eventPassesFileDateWindow(e) {
+  if (!e || !e.date) return false;
+
+  const fileWindow = getFileDateWindow();
+
+  if (!fileWindow.start || !fileWindow.end) {
+    return true;
+  }
+
+  const t = e.date instanceof Date
+    ? e.date
+    : new Date(e.date);
+
+  if (Number.isNaN(t.getTime())) return false;
+
+  return t >= fileWindow.start && t <= fileWindow.end;
+}
+
+function isMatchedFileEventInRange(e, fileQuery) {
+  if (!e || !e.date) return false;
+
+  if (!eventPassesFileDateWindow(e)) {
+    return false;
+  }
+
+  if (!isFileEvent(e, fileQuery)) {
+    return false;
+  }
+
+  return true;
+}
+
+function getConcreteFileWindow(events) {
+  const { start, end } = getFileDateWindow();
+
+  const minDate = d3.min(events, d => d.date);
+  const maxDate = d3.max(events, d => d.date);
+
+  return {
+    start: start || minDate || new Date("2046-01-01T00:00:00"),
+    end: end || maxDate || new Date("2046-12-31T23:59:59")
+  };
+}
+
+function isAgentEntity(type) {
+  return (type || "").toLowerCase() === "agent";
+}
+
+function isEventFileRelated(e) {
+  if (dailyGraphMode !== "file") return false;
+
+  return (
+    eventPassesFileDateWindow(e) &&
+    isFileEvent(e, dailyGraphFileQuery)
+  );
+}
+
+function getEntityTypeForFocus(e, focusQuery) {
+  const q = focusQuery.toLowerCase();
+
+  if ((e.sender_id || "").toLowerCase().includes(q)) {
+    return e.sender_type || "";
+  }
+
+  for (const r of (e.receivers || [])) {
+    if ((r.id || "").toLowerCase().includes(q)) {
+      return r.type || "";
+    }
+  }
+
+  return "";
 }
 
 function eventPassesCurrentFilters(e) {
-
   const senderDeptSet = getCheckedValues("#senderDeptFilter");
-
   const receiverDeptSet = getCheckedValues("#receiverDeptFilter");
-
   const actionSet = getCheckedValues("#actionFilter");
-
   const {startDate, endDate} = getDateFilters();
 
   if (senderDeptSet && !senderDeptSet.has(e.sender_department)) return false;
-
   if (actionSet && !actionSet.has(e.action)) return false;
 
   if (receiverDeptSet) {
-
     const depts = e.receiver_departments || [];
-
     if (!depts.some(dep => receiverDeptSet.has(dep))) return false;
-
   }
 
   if (startDate && e.date < startDate) return false;
-
   if (endDate && e.date > endDate) return false;
 
   return true;
-
 }
 
 function eventPassesDailyGraphBaseFilters(e) {
@@ -800,14 +1823,12 @@ function eventPassesDailyGraphBaseFilters(e) {
 
   return true;
 }
-// ---------- Overview rendering ----------
+
+/* ---------- Overview ---------- */
 
 function render() {
-
   currentTab = "overview";
-
   currentLevel = 1;
-
   currentData = level1Data;
 
   if (!currentData.length || !width) return;
@@ -815,115 +1836,61 @@ function render() {
   visibleData = getFilteredData();
 
   if (!visibleData.length) {
-
     clearCanvasAndSvg(document.getElementById("container").clientHeight);
-
     return;
-
   }
 
   const times = d3.extent(visibleData, d => d.date);
-
   const yDomain = Array.from(new Set(visibleData.map(d => d.pair))).sort();
 
   xScale = d3.scaleTime()
-
     .domain(times)
-
     .range([margin.left, width - margin.right]);
 
   const chartHeight = buildGroupedYMap(yDomain);
 
   height = Math.max(
-
     document.getElementById("container").clientHeight,
-
     chartHeight
-
   );
 
   setupCanvasSvg(height);
-
   clearCanvasAndSvg(height);
 
-  yScale = function(key) {
-
-    return yMap.get(key);
-
-  };
-
+  yScale = key => yMap.get(key);
   colorScale = actionColor;
 
   drawAxes(yDomain);
-
   drawCanvasPoints();
-
   buildQuadtree();
-
 }
 
 function buildGroupedYMap(yDomain) {
-
   yMap = new Map();
 
   const innerGap = 11;
-
   const groupGap = 26;
 
   const groups = d3.group(yDomain, d => {
-
     if (d.includes(" → ")) return d.split(" → ")[0];
-
     return d;
-
   });
 
   let y = margin.top;
-
   const senderGroups = Array.from(groups.keys()).sort();
 
   for (const sender of senderGroups) {
-
     const rows = groups.get(sender).sort();
 
     for (const row of rows) {
-
       yMap.set(row, y);
-
       y += innerGap;
-
     }
 
     y += groupGap;
-
   }
 
   return y + margin.bottom + 30;
-
-}
-
-function buildAnchorWindowsForRoot(events, rootQuery, traceDate, hoursBack) {
-  const q = rootQuery.toLowerCase();
-
-  const dayStart = new Date(`${traceDate}T00:00:00`);
-  const dayEnd = new Date(`${traceDate}T23:59:59`);
-
-  const rootDayEvents = events
-    .filter(e => {
-      if (e.date < dayStart || e.date > dayEnd) return false;
-      return isPersonSender(e, q) || isPersonReceiver(e, q);
-    })
-    .sort((a, b) => a.date - b.date);
-
-  return rootDayEvents.map(e => ({
-    anchorEventId: e.id,
-    end: e.date,
-    start: new Date(e.date.getTime() - hoursBack * 60 * 60 * 1000)
-  }));
-}
-
-function eventInAnyAnchorWindow(e, windows) {
-  return windows.some(w => e.date >= w.start && e.date <= w.end);
 }
 
 function setupCanvasSvg(h) {
@@ -946,346 +1913,737 @@ function setupCanvasSvg(h) {
 }
 
 function clearCanvasAndSvg(h) {
-
   ctx.clearRect(0, 0, width, h);
-
   svg.selectAll("*").remove();
-
 }
 
 function drawAxes(yDomain) {
-
   const xAxis = d3.axisBottom(xScale)
-
     .ticks(8)
-
     .tickFormat(d3.timeFormat("%m-%d %H:%M"));
 
   svg.append("g")
-
     .attr("transform", `translate(0, ${height - margin.bottom})`)
-
     .call(xAxis);
 
   const yLabelG = svg.append("g")
-
     .attr("transform", `translate(${margin.left}, 0)`);
 
   for (const label of yDomain) {
-
     const y = yScale(label);
-
     if (y === undefined) continue;
 
     yLabelG.append("text")
-
       .attr("x", -8)
-
       .attr("y", y)
-
       .attr("text-anchor", "end")
-
       .attr("dominant-baseline", "middle")
-
       .attr("font-size", "10px")
-
       .text(label);
-
   }
 
   svg.append("text")
-
     .attr("x", margin.left)
-
     .attr("y", margin.top - 12)
-
     .attr("font-size", 14)
-
     .attr("font-weight", "bold")
-
     .text("Department-to-department interaction overview");
-
 }
 
 function drawCanvasPoints() {
-
   const maxCount = d3.max(visibleData, d => d.count || 1);
 
   const hScale = d3.scaleSqrt()
-
     .domain([1, maxCount])
-
     .range([2, 8]);
 
   for (const d of visibleData) {
-
     const x = xScale(d.date);
-
     const y = yScale(d.pair);
 
     d._x = x;
-
     d._y = y;
 
     const segW = 2;
-
     const segH = hScale(d.count || 1);
 
     d._segW = segW;
-
     d._segH = segH;
 
-    drawLineNodeGlyph(
-
-      x,
-
-      y,
-
-      segW,
-
-      segH,
-
-      colorScale(d.action)
-
-    );
+    drawLineNodeGlyph(x, y, segW, segH, colorScale(d.action));
 
     if (d._highlightPerson) {
-
-      drawSelectedPersonTailsOnSegment(
-
-        x,
-
-        y,
-
-        segW,
-
-        segH,
-
-        d
-
-      );
-
+      drawSelectedPersonTailsOnSegment(x, y, segW, segH, d);
     }
-
   }
-
 }
 
 function drawLineNodeGlyph(x, y, w, h, color) {
-
   const radius = h / 2;
 
   ctx.save();
-
   ctx.globalAlpha = 0.78;
-
   ctx.fillStyle = color;
 
-  roundRect(
-
-    ctx,
-
-    x - w / 2,
-
-    y - h / 2,
-
-    w,
-
-    h,
-
-    radius
-
-  );
+  roundRect(ctx, x - w / 2, y - h / 2, w, h, radius);
 
   ctx.fill();
-
   ctx.restore();
-
 }
 
 function roundRect(ctx, x, y, w, h, r) {
-
   const rr = Math.min(r, w / 2, h / 2);
 
   ctx.beginPath();
-
   ctx.moveTo(x + rr, y);
-
   ctx.lineTo(x + w - rr, y);
-
   ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
-
   ctx.lineTo(x + w, y + h - rr);
-
   ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
-
   ctx.lineTo(x + rr, y + h);
-
   ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
-
   ctx.lineTo(x, y + rr);
-
   ctx.quadraticCurveTo(x, y, x + rr, y);
-
   ctx.closePath();
+}
 
+const FILE_EXT_RE = /\.(md|txt|csv|json|xlsx?|docx?|pdf|png|jpg|jpeg|log|yaml|yml|html|xml)$/i;
+
+function collectStringsDeep(obj, result = []) {
+  if (obj == null) return result;
+
+  if (typeof obj === "string") {
+    result.push(obj);
+    return result;
+  }
+
+  if (Array.isArray(obj)) {
+    obj.forEach(v => collectStringsDeep(v, result));
+    return result;
+  }
+
+  if (typeof obj === "object") {
+    Object.values(obj).forEach(v => collectStringsDeep(v, result));
+  }
+
+  return result;
+}
+
+function looksLikeFileName(s) {
+  if (!s || typeof s !== "string") return false;
+
+  const v = s.trim();
+
+  // 排除明显的 person / agent / system id
+  if (v.startsWith("person:")) return false;
+  if (v.startsWith("Agent/person:")) return false;
+  if (v.startsWith("system:")) return false;
+  if (v.startsWith("world:")) return false;
+
+  // path/to/file.ext 或 file.ext
+  const lastPart = v.split("/").pop();
+
+  return FILE_EXT_RE.test(lastPart);
+}
+
+function extractFileNames(e) {
+  const files = [];
+
+  FILE_FIELD_PATHS.forEach(path => {
+    const values = getValuesByPath(e, path);
+
+    values.forEach(value => {
+      if (typeof value === "string" && looksLikeFileName(value)) {
+        files.push(value.trim());
+      }
+    });
+  });
+
+  return Array.from(new Set(files));
+}
+
+function containsFileKeyword(obj, keyword) {
+
+if (!obj) return false;
+
+if (typeof obj === "string") {
+  return obj.toLowerCase().includes(
+    keyword.toLowerCase()
+  );
+}
+
+if (Array.isArray(obj)) {
+  return obj.some(v =>
+    containsFileKeyword(v, keyword)
+  );
+}
+
+if (typeof obj === "object") {
+  return Object.values(obj).some(v =>
+    containsFileKeyword(v, keyword)
+  );
+}
+
+return false;
+}
+
+function isFileEvent(e, query) {
+  if (!query) return false;
+
+  const q = query.toLowerCase().trim();
+  if (!q) return false;
+
+  const files = extractFileNames(e);
+
+  return files.some(file =>
+    file.toLowerCase().includes(q)
+  );
+}
+
+function getPeopleForFile(fileQuery, fileEvents) {
+  const peopleMap = new Map();
+
+  fileEvents.forEach(e => {
+    if (e.sender_id) {
+      peopleMap.set(
+        (e.sender_id || "").replace(/^Agent\//, "").toLowerCase(),
+        {
+          id: e.sender_id,
+          name: e.sender_name || e.sender_id,
+          type: e.sender_type,
+          department: e.sender_department
+        }
+      );
+    }
+
+    (e.receivers || []).forEach(r => {
+      if (r.id) {
+        peopleMap.set(
+          (r.id || "").replace(/^Agent\//, "").toLowerCase(),
+          {
+            id: r.id,
+            name: r.name || r.id,
+            type: r.type,
+            department: r.department
+          }
+        );
+      }
+    });
+  });
+
+  return Array.from(peopleMap.values());
 }
 
 function drawSelectedPersonTailsOnSegment(x, y, w, h, d) {
-
   if (d._isSenderTrace) {
-
-    drawSenderTailOnSegment(
-
-      x,
-
-      y,
-
-      w,
-
-      h,
-
-      deptColor(d.sender_department)
-
-    );
-
+    drawSenderTailOnSegment(x, y, w, h, deptColor(d.sender_department));
   }
 
   if (d._isReceiverTrace) {
-
-    drawReceiverTailOnSegment(
-
-      x,
-
-      y,
-
-      w,
-
-      h,
-
-      deptColor(d.receiver_department)
-
-    );
-
+    drawReceiverTailOnSegment(x, y, w, h, deptColor(d.receiver_department));
   }
+}
 
+function getTraceArrowColor(isSelectedTrace) {
+  return isSelectedTrace ? "#c04fb3" : "#b8b8b8";
+}
+
+function isExpandedTraceNode(sender, day, x, y, rootWindow, eventDate) {
+  if (!rootWindow || !eventDate) return false;
+
+  const focusId = (sender.id || sender.name || "")
+    .replace(/^Agent\//, "")
+    .toLowerCase();
+
+  const clickedTime = eventDate.toISOString();
+
+  const key = [
+    focusId,
+    day,
+    x.toFixed(1),
+    y.toFixed(1),
+    rootWindow.start.toISOString(),
+    clickedTime
+  ].join("||");
+
+  return dailyGraphExpansions.some(exp => exp.key === key);
 }
 
 function drawSenderTailOnSegment(x, y, w, h, color) {
-
   const left = x - w / 2;
-
   const top = y - h / 2;
-
   const r = Math.max(h, 4);
 
   ctx.save();
-
   ctx.fillStyle = color;
-
   ctx.globalAlpha = 0.78;
 
   ctx.beginPath();
-
   ctx.moveTo(left, top);
-
-  ctx.bezierCurveTo(
-
-    left - r * 0.3,
-
-    top - r * 0.6,
-
-    left - r * 0.15,
-
-    top - r * 1.4,
-
-    left + r * 0.35,
-
-    top - r * 2.0
-
-  );
-
-  ctx.bezierCurveTo(
-
-    left + r * 0.65,
-
-    top - r * 1.2,
-
-    left + r * 0.55,
-
-    top - r * 0.45,
-
-    left + r * 0.15,
-
-    top
-
-  );
-
+  ctx.bezierCurveTo(left - r * 0.3, top - r * 0.6, left - r * 0.15, top - r * 1.4, left + r * 0.35, top - r * 2.0);
+  ctx.bezierCurveTo(left + r * 0.65, top - r * 1.2, left + r * 0.55, top - r * 0.45, left + r * 0.15, top);
   ctx.closePath();
-
   ctx.fill();
 
   ctx.restore();
-
 }
 
 function drawReceiverTailOnSegment(x, y, w, h, color) {
-
   const right = x + w / 2;
-
   const bottom = y + h / 2;
-
   const r = Math.max(h, 4);
 
   ctx.save();
-
   ctx.fillStyle = color;
-
   ctx.globalAlpha = 0.78;
 
   ctx.beginPath();
-
   ctx.moveTo(right, bottom);
-
-  ctx.bezierCurveTo(
-
-    right + r * 0.35,
-
-    bottom + r * 0.8,
-
-    right + r * 0.25,
-
-    bottom + r * 1.8,
-
-    right - r * 0.25,
-
-    bottom + r * 2.8
-
-  );
-
-  ctx.bezierCurveTo(
-
-    right - r * 0.65,
-
-    bottom + r * 1.8,
-
-    right - r * 0.45,
-
-    bottom + r * 0.65,
-
-    right - r * 0.05,
-
-    bottom
-
-  );
-
+  ctx.bezierCurveTo(right + r * 0.35, bottom + r * 0.8, right + r * 0.25, bottom + r * 1.8, right - r * 0.25, bottom + r * 2.8);
+  ctx.bezierCurveTo(right - r * 0.65, bottom + r * 1.8, right - r * 0.45, bottom + r * 0.65, right - r * 0.05, bottom);
   ctx.closePath();
-
   ctx.fill();
 
   ctx.restore();
-
 }
+
+function buildQuadtree() {
+  quadtree = d3.quadtree()
+    .x(d => d._x)
+    .y(d => d._y)
+    .addAll(visibleData);
+}
+
+canvas.addEventListener("mousemove", event => {
+  if (currentTab !== "overview") return;
+  if (!quadtree) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = event.clientX - rect.left;
+  const my = event.clientY - rect.top;
+
+  const d = quadtree.find(mx, my, 12);
+
+  if (!d) {
+    tooltip.style("display", "none");
+    return;
+  }
+
+  tooltip
+    .style("display", "block")
+    .style("left", `${event.clientX + 16}px`)
+    .style("top", `${event.clientY + 16}px`)
+    .html(makeTooltip(d));
+});
+
+function makeTooltip(d) {
+  const eventType = d.action || "unknown";
+  const dateTime = d.first_time || d.time || d.time_bin || "";
+
+  const sender =
+    d.sender_name ||
+    d.sender_id ||
+    d.sender_department ||
+    "Unknown sender";
+
+  let receivers = "Unknown receiver";
+
+  if (d.receiver_names && d.receiver_names.length) {
+    receivers = d.receiver_names.join(", ");
+  } else if (d.receivers && d.receivers.length) {
+    receivers = d.receivers.map(r => r.name || r.id || r).join(", ");
+  } else if (d.receiver_ids && d.receiver_ids.length) {
+    receivers = d.receiver_ids.join(", ");
+  } else if (d.receiver_department) {
+    receivers = d.receiver_department;
+  } else if (d.receiver_departments && d.receiver_departments.length) {
+    receivers = d.receiver_departments.join(", ");
+  }
+
+  return `
+    <b>Event type:</b> ${eventType}<br>
+    <b>Sender:</b> ${sender}<br>
+    <b>Receiver:</b> ${receivers}<br>
+    <b>Date & time:</b> ${dateTime}<br>
+    <b>Count:</b> ${d.count || 1}
+  `;
+}
+
+/* ---------- Person matching ---------- */
+
+function normalizeEntityId(id) {
+  return (id || "")
+    .replace(/^Agent\//, "")
+    .toLowerCase();
+}
+
+function isPersonSender(e, q) {
+  const target = normalizeEntityId(q);
+  const senderId = normalizeEntityId(e.sender_id);
+  const senderName = (e.sender_name || "").toLowerCase();
+
+  return (
+    senderId.includes(target) ||
+    senderName.includes(target)
+  );
+}
+
+function isPersonReceiver(e, q) {
+  const target = normalizeEntityId(q);
+
+  return (e.receivers || []).some(r => {
+    const rid = normalizeEntityId(r.id);
+    const rname = (r.name || "").toLowerCase();
+
+    return (
+      rid.includes(target) ||
+      rname.includes(target)
+    );
+  });
+}
+
+/* ---------- Overview person trace ---------- */
+
+function getPersonAnchorLevel1(d) {
+  const w = d._segW || 2;
+  const h = d._segH || 4;
+  const r = Math.max(h, 4);
+
+  if (d._isSenderTrace && !d._isReceiverTrace) {
+    return {
+      x: d._x - w / 2 + r * 0.35,
+      y: d._y - h / 2 - r * 2.0
+    };
+  }
+
+  if (d._isReceiverTrace && !d._isSenderTrace) {
+    return {
+      x: d._x + w / 2 - r * 0.25,
+      y: d._y + h / 2 + r * 2.8
+    };
+  }
+
+  return {
+    x: d._x,
+    y: d._y
+  };
+}
+
+function makeLevel1Key(d) {
+  return [
+    d.time_bin,
+    d.sender_department,
+    d.receiver_department,
+    d.action
+  ].join("||");
+}
+
+function makeEventToLevel1Key(e, receiverDepartment) {
+  return [
+    e.time_bin,
+    e.sender_department,
+    receiverDepartment,
+    e.action
+  ].join("||");
+}
+
+function renderTrace() {
+  currentTab = "overview";
+  currentLevel = 1;
+  currentData = level1Data;
+
+  level1Data.forEach(d => {
+    d._highlightPerson = false;
+    d._isSenderTrace = false;
+    d._isReceiverTrace = false;
+  });
+
+  render();
+
+  const query = d3.select("#overviewPersonInput")
+    .property("value")
+    .trim()
+    .toLowerCase();
+
+  if (!query) return;
+
+  const nodeByKey = new Map();
+
+  visibleData.forEach(d => {
+    nodeByKey.set(makeLevel1Key(d), d);
+  });
+
+  const matchedEvents = eventsData
+    .filter(e => isPersonSender(e, query) || isPersonReceiver(e, query))
+    .filter(eventPassesCurrentFilters)
+    .sort((a, b) => a.date - b.date);
+
+  const traceNodes = [];
+
+  matchedEvents.forEach(e => {
+    const senderMatch = isPersonSender(e, query);
+    const receiverMatch = isPersonReceiver(e, query);
+
+    const receiverDepartments =
+      e.receiver_departments && e.receiver_departments.length
+        ? e.receiver_departments
+        : ["Unknown Receiver Department"];
+
+    receiverDepartments.forEach(receiverDept => {
+      const key = makeEventToLevel1Key(e, receiverDept);
+      const node = nodeByKey.get(key);
+
+      if (!node) return;
+
+      node._highlightPerson = true;
+      if (senderMatch) node._isSenderTrace = true;
+      if (receiverMatch) node._isReceiverTrace = true;
+
+      if (!traceNodes.includes(node)) {
+        traceNodes.push(node);
+      }
+    });
+  });
+
+  traceNodes.sort((a, b) => a.date - b.date);
+
+  ctx.clearRect(0, 0, width, height);
+  drawCanvasPoints();
+
+  svg.selectAll(".trace-layer").remove();
+
+  const g = svg.append("g")
+    .attr("class", "trace-layer");
+
+  if (!traceNodes.length) return;
+
+  const tracePoints = traceNodes.map(d => {
+    const anchor = getPersonAnchorLevel1(d);
+    return {
+      ...d,
+      anchorX: anchor.x,
+      anchorY: anchor.y
+    };
+  });
+
+  const line = d3.line()
+    .x(d => d.anchorX)
+    .y(d => d.anchorY)
+    .curve(d3.curveMonotoneX);
+
+  g.append("path")
+    .datum(tracePoints)
+    .attr("d", line)
+    .attr("fill", "none")
+    .attr("stroke", "#9aa0a6")
+    .attr("stroke-width", 1.2)
+    .attr("opacity", 0.45)
+    .attr("stroke-linecap", "round")
+    .attr("stroke-linejoin", "round");
+
+  drawPersonEventTimeline(matchedEvents, query);
+}
+
+function makeEventTimelineTooltip(d, query) {
+  const personName = getDisplayPersonNameFromEvent(d, query);
+
+  const role = isPersonSender(d, query) && !isPersonReceiver(d, query)
+    ? "sender"
+    : isPersonReceiver(d, query) && !isPersonSender(d, query)
+      ? "receiver"
+      : "self / both";
+
+  const sender =
+    d.sender_name ||
+    d.sender_id ||
+    d.sender_department ||
+    "Unknown sender";
+  
+  const files = extractFileNames(d);
+  const fileHtml = files.length
+  ? `<b>File:</b> ${files.join(", ")}<br>`
+  : "";
+
+  let receivers = "Unknown receiver";
+
+  if (d.receivers && d.receivers.length) {
+    receivers = d.receivers.map(r => r.name || r.id || r).join(", ");
+  } else if (d.receiver_ids && d.receiver_ids.length) {
+    receivers = d.receiver_ids.join(", ");
+  } else if (d.receiver_departments && d.receiver_departments.length) {
+    receivers = d.receiver_departments.join(", ");
+  }
+
+  return `
+    <b>Person:</b> <b>${personName}</b><br>
+    ${fileHtml}
+    <b>Event type:</b> ${d.action || "unknown"}<br>
+    <b>Date & time:</b> ${d.time || d.first_time || d.time_bin || ""}
+  `;
+}
+
+function getDisplayPersonNameFromEvent(e, query) {
+  const q = query.toLowerCase();
+
+  if (
+    (e.sender_id || "").toLowerCase().includes(q) ||
+    (e.sender_name || "").toLowerCase().includes(q)
+  ) {
+    return e.sender_name || e.sender_id || query;
+  }
+
+  for (const r of (e.receivers || [])) {
+    if (
+      (r.id || "").toLowerCase().includes(q) ||
+      (r.name || "").toLowerCase().includes(q)
+    ) {
+      return r.name || r.id || query;
+    }
+  }
+
+  return query;
+}
+
+function drawPersonEventTimeline(events, query) {
+  svg.selectAll(".person-event-timeline").remove();
+
+  if (!events || !events.length) return;
+
+  const g = svg.append("g")
+    .attr("class", "person-event-timeline");
+
+  const y = 62;
+  const tickY = y + 18;
+
+  g.append("text")
+    .attr("x", margin.left)
+    .attr("y", 22)
+    .attr("font-size", 13)
+    .attr("font-weight", "bold")
+    .attr("fill", "#111")
+    .text(`Person event timeline: ${query}`);
+
+  g.append("line")
+    .attr("x1", margin.left)
+    .attr("x2", width - margin.right)
+    .attr("y1", y)
+    .attr("y2", y)
+    .attr("stroke", "#777")
+    .attr("stroke-width", 1)
+    .attr("opacity", 0.5);
+
+  g.selectAll("circle.event-dot")
+    .data(events)
+    .enter()
+    .append("circle")
+    .attr("class", "event-dot")
+    .attr("cx", d => xScale(d.date))
+    .attr("cy", d => {
+      const sender = isPersonSender(d, query);
+      const receiver = isPersonReceiver(d, query);
+
+      if (sender && !receiver) return y - 12;
+      if (receiver && !sender) return y + 12;
+      return y;
+    })
+    .attr("r", 3.2)
+    .attr("fill", d => colorScale(d.action))
+    .attr("opacity", 0.9)
+    .on("mousemove", function(event, d) {
+      d3.select(this)
+        .attr("r", 5)
+        .attr("stroke", "#111")
+        .attr("stroke-width", 1.2);
+
+      tooltip
+        .style("display", "block")
+        .style("left", `${event.clientX + 16}px`)
+        .style("top", `${event.clientY + 16}px`)
+        .html(makeEventTimelineTooltip(d, query));
+    })
+    .on("mouseleave", function() {
+      d3.select(this)
+        .attr("r", 3.2)
+        .attr("stroke", "none");
+
+      tooltip.style("display", "none");
+    });
+
+  g.selectAll("line.event-stem")
+    .data(events)
+    .enter()
+    .append("line")
+    .attr("class", "event-stem")
+    .attr("x1", d => xScale(d.date))
+    .attr("x2", d => xScale(d.date))
+    .attr("y1", y)
+    .attr("y2", d => {
+      const sender = isPersonSender(d, query);
+      const receiver = isPersonReceiver(d, query);
+
+      if (sender && !receiver) return y - 12;
+      if (receiver && !sender) return y + 12;
+      return y;
+    })
+    .attr("stroke", "#aaa")
+    .attr("stroke-width", 0.6)
+    .attr("opacity", 0.45);
+
+  const grouped = d3.group(events, d => d.action);
+
+  const actionSummary = Array.from(grouped, ([action, arr]) => ({
+    action,
+    count: arr.length
+  }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  const legend = g.append("g")
+    .attr("transform", `translate(${margin.left}, ${tickY + 22})`);
+
+  const legendItems = legend.selectAll("g.legend-item")
+    .data(actionSummary)
+    .enter()
+    .append("g")
+    .attr("class", "legend-item")
+    .attr("transform", (d, i) => {
+      const col = i % 5;
+      const row = Math.floor(i / 5);
+      return `translate(${col * 170}, ${row * 16})`;
+    });
+
+  legendItems.append("circle")
+    .attr("cx", 0)
+    .attr("cy", -3)
+    .attr("r", 4)
+    .attr("fill", d => colorScale(d.action))
+    .attr("opacity", 0.9);
+
+  legendItems.append("text")
+    .attr("x", 8)
+    .attr("y", 0)
+    .attr("font-size", 10)
+    .attr("fill", "#111")
+    .text(d => `${d.action} (${d.count})`);
+
+  g.append("text")
+    .attr("x", margin.left - 8)
+    .attr("y", y - 12)
+    .attr("text-anchor", "end")
+    .attr("font-size", 10)
+    .attr("fill", "#aaa")
+    .text("sender");
+
+  g.append("text")
+    .attr("x", margin.left - 8)
+    .attr("y", y + 15)
+    .attr("text-anchor", "end")
+    .attr("font-size", 10)
+    .attr("fill", "#aaa")
+    .text("receiver");
+}
+
+/* ---------- Daily graph filtering ---------- */
 
 function getTraceWindow() {
   const dateValue = d3.select("#traceDateFilter").property("value");
@@ -1299,813 +2657,396 @@ function getTraceWindow() {
   };
 }
 
-function getInteractedPeopleInWindow(events, query, start, end) {
-  const q = query.toLowerCase();
-  const people = new Map();
+function buildAnchorWindowsForRoot(events, rootQuery, traceDate, hoursBack) {
+  const q = rootQuery.toLowerCase();
 
-  events.forEach(e => {
-    if (e.date < start || e.date > end) return;
+  const dayStart = new Date(`${traceDate}T00:00:00`);
+  const dayEnd = new Date(`${traceDate}T23:59:59`);
 
-    const targetIsSender = isPersonSender(e, q);
-    const targetIsReceiver = isPersonReceiver(e, q);
+  const rootDayEvents = events
+    .filter(e => {
+      if (!e.date) return false;
+      if (e.date < dayStart || e.date > dayEnd) return false;
+      return isPersonSender(e, q) || isPersonReceiver(e, q);
+    })
+    .sort((a, b) => a.date - b.date);
 
-    if (!targetIsSender && !targetIsReceiver) return;
+  if (!rootDayEvents.length) return [];
 
-    if (!targetIsSender && e.sender_id) {
-      people.set(e.sender_id.toLowerCase(), {
-        id: e.sender_id,
-        name: e.sender_name,
-        department: e.sender_department
-      });
-    }
-
-    (e.receivers || []).forEach(r => {
-      const isTarget =
-        (r.id || "").toLowerCase().includes(q) ||
-        (r.name || "").toLowerCase().includes(q);
-
-      if (!isTarget && r.id) {
-        people.set(r.id.toLowerCase(), {
-          id: r.id,
-          name: r.name,
-          department: r.department
-        });
-      }
-    });
-  });
-
-  return Array.from(people.values());
-}
-
-function buildWindowInteractionTraceEvents(events, rootQueries, traceDate, hoursBack) {
-  const targetQuery = rootQueries[0].toLowerCase();
-
-  dailyGraphAnchorWindows = buildAnchorWindowsForRoot(
-    events,
-    targetQuery,
-    traceDate,
-    hoursBack
+  const rawStart = new Date(
+    dayEnd.getTime() - hoursBack * 60 * 60 * 1000
   );
 
-  const selectedEventIds = new Set();
+  const start = rawStart < dayStart ? dayStart : rawStart;
 
-  events.forEach(e => {
-    if (!eventInAnyAnchorWindow(e, dailyGraphAnchorWindows)) return;
-
-    // 初始 root circle 只画 root person 在这些窗口里的活动
-    if (isPersonSender(e, targetQuery) || isPersonReceiver(e, targetQuery)) {
-      selectedEventIds.add(e.id);
-    }
-  });
-
-  return events.filter(e => selectedEventIds.has(e.id));
+  return [{
+    anchorEventId: "day-window",
+    anchorDate: dayEnd,
+    start,
+    end: dayEnd
+  }];
 }
 
-function getEventsForPersonWithinRootWindows(allBaseEvents, personQuery) {
+function buildClickedWindowForExpansion(clickedDate, parentWindow) {
+  const clickedTime = clickedDate instanceof Date
+    ? clickedDate
+    : new Date(clickedDate);
+
+  if (Number.isNaN(clickedTime.getTime())) {
+    return parentWindow;
+  }
+
+  if (dailyGraphMode === "person") {
+    const traceDate = d3.select("#traceDateFilter").property("value");
+    const hoursBack =
+      +d3.select("#hoursBackFilter").property("value") || 24;
+
+    if (!traceDate) return parentWindow;
+
+    const dayStart = new Date(`${traceDate}T00:00:00`);
+    const dayEnd = new Date(`${traceDate}T23:59:59`);
+
+    const rawStart = new Date(
+      dayEnd.getTime() - hoursBack * 60 * 60 * 1000
+    );
+
+    const baseStart = rawStart < dayStart ? dayStart : rawStart;
+
+    return {
+      // 关键：outer 的 start 和 inner 一样
+      start: baseStart,
+
+      // 关键：outer 的 end 才是 clickedTime
+      end: clickedTime
+    };
+  }
+
+  if (dailyGraphMode === "file") {
+    const fileWindow = getFileDateWindow();
+
+    return {
+      start: fileWindow.start || parentWindow.start,
+      end: clickedTime
+    };
+  }
+
+  return parentWindow;
+}
+
+function buildInnerWindowForExpansion(clickedDate, parentWindow) {
+  if (dailyGraphMode === "person") {
+    const traceDate = d3.select("#traceDateFilter").property("value");
+    const hoursBack =
+      +d3.select("#hoursBackFilter").property("value") || 24;
+
+    if (!traceDate) return parentWindow;
+
+    const dayStart = new Date(`${traceDate}T00:00:00`);
+    const dayEnd = new Date(`${traceDate}T23:59:59`);
+
+    const rawStart = new Date(
+      dayEnd.getTime() - hoursBack * 60 * 60 * 1000
+    );
+
+    return {
+      start: rawStart < dayStart ? dayStart : rawStart,
+      end: dayEnd
+    };
+  }
+
+  if (dailyGraphMode === "file") {
+    const fileWindow = getFileDateWindow();
+
+    return {
+      start: fileWindow.start || parentWindow.start,
+      end: fileWindow.end || parentWindow.end
+    };
+  }
+
+  return parentWindow;
+}
+
+function toDateObj(d) {
+  if (!d) return null;
+
+  const t = d instanceof Date ? d : new Date(d);
+
+  if (Number.isNaN(t.getTime())) return null;
+
+  return t;
+}
+
+function eventInWindow(e, windowObj) {
+  if (!e || !e.date || !windowObj) return false;
+
+  const t = toDateObj(e.date);
+  const start = toDateObj(windowObj.start);
+  const end = toDateObj(windowObj.end);
+
+  if (!t || !start || !end) return false;
+
+  return t >= start && t <= end;
+}
+
+function eventInAnyAnchorWindow(e, windows) {
+  return (windows || []).some(w => eventInWindow(e, w));
+}
+
+function getAnchorWindowForEvent(e) {
+  if (!e || !e.date) return null;
+
+  return (dailyGraphAnchorWindows || []).find(w =>
+    eventInWindow(e, w)
+  ) || null;
+}
+
+function getEventsForPersonWithinOneRootWindow(personQuery, windowObj, events) {
   const q = personQuery.toLowerCase();
 
-  return allBaseEvents.filter(e => {
+  return events.filter(e => {
+    if (!e || !e.date) return false;
+
+    const isTargetPerson =
+      isPersonSender(e, q) ||
+      isPersonReceiver(e, q);
+
+    if (!isTargetPerson) return false;
+
+    if (dailyGraphMode === "person") {
+      if (!windowObj) return false;
+      return eventInWindow(e, windowObj);
+    }
+
+    if (dailyGraphMode === "file") {
+      if (!windowObj) return false;
+      return eventInWindow(e, windowObj);
+    }
+
+    return false;
+  });
+}
+
+function getEventsForPersonWithinRootWindows(personQuery) {
+  const q = personQuery.toLowerCase();
+
+  return dailyGraphBaseEvents.filter(e => {
     if (!eventInAnyAnchorWindow(e, dailyGraphAnchorWindows)) return false;
     return isPersonSender(e, q) || isPersonReceiver(e, q);
   });
 }
 
-function buildQuadtree() {
 
-  quadtree = d3.quadtree()
-
-    .x(d => d._x)
-
-    .y(d => d._y)
-
-    .addAll(visibleData);
-
-}
-
-canvas.addEventListener("mousemove", event => {
-
-  if (currentTab !== "overview") return;
-
-  if (!quadtree) return;
-
-  const rect = canvas.getBoundingClientRect();
-
-  const mx = event.clientX - rect.left;
-
-  const my = event.clientY - rect.top;
-
-  const d = quadtree.find(mx, my, 12);
-
-  if (!d) {
-
-    tooltip.style("display", "none");
-
-    return;
-
-  }
-
-  tooltip
-
-    .style("display", "block")
-
-    .style("left", `${event.clientX + 16}px`)
-
-    .style("top", `${event.clientY + 16}px`)
-
-    .html(makeTooltip(d));
-
-});
-
-function makeTooltip(d) {
-
-  const eventType = d.action || "unknown";
-
-  const dateTime = d.first_time || d.time || d.time_bin || "";
-
-  const sender =
-
-    d.sender_name ||
-
-    d.sender_id ||
-
-    d.sender_department ||
-
-    "Unknown sender";
-
-  let receivers = "Unknown receiver";
-
-  if (d.receiver_names && d.receiver_names.length) {
-
-    receivers = d.receiver_names.join(", ");
-
-  } else if (d.receivers && d.receivers.length) {
-
-    receivers = d.receivers.map(r => r.name || r.id || r).join(", ");
-
-  } else if (d.receiver_ids && d.receiver_ids.length) {
-
-    receivers = d.receiver_ids.join(", ");
-
-  } else if (d.receiver_department) {
-
-    receivers = d.receiver_department;
-
-  } else if (d.receiver_departments && d.receiver_departments.length) {
-
-    receivers = d.receiver_departments.join(", ");
-
-  }
-
-  return `
-
-    <b>Event type:</b> ${eventType}<br>
-
-    <b>Sender:</b> ${sender}<br>
-
-    <b>Receiver:</b> ${receivers}<br>
-
-    <b>Date & time:</b> ${dateTime}<br>
-
-    <b>Count:</b> ${d.count || 1}
-
-  `;
-
-}
-
-// ---------- Person trace on overview ----------
-
-function isPersonSender(d, query) {
-
-  const q = query.toLowerCase();
-
-  return (
-
-    (d.sender_id || "").toLowerCase().includes(q) ||
-
-    (d.sender_name || "").toLowerCase().includes(q)
-
-  );
-
-}
-
-function isPersonReceiver(d, query) {
-
-  const q = query.toLowerCase();
-
-  return (
-
-    (d.receiver_ids || []).some(id =>
-
-      id.toLowerCase().includes(q)
-
-    ) ||
-
-    (d.receivers || []).some(r =>
-
-      (r.id || "").toLowerCase().includes(q) ||
-
-      (r.name || "").toLowerCase().includes(q)
-
-    )
-
-  );
-
-}
-
-function getPersonAnchorLevel1(d) {
-
-  const w = d._segW || 2;
-
-  const h = d._segH || 4;
-
-  const r = Math.max(h, 4);
-
-  if (d._isSenderTrace && !d._isReceiverTrace) {
-
-    return {
-
-      x: d._x - w / 2 + r * 0.35,
-
-      y: d._y - h / 2 - r * 2.0
-
-    };
-
-  }
-
-  if (d._isReceiverTrace && !d._isSenderTrace) {
-
-    return {
-
-      x: d._x + w / 2 - r * 0.25,
-
-      y: d._y + h / 2 + r * 2.8
-
-    };
-
-  }
-
-  return {
-
-    x: d._x,
-
-    y: d._y
-
-  };
-
-}
-
-function makeLevel1Key(d) {
-
-  return [
-
-    d.time_bin,
-
-    d.sender_department,
-
-    d.receiver_department,
-
-    d.action
-
-  ].join("||");
-
-}
-
-function makeEventToLevel1Key(e, receiverDepartment) {
-
-  return [
-
-    e.time_bin,
-
-    e.sender_department,
-
-    receiverDepartment,
-
-    e.action
-
-  ].join("||");
-
-}
-
-function renderTrace() {
-
-  currentTab = "overview";
-
-  currentLevel = 1;
-
-  currentData = level1Data;
-
-  level1Data.forEach(d => {
-
-    d._highlightPerson = false;
-
-    d._isSenderTrace = false;
-
-    d._isReceiverTrace = false;
-
-  });
-
-  render();
-
-  const query = d3.select("#overviewPersonInput")
-  .property("value")
-  .trim()
-  .toLowerCase();
-
-  if (!query) return;
-
-  const nodeByKey = new Map();
-
-  visibleData.forEach(d => {
-
-    nodeByKey.set(makeLevel1Key(d), d);
-
-  });
-
-  const matchedEvents = eventsData.filter(e => {
-
-    return isPersonSender(e, query) || isPersonReceiver(e, query);
-
-  })
-
-  .filter(eventPassesCurrentFilters)
-
-  .sort((a, b) => a.date - b.date);
-
-  const traceNodes = [];
-
-  matchedEvents.forEach(e => {
-
-    const senderMatch = isPersonSender(e, query);
-
-    const receiverMatch = isPersonReceiver(e, query);
-
-    const receiverDepartments =
-
-      e.receiver_departments && e.receiver_departments.length
-
-        ? e.receiver_departments
-
-        : ["Unknown Receiver Department"];
-
-    receiverDepartments.forEach(receiverDept => {
-
-      const key = makeEventToLevel1Key(e, receiverDept);
-
-      const node = nodeByKey.get(key);
-
-      if (!node) return;
-
-      node._highlightPerson = true;
-
-      if (senderMatch) node._isSenderTrace = true;
-
-      if (receiverMatch) node._isReceiverTrace = true;
-
-      if (!traceNodes.includes(node)) {
-
-        traceNodes.push(node);
-
-      }
-
-    });
-
-  });
-
-  traceNodes.sort((a, b) => a.date - b.date);
-
-  ctx.clearRect(0, 0, width, height);
-
-  drawCanvasPoints();
-
-  svg.selectAll(".trace-layer").remove();
-
-  const g = svg.append("g")
-
-    .attr("class", "trace-layer");
-
-  if (!traceNodes.length) return;
-
-  const tracePoints = traceNodes.map(d => {
-
-    const anchor = getPersonAnchorLevel1(d);
-
-    return {
-
-      ...d,
-
-      anchorX: anchor.x,
-
-      anchorY: anchor.y
-
-    };
-
-  });
-
-  const line = d3.line()
-
-    .x(d => d.anchorX)
-
-    .y(d => d.anchorY)
-
-    .curve(d3.curveMonotoneX);
-
-  g.append("path")
-
-    .datum(tracePoints)
-
-    .attr("d", line)
-
-    .attr("fill", "none")
-
-    .attr("stroke", "#9aa0a6")
-
-    .attr("stroke-width", 1.2)
-
-    .attr("opacity", 0.45)
-
-    .attr("stroke-linecap", "round")
-
-    .attr("stroke-linejoin", "round");
-
-  drawPersonEventTimeline(matchedEvents, query);
-
-}
-
-function updateToolbarByTab() {
-  d3.select("#overviewControls")
-    .style("display", currentTab === "overview" ? "flex" : "none");
-
-  d3.select("#dailyGraphControls")
-    .style("display", currentTab === "dailyGraph" ? "flex" : "none");
-}
-
-function makeEventTimelineTooltip(d, query) {
-
-  const role = isPersonSender(d, query) && !isPersonReceiver(d, query)
-
-    ? "sender"
-
-    : isPersonReceiver(d, query) && !isPersonSender(d, query)
-
-      ? "receiver"
-
-      : "self / both";
-
-  const sender =
-
-    d.sender_name ||
-
-    d.sender_id ||
-
-    d.sender_department ||
-
-    "Unknown sender";
-
-  let receivers = "Unknown receiver";
-
-  if (d.receivers && d.receivers.length) {
-
-    receivers = d.receivers.map(r => r.name || r.id || r).join(", ");
-
-  } else if (d.receiver_ids && d.receiver_ids.length) {
-
-    receivers = d.receiver_ids.join(", ");
-
-  } else if (d.receiver_departments && d.receiver_departments.length) {
-
-    receivers = d.receiver_departments.join(", ");
-
-  }
-
-  return `
-
-    <b>Person role:</b> ${role}<br>
-
-    <b>Event type:</b> ${d.action || "unknown"}<br>
-
-    <b>Sender:</b> ${sender}<br>
-
-    <b>Receiver:</b> ${receivers}<br>
-
-    <b>Date & time:</b> ${d.time || d.first_time || d.time_bin || ""}
-
-  `;
-
-}
-
-function drawPersonEventTimeline(events, query) {
-
-  svg.selectAll(".person-event-timeline").remove();
-
-  if (!events || !events.length) return;
-
-  const g = svg.append("g")
-
-    .attr("class", "person-event-timeline");
-
-  const y = 62;
-
-  const tickY = y + 18;
-
-  g.append("text")
-
-    .attr("x", margin.left)
-
-    .attr("y", 22)
-
-    .attr("font-size", 13)
-
-    .attr("font-weight", "bold")
-
-    .attr("fill", "#111")
-
-    .text(`Person event timeline: ${query}`);
-
-  g.append("line")
-
-    .attr("x1", margin.left)
-
-    .attr("x2", width - margin.right)
-
-    .attr("y1", y)
-
-    .attr("y2", y)
-
-    .attr("stroke", "#777")
-
-    .attr("stroke-width", 1)
-
-    .attr("opacity", 0.5);
-
-  g.selectAll("circle.event-dot")
-
-    .data(events)
-
-    .enter()
-
-    .append("circle")
-
-    .attr("class", "event-dot")
-
-    .attr("cx", d => xScale(d.date))
-
-    .attr("cy", d => {
-
-      const isSender = isPersonSender(d, query);
-
-      const isReceiver = isPersonReceiver(d, query);
-
-      if (isSender && !isReceiver) return y - 12;
-
-      if (isReceiver && !isSender) return y + 12;
-
-      return y;
-
-    })
-
-    .attr("r", 3.2)
-
-    .attr("fill", d => colorScale(d.action))
-
-    .attr("opacity", 0.9)
-
-    .on("mousemove", function(event, d) {
-
-      d3.select(this)
-
-        .attr("r", 1)
-
-        .attr("stroke", "#111")
-
-        .attr("stroke-width", 1.2);
-
-      tooltip
-
-        .style("display", "block")
-
-        .style("left", `${event.clientX + 16}px`)
-
-        .style("top", `${event.clientY + 16}px`)
-
-        .html(makeEventTimelineTooltip(d, query));
-
-    })
-
-    .on("mouseleave", function() {
-
-      d3.select(this)
-
-        .attr("r", 3.2)
-
-        .attr("stroke", "none");
-
-      tooltip.style("display", "none");
-
-    });
-
-  g.selectAll("line.event-stem")
-
-    .data(events)
-
-    .enter()
-
-    .append("line")
-
-    .attr("class", "event-stem")
-
-    .attr("x1", d => xScale(d.date))
-
-    .attr("x2", d => xScale(d.date))
-
-    .attr("y1", y)
-
-    .attr("y2", d => {
-
-      const isSender = isPersonSender(d, query);
-
-      const isReceiver = isPersonReceiver(d, query);
-
-      if (isSender && !isReceiver) return y - 12;
-
-      if (isReceiver && !isSender) return y + 12;
-
-      return y;
-
-    })
-
-    .attr("stroke", "#aaa")
-
-    .attr("stroke-width", 0.6)
-
-    .attr("opacity", 0.45);
-
-  const grouped = d3.group(events, d => d.action);
-
-  const actionSummary = Array.from(grouped, ([action, arr]) => ({
-
-    action,
-
-    count: arr.length
-
-  })).sort((a, b) => b.count - a.count).slice(0, 8);
-
-  const legend = g.append("g")
-
-    .attr("transform", `translate(${margin.left}, ${tickY + 22})`);
-
-  const legendItems = legend.selectAll("g.legend-item")
-
-    .data(actionSummary)
-
-    .enter()
-
-    .append("g")
-
-    .attr("class", "legend-item")
-
-    .attr("transform", (d, i) => {
-
-      const col = i % 5;
-
-      const row = Math.floor(i / 5);
-
-      return `translate(${col * 170}, ${row * 16})`;
-
-    });
-
-  legendItems.append("circle")
-
-    .attr("cx", 0)
-
-    .attr("cy", -3)
-
-    .attr("r", 4)
-
-    .attr("fill", d => colorScale(d.action))
-
-    .attr("opacity", 0.9);
-
-  legendItems.append("text")
-
-    .attr("x", 8)
-
-    .attr("y", 0)
-
-    .attr("font-size", 10)
-
-    .attr("fill", "#111")
-
-    .text(d => `${d.action} (${d.count})`);
-
-  g.append("text")
-
-    .attr("x", margin.left - 8)
-
-    .attr("y", y - 12)
-
-    .attr("text-anchor", "end")
-
-    .attr("font-size", 10)
-
-    .attr("fill", "#aaa")
-
-    .text("sender");
-
-  g.append("text")
-
-    .attr("x", margin.left - 8)
-
-    .attr("y", y + 15)
-
-    .attr("text-anchor", "end")
-
-    .attr("font-size", 10)
-
-    .attr("fill", "#aaa")
-
-    .text("receiver");
-
-}
-
-// ---------- Daily graph tab ----------
+/* ---------- Daily graph rendering ---------- */
 
 function renderDailyGraphTab() {
   currentTab = "dailyGraph";
   updateToolbarByTab();
 
-  const rawQuery = d3.select("#personInput")
+  const personQuery = d3.select("#personInput")
     .property("value")
     .trim()
     .toLowerCase();
 
-  if (!rawQuery) {
-    const h = Math.max(document.getElementById("container").clientHeight, 900);
-    height = h;
-    setupCanvasSvg(h);
-    clearCanvasAndSvg(h);
+  const fileQuery = d3.select("#fileInput")
+    .property("value")
+    .trim()
+    .toLowerCase();
 
-    svg.append("text")
-      .attr("x", margin.left)
-      .attr("y", 50)
-      .attr("font-size", 14)
-      .attr("fill", "#111")
-      .text("Enter a person name or id, select a trace date and hours before, then click Trace.");
-
-    return;
-  }
-
-  const traceWindow = getTraceWindow();
-
-  const baseEvents = eventsData
+  dailyGraphBaseEvents = eventsData
     .filter(eventPassesDailyGraphBaseFilters);
-    dailyGraphBaseEvents = baseEvents;
-    dailyGraphRootQuery = rawQuery;
 
-  let filteredEvents = baseEvents;
-  let rootQueries = [rawQuery];
-  let rootKey = rawQuery;
+  let filteredEvents = [];
+  let rootKey = "";
 
-  if (traceWindow) {
-    filteredEvents = buildWindowInteractionTraceEvents(
-      baseEvents,
-      rootQueries,
+  if (dailyGraphMode === "person") {
+    if (!personQuery) {
+      drawDailyMessage("Enter a person name or id, select a trace date and hours before, then click Trace.");
+      return;
+    }
+
+    const traceWindow = getTraceWindow();
+
+    if (!traceWindow) {
+      drawDailyMessage("Select a trace date first.");
+      return;
+    }
+
+    dailyGraphRootQuery = personQuery;
+
+    dailyGraphAnchorWindows = buildAnchorWindowsForRoot(
+      dailyGraphBaseEvents,
+      personQuery,
       traceWindow.dateValue,
       traceWindow.hoursBack
     );
 
+    dailyGraphFocusStack = [personQuery];
+
+    filteredEvents = getEventsForPersonWithinRootWindows(personQuery)
+      .sort((a, b) => a.date - b.date);
+
     rootKey = [
-      rawQuery,
+      "person",
+      personQuery,
       traceWindow.dateValue,
       traceWindow.hoursBack
     ].join("||");
+  } else {
+    if (!fileQuery) {
+      drawDailyMessage("Enter a file name.");
+      return;
+    }
+
+    dailyGraphFileQuery = fileQuery;
+    dailyGraphRootQuery = fileQuery;
+
+// 1. fileEvents: 只包含 file name/path match keyword 的 events
+const fileEvents = dailyGraphBaseEvents
+  .filter(e =>
+    eventPassesFileDateWindow(e) &&
+    isFileEvent(e, fileQuery)
+  )
+  .sort((a, b) => a.date - b.date);
+
+if (!fileEvents.length) {
+  drawDailyMessage("No file-related events in this date range.");
+  return;
+}
+
+// 2. same-day file-related people
+dailyGraphFileFocusByDay = buildFileFocusByDay(fileEvents);
+
+// 3. contextEvents: 只保留这些人在 file match 那一天的 activity
+const contextEvents = dailyGraphBaseEvents
+  .filter(e =>
+    eventPassesFileDateWindow(e) &&
+    eventTouchesFileFocusPeopleOnSameDay(e)
+  )
+  .sort((a, b) => a.date - b.date);
+
+console.log("FILE CONTEXT EVENTS SAME DAY ONLY", {
+  contextEvents: contextEvents.length,
+  samples: contextEvents.slice(0, 20).map(e => ({
+    id: e.id,
+    day: getDailyGraphDayKey(e),
+    time: e.date,
+    action: e.action,
+    sender: e.sender_id,
+    receivers: (e.receivers || []).map(r => r.id),
+    files: extractFileNames(e)
+  }))
+});
+
+if (!contextEvents.length) {
+  drawDailyMessage("Found related people, but no activity events in this date range.");
+  return;
+}
+
+// 4. temporal chains
+dailyGraphFileChainsByDay = buildFileTemporalChainsByDay(fileEvents);
+
+dailyGraphFileRootPeopleByDay = new Map();
+dailyGraphFilePlannedEdgeKeys = new Set();
+
+dailyGraphFileChainsByDay.forEach((chains, day) => {
+  dailyGraphFileRootPeopleByDay.set(
+    day,
+    new Set(chains.map(c => c.rootPersonId))
+  );
+
+  chains.forEach(chain => {
+    (chain.edges || []).forEach(edge => {
+      dailyGraphFilePlannedEdgeKeys.add(edge.key);
+    });
+  });
+});
+
+dailyGraphFocusStack = Array.from(
+  new Set(
+    Array.from(dailyGraphFileRootPeopleByDay.values())
+      .flatMap(set => Array.from(set))
+  )
+);
+
+if (!dailyGraphFocusStack.length) {
+  drawDailyMessage("Found file events, but no root people.");
+  return;
+}
+
+// 5. 真正传给画图的数据
+filteredEvents = contextEvents;
+
+dailyGraphAnchorWindows = [];
+
+dailyGraphConcreteFileWindow = getConcreteFileWindow(filteredEvents);
+const fileWindow = dailyGraphConcreteFileWindow;
+
+rootKey = [
+  "file",
+  fileQuery,
+  fileWindow.start.toISOString(),
+  fileWindow.end.toISOString()
+].join("||");
   }
+
+  dailyGraphFilteredEvents = filteredEvents;
 
   if (rootKey !== dailyGraphLastRootKey) {
     dailyGraphLastRootKey = rootKey;
-    dailyGraphFocusStack = rootQueries;
-    dailyGraphExpansions = [];
-  } else {
-    dailyGraphFocusStack = rootQueries;
   }
 
-  filteredEvents = filteredEvents.sort((a, b) => a.date - b.date);
+  const container = document.getElementById("container");
+  const oldScrollTop = container.scrollTop;
+  const oldScrollLeft = container.scrollLeft;
 
-  const initialH = Math.max(
-    document.getElementById("container").clientHeight,
-    900
-  );
+  const initialH = Math.max(container.clientHeight, 900);
 
   height = initialH;
+  width = container.clientWidth;
+
   setupCanvasSvg(height);
   clearCanvasAndSvg(height);
 
-  const g = drawExpandableDailyGraph(filteredEvents, dailyGraphFocusStack);
-  autoFitDailyGraph(g);
+  dailyGraphExpansions = dailyGraphExpansions.filter(exp =>
+  !exp.autoFileChain
+);
+
+dailyGraphFileAutoExpandedKeys = new Set();
+
+  const g = drawExpandableDailyGraph(
+    filteredEvents,
+    dailyGraphFocusStack
+  );
+
+  container.scrollTop = oldScrollTop;
+  container.scrollLeft = oldScrollLeft;
+
+  console.log("expansions", dailyGraphExpansions.length);
+}
+
+function drawDailyMessage(message) {
+  const h = Math.max(document.getElementById("container").clientHeight, 900);
+
+  height = h;
+  setupCanvasSvg(h);
+  clearCanvasAndSvg(h);
+
+  svg.append("text")
+    .attr("x", margin.left)
+    .attr("y", 50)
+    .attr("font-size", 14)
+    .attr("fill", "#111")
+    .text(message);
 }
 
 function drawExpandableDailyGraph(events, focusStack) {
-  const g = svg.append("g")
-    .attr("class", "expandable-daily-graph");
+  setupDailyGraphZoom();
+
+  zoomLayer = svg.append("g")
+  .attr("class", "daily-graph-zoom-layer");
+
+const g = zoomLayer.append("g")
+  .attr("class", "daily-graph-content");
 
   const eventsByDay = d3.group(events, d => d3.timeFormat("%m-%d")(d.date));
   const days = Array.from(eventsByDay.keys()).sort();
@@ -2116,18 +3057,23 @@ function drawExpandableDailyGraph(events, focusStack) {
       .attr("y", 50)
       .attr("font-size", 14)
       .attr("fill", "#111")
-      .text("No events match the current trace window.");
+      .text("No events match the selected filters.");
     return g;
   }
 
-  const dayX = d3.scalePoint()
-    .domain(days)
-    .range([margin.left, width - margin.right])
-    .padding(0.7);
-
   const innerRadius = DAILY_INNER_RADIUS;
   const outerRadius = DAILY_OUTER_RADIUS;
-  const rowGap = 160;
+
+  const graphDiameter = outerRadius * 2;
+
+  // 控制同一天 column 之间的距离
+  const colGap = graphDiameter + 160;
+
+  // 控制同一天内不同 person 之间的距离
+  const rowGap = graphDiameter + 120;
+
+  const startX = margin.left + outerRadius + 80;
+  const startY = 160 + outerRadius;
 
   g.append("text")
     .attr("x", margin.left)
@@ -2135,21 +3081,34 @@ function drawExpandableDailyGraph(events, focusStack) {
     .attr("font-size", 15)
     .attr("font-weight", "bold")
     .attr("fill", "#111")
-    .text("Window-based interaction trace graph");
+    .text("Root-window upstream trace graph");
 
   g.append("text")
     .attr("x", margin.left)
     .attr("y", 54)
     .attr("font-size", 11)
     .attr("fill", "#555")
-    .text("Roots = selected person plus people who interacted with them in the selected time window.");
+    .text(
+      dailyGraphMode === "file"
+        ? "File-related people are shown with expandable upstream interactions."
+        : "All layers are filtered by the root person's activity-time windows."
+    );
 
-  focusStack.forEach((rootQuery, i) => {
-    const centerY = height * 0.5 + i * rowGap;
+  days.forEach((day, dayIndex) => {
+    const cx = startX + dayIndex * colGap;
 
-    days.forEach(day => {
+    g.append("text")
+      .attr("x", cx)
+      .attr("y", startY - outerRadius - 35)
+      .attr("text-anchor", "middle")
+      .attr("font-size", 12)
+      .attr("font-weight", "bold")
+      .attr("fill", "#111")
+      .text(day);
+
+    focusStack.forEach((rootQuery, personIndex) => {
+      const cy = startY + personIndex * rowGap;
       const dayEvents = eventsByDay.get(day).sort((a, b) => a.date - b.date);
-      const cx = dayX(day);
 
       drawRootDailyLayer(
         g,
@@ -2157,23 +3116,93 @@ function drawExpandableDailyGraph(events, focusStack) {
         rootQuery,
         day,
         cx,
-        centerY,
+        cy,
         innerRadius,
         outerRadius
       );
     });
   });
 
-  dailyGraphExpansions.forEach(exp => {
-    drawNodeExpansion(
-      g,
-      events,
-      exp,
-      DAILY_OUTER_RADIUS - DAILY_INNER_RADIUS
-    );
-  });
+  for (let i = 0; i < dailyGraphExpansions.length; i++) {
+  drawNodeExpansion(g, dailyGraphExpansions[i]);
+}
+  
+  g.selectAll(".daily-node, .daily-upstream-node").raise();
+
+  const contentW =
+    startX + days.length * colGap + margin.right + 200;
+
+  const contentH =
+    startY + focusStack.length * rowGap + margin.bottom + 220;
+
+  setDailyGraphCanvasSize(contentW, contentH);
+
+  if (keepDailyGraphZoom && savedDailyGraphViewCenter) {
+  restoreViewCenterInGraphCoords(savedDailyGraphViewCenter);
+  keepDailyGraphZoom = false;
+  savedDailyGraphViewCenter = null;
+} else {
+  fitDailyGraphToView(zoomLayer);
+}
 
   return g;
+}
+
+function setDailyGraphCanvasSize(contentW, contentH) {
+  const container = document.getElementById("container");
+
+  width = Math.max(container.clientWidth, contentW);
+  height = Math.max(container.clientHeight, contentH);
+
+  setupCanvasSvg(height);
+
+  svg
+    .attr("width", width)
+    .attr("height", height);
+
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+  svg.style.width = width + "px";
+  svg.style.height = height + "px";
+}
+
+function fitDailyGraphToView(g) {
+  if (keepDailyGraphZoom && savedDailyGraphViewCenter) {
+    restoreViewCenterInGraphCoords(savedDailyGraphViewCenter);
+    keepDailyGraphZoom = false;
+    savedDailyGraphViewCenter = null;
+    return;
+  }
+
+  if (!g || !svgZoom || !svg) return;
+
+  const node = g.node();
+  if (!node) return;
+
+  const bbox = node.getBBox();
+
+  if (!bbox.width || !bbox.height) return;
+
+  const container = document.getElementById("container");
+
+  const padding = 80;
+
+  const scale = Math.min(
+    (container.clientWidth - padding * 2) / bbox.width,
+    (container.clientHeight - padding * 2) / bbox.height,
+    1.2
+  );
+
+  const x = container.clientWidth / 2 - scale * (bbox.x + bbox.width / 2);
+  const y = container.clientHeight / 2 - scale * (bbox.y + bbox.height / 2);
+
+  const t = d3.zoomIdentity
+    .translate(x, y)
+    .scale(scale);
+
+  dailyGraphZoomTransform = t;
+
+  svg.call(svgZoom.transform, t);
 }
 
 function autoFitDailyGraph(g) {
@@ -2181,6 +3210,7 @@ function autoFitDailyGraph(g) {
   if (!node) return;
 
   let box;
+
   try {
     box = node.getBBox();
   } catch (err) {
@@ -2200,7 +3230,6 @@ function autoFitDailyGraph(g) {
     offsetX = safeLeft - box.x;
   }
 
-  // 关键：graph 顶部不能碰标题区
   if (box.y < safeTop) {
     offsetY = safeTop - box.y;
   }
@@ -2235,187 +3264,617 @@ function drawRootDailyLayer(
   innerRadius,
   outerRadius
 ) {
-  const focusEvents = dayEvents.filter(e =>
-    isPersonSender(e, focusQuery) || isPersonReceiver(e, focusQuery)
-  );
+  if (dailyGraphMode === "file") {
+  const roots = dailyGraphFileRootPeopleByDay.get(day);
+
+  if (
+    !roots ||
+    !roots.has(normalizeTracePersonId(focusQuery))
+  ) {
+    return;
+  }
+}
+
+let focusEvents = dayEvents.filter(e => {
+  if (dailyGraphMode === "person" && !eventInAnyAnchorWindow(e, dailyGraphAnchorWindows)) {
+    return false;
+  }
+
+  if (dailyGraphMode === "file" && !eventPassesFileDateWindow(e)) {
+    return false;
+  }
+
+  if (dailyGraphMode === "file") {
+    return isPersonSender(e, focusQuery) || isPersonReceiver(e, focusQuery);
+  }
+
+  return isPersonSender(e, focusQuery) || isPersonReceiver(e, focusQuery);
+});
+
+if (dailyGraphMode === "file") {
+  focusEvents = focusEvents.sort((a, b) => {
+    const ta = getEventTimeMs(a);
+    const tb = getEventTimeMs(b);
+    return tb - ta;   // file mode 从最晚的 event 开始画
+  });
+} else {
+  focusEvents = focusEvents.sort((a, b) => getEventTimeMs(a) - getEventTimeMs(b));
+}
 
   if (!focusEvents.length) return;
 
-  g.append("text")
-    .attr("x", cx)
-    .attr("y", cy - outerRadius - 28)
-    .attr("text-anchor", "middle")
-    .attr("font-size", 11)
-    .attr("fill", "#111")
-    .text(day);
+  const outerEventsForArc = focusEvents.filter(e =>
+    getExternalSendersForFocus(e, focusQuery).length > 0
+  );
+
+  drawPersonDisk(
+    g,
+    cx,
+    cy,
+    innerRadius,
+    focusQuery,
+    focusEvents
+  );
+
+  drawOuterActivityArc(
+    g,
+    cx,
+    cy,
+    outerRadius,
+    outerEventsForArc,
+    "#eeeeee"
+  );
 
   g.append("text")
     .attr("x", cx)
-    .attr("y", cy - outerRadius - 12)
-    .attr("text-anchor", "middle")
-    .attr("font-size", 10)
-    .attr("fill", "#555")
-    .text(focusQuery);
-
-  g.append("circle")
-    .attr("cx", cx)
-    .attr("cy", cy)
-    .attr("r", innerRadius)
-    .attr("fill", "none")
-    .attr("stroke", "#e6e6e6")
-    .attr("stroke-width", 1.3);
-
-    [12, 3, 6, 9].forEach(hour => {
-  const p = polar(cx, cy, innerRadius + 12, hourToAngle(hour));
-
-  g.append("text")
-    .attr("x", p.x)
-    .attr("y", p.y)
+    .attr("y", cy)
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
     .attr("font-size", 9)
-    .attr("fill", "#777")
-    .text(hour);
-});
-
-dayEvents.forEach(e => {
-    const angle = dateToDayAngle(e.date);
-    const innerP = polar(cx, cy, innerRadius, angle);
-
-    drawDailyActivityNode(g, innerP.x, innerP.y, e, focusQuery);
-
-    const upstreamSenders = getExternalSendersForFocus(e, focusQuery);
-
-    upstreamSenders.forEach(sender => {
-      const outerP = polar(cx, cy, outerRadius, angle);
-
-      drawClickableUpstreamNode(
-        g,
-        outerP.x,
-        outerP.y,
-        sender,
-        e,
-        focusQuery,
-        angle,
-        1
-      );
-
-      drawTinyArrow(
-        g,
-        outerP.x,
-        outerP.y,
-        innerP.x,
-        innerP.y,
-        "#c04fb3"
-      );
-    });
-  });
-}
-
-function drawNodeExpansion(g, allEvents, exp, expansionGap) {
-  const focusQuery = exp.personId;
-  const day = exp.day;
-  const depth = exp.depth || 1;
-
-  const focusEvents = getEventsForPersonWithinRootWindows(
-  dailyGraphBaseEvents,
-  focusQuery
-);
-
-if (!focusEvents.length) return;
-
-const dayEvents = focusEvents.filter(e =>
-  d3.timeFormat("%m-%d")(e.date) === day
-);
-
-  if (!focusEvents.length) return;
-
-  // smaller expansion ring
-  const innerRadius = DAILY_INNER_RADIUS;
-const outerRadius = DAILY_OUTER_RADIUS;
-
-  // Important:
-  // clicked node should lie on the inner ring at the same timestamp angle.
-  const center = centerFromPointOnCircle(
-    exp.clickedX,
-    exp.clickedY,
-    innerRadius,
-    exp.clickedAngle
-  );
-
-  g.append("circle")
-    .attr("cx", center.x)
-    .attr("cy", center.y)
-    .attr("r", innerRadius)
-    .attr("fill", "none")
-    .attr("stroke", "#e6e6e6")
-    .attr("stroke-width", 1.2)
-    .attr("opacity", 0.9);
-
-  g.append("text")
-    .attr("x", center.x)
-    .attr("y", center.y - outerRadius - 6)
-    .attr("text-anchor", "middle")
-    .attr("font-size", 9)
     .attr("fill", "#555")
-    .text((exp.personName || focusQuery).replace("person:", ""));
+    .attr("pointer-events", "none")
+    .text(
+      focusQuery
+        .replace("person:", "")
+        .replace(/_/g, " ")
+    );
 
-    dayEvents.forEach(e => {
+  const fileRootWindow =
+    dailyGraphMode === "file"
+      ? dailyGraphConcreteFileWindow
+      : null;
+
+  focusEvents.forEach(e => {
     const angle = dateToDayAngle(e.date);
 
-    const innerP = polar(center.x, center.y, innerRadius, angle);
+    const innerP = polar(
+      cx,
+      cy,
+      innerRadius,
+      angle
+    );
 
     drawDailyActivityNode(
       g,
       innerP.x,
       innerP.y,
       e,
-      focusQuery
+      focusQuery,
+      cx,
+      cy,
+      innerRadius,
+      angle
     );
 
-    const upstreamSenders = getExternalSendersForFocus(e, focusQuery);
+    const rootWindow =
+      dailyGraphMode === "person"
+        ? getAnchorWindowForEvent(e)
+        : fileRootWindow;
+
+    if (!rootWindow) {
+      console.warn("SKIP ROOT NODE: no rootWindow", {
+        mode: dailyGraphMode,
+        eventId: e.id,
+        time: e.date,
+        focusQuery
+      });
+      return;
+    }
+
+    const upstreamSenders =
+      getExternalSendersForFocus(e, focusQuery);
+
+    if (upstreamSenders.length > 10) {
+      console.log(
+        "Huge sender list",
+        day,
+        e.id,
+        upstreamSenders.length,
+        e
+      );
+    }
 
     upstreamSenders.forEach(sender => {
-      const outerP = polar(center.x, center.y, outerRadius, angle);
+  const senderId = normalizeTracePersonId(
+    sender.id || sender.name
+  );
 
-      drawClickableUpstreamNode(
-        g,
-        outerP.x,
-        outerP.y,
-        sender,
-        e,
-        focusQuery,
-        angle,
-        depth + 1
-      );
+  const focusId = normalizeTracePersonId(focusQuery);
 
-      drawTinyArrow(
-        g,
-        outerP.x,
-        outerP.y,
-        innerP.x,
-        innerP.y,
-        "#c04fb3"
-      );
+  if (!senderId || !focusId) return;
+
+  const plannedKey = [
+    "edge",
+    day,
+    senderId,
+    focusId,
+    e.id
+  ].join("||");
+
+  // file mode 下，root layer 只画 planner 选中的 edge
+  if (
+    dailyGraphMode === "file" &&
+    !dailyGraphFilePlannedEdgeKeys.has(plannedKey)
+  ) {
+    console.log("DRAW ROOT SKIP NON-PLANNED EDGE", {
+      day,
+      from: senderId,
+      to: focusId,
+      eventId: e.id,
+      time: e.date,
+      plannedKey
     });
+
+    return;
+  }
+
+  const angle = dateToDayAngle(e.date);
+
+  const innerP = polar(
+    cx,
+    cy,
+    innerRadius,
+    angle
+  );
+
+  const outerP = polar(
+    cx,
+    cy,
+    outerRadius,
+    angle
+  );
+
+  const rootWindow =
+    dailyGraphMode === "person"
+      ? getAnchorWindowForEvent(e)
+      : fileRootWindow;
+
+  if (!rootWindow) return;
+
+  const isAutoFileChainEdge =
+    dailyGraphMode === "file" &&
+    isPlannedFileTemporalEdge(
+      day,
+      senderId,
+      focusId,
+      e.id
+    );
+
+  const isSelectedTrace =
+    isExpandedTraceNode(
+      sender,
+      day,
+      outerP.x,
+      outerP.y,
+      rootWindow,
+      e.date
+    ) || isAutoFileChainEdge;
+
+  drawTinyArrow(
+    g,
+    outerP.x,
+    outerP.y,
+    innerP.x,
+    innerP.y,
+    isSelectedTrace
+      ? TRACE_ACTIVE_COLOR
+      : TRACE_INACTIVE_COLOR,
+    isSelectedTrace
+      ? TRACE_ACTIVE_OPACITY
+      : TRACE_INACTIVE_OPACITY,
+    isSelectedTrace ? 2.5 : 0.9,
+    isSelectedTrace ? 7 : 4
+  );
+
+  drawClickableUpstreamNode(
+    g,
+    outerP.x,
+    outerP.y,
+    sender,
+    e,
+    focusQuery,
+    angle,
+    1,
+    rootWindow,
+    cx,
+    cy
+  );
+
+  maybeAutoAddTemporalFileExpansion({
+    sender,
+    e,
+    focusQuery,
+    x: outerP.x,
+    y: outerP.y,
+    angle,
+    depth: 1,
+    rootWindow
+  });
+});
   });
 }
 
-function drawDailyActivityNode(g, x, y, e, focusQuery) {
-  const dept = getPersonDepartmentFromEvent(e, focusQuery);
+function drawNodeExpansion(g, exp) {
+  console.log("DRAW NODE EXPANSION START", {
+    exp,
+    mode: dailyGraphMode
+  });
 
-  g.append("circle")
-    .attr("class", "daily-node")
+  const focusQuery = exp.personId;
+  const day = exp.day;
+  const depth = exp.depth || 1;
+
+  // outer window:
+  // person = clickedTime 往前 hoursBack
+  // file = fileStart → clickedTime
+  const outerWindow = {
+    start: new Date(exp.windowStart),
+    end: new Date(exp.windowEnd)
+  };
+
+  // inner window:
+  // person = selected day 内 hoursBack 范围
+  // file = file date range 完整范围
+  const innerWindow = {
+    start: exp.innerWindowStart
+      ? new Date(exp.innerWindowStart)
+      : outerWindow.start,
+    end: exp.innerWindowEnd
+      ? new Date(exp.innerWindowEnd)
+      : outerWindow.end
+  };
+
+  if (
+    Number.isNaN(outerWindow.start.getTime()) ||
+    Number.isNaN(outerWindow.end.getTime()) ||
+    Number.isNaN(innerWindow.start.getTime()) ||
+    Number.isNaN(innerWindow.end.getTime())
+  ) {
+    console.warn("DRAW NODE EXPANSION RETURN: invalid windows", {
+      exp,
+      outerWindow,
+      innerWindow
+    });
+    return;
+  }
+
+  const sourceEvents =
+  dailyGraphMode === "person"
+    ? dailyGraphBaseEvents
+    : dailyGraphBaseEvents.filter(e =>
+        eventPassesFileDateWindow(e)
+      );
+      
+  const innerEvents = getEventsForPersonWithinOneRootWindow(
+    focusQuery,
+    innerWindow,
+    sourceEvents
+  );
+
+  const outerEvents = getEventsForPersonWithinOneRootWindow(
+    focusQuery,
+    outerWindow,
+    sourceEvents
+  );
+
+  let dayInnerEvents = innerEvents.filter(e =>
+  getDailyGraphDayKey(e) === day
+);
+
+let dayOuterEvents = outerEvents.filter(e =>
+  getDailyGraphDayKey(e) === day
+);
+
+// file mode: 从最晚的 event 开始画/展开
+if (dailyGraphMode === "file") {
+  dayInnerEvents = dayInnerEvents
+    .slice()
+    .sort((a, b) => getEventTimeMs(b) - getEventTimeMs(a));
+
+  dayOuterEvents = dayOuterEvents
+    .slice()
+    .sort((a, b) => getEventTimeMs(b) - getEventTimeMs(a));
+} else {
+  dayInnerEvents = dayInnerEvents
+    .slice()
+    .sort((a, b) => getEventTimeMs(a) - getEventTimeMs(b));
+
+  dayOuterEvents = dayOuterEvents
+    .slice()
+    .sort((a, b) => getEventTimeMs(a) - getEventTimeMs(b));
+}
+
+  console.log("DRAW NODE EXPANSION DATA", {
+    mode: dailyGraphMode,
+    focusQuery,
+    day,
+    outerWindow,
+    innerWindow,
+    sourceEventsCount: sourceEvents.length,
+    innerEventsCount: innerEvents.length,
+    outerEventsCount: outerEvents.length,
+    dayInnerEventsCount: dayInnerEvents.length,
+    dayOuterEventsCount: dayOuterEvents.length,
+    sampleInner: dayInnerEvents.slice(0, 5).map(e => ({
+      time: e.date,
+      action: e.action,
+      sender: e.sender_id,
+      receivers: (e.receivers || []).map(r => r.id)
+    })),
+    sampleOuter: dayOuterEvents.slice(0, 5).map(e => ({
+      time: e.date,
+      action: e.action,
+      sender: e.sender_id,
+      receivers: (e.receivers || []).map(r => r.id)
+    }))
+  });
+
+  // inner 为空就不画这个 expanded graph
+  if (!dayInnerEvents.length) return;
+
+  const outerEventsForArc = dayOuterEvents.filter(e =>
+    getExternalSendersForFocus(e, focusQuery).length > 0
+  );
+
+  const innerRadius = DAILY_INNER_RADIUS;
+  const outerRadius = DAILY_OUTER_RADIUS;
+
+  const center = {
+    x: exp.clickedX,
+    y: exp.clickedY
+  };
+
+  drawPersonDisk(
+    g,
+    center.x,
+    center.y,
+    innerRadius,
+    focusQuery,
+    dayInnerEvents
+  );
+
+  drawOuterActivityArc(
+    g,
+    center.x,
+    center.y,
+    outerRadius,
+    outerEventsForArc,
+    "#eeeeee"
+  );
+
+  g.append("text")
+    .attr("x", center.x)
+    .attr("y", center.y)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("font-size", 9)
+    .attr("fill", "#555")
+    .attr("pointer-events", "none")
+    .text(
+      (exp.personName || focusQuery)
+        .replace("person:", "")
+        .replace(/_/g, " ")
+    );
+
+  // inner node：只按 innerWindow 过滤，不受 clickedTime 影响
+  dayInnerEvents.forEach(e => {
+    const angle = dateToDayAngle(e.date);
+    const innerP = polar(
+      center.x,
+      center.y,
+      innerRadius,
+      angle
+    );
+
+    drawDailyActivityNode(
+      g,
+      innerP.x,
+      innerP.y,
+      e,
+      focusQuery,
+      center.x,
+      center.y,
+      innerRadius,
+      angle
+    );
+  });
+
+  // outer node + arrow：按 outerWindow 过滤，会受 clickedTime 影响
+  dayOuterEvents.forEach(e => {
+    const angle = dateToDayAngle(e.date);
+
+    const innerP = polar(
+      center.x,
+      center.y,
+      innerRadius,
+      angle
+    );
+
+    const outerP = polar(
+      center.x,
+      center.y,
+      outerRadius,
+      angle
+    );
+
+    const upstreamSenders =
+      getExternalSendersForFocus(e, focusQuery);
+
+      upstreamSenders.forEach(sender => {
+  const senderId = normalizeTracePersonId(
+    sender.id || sender.name
+  );
+
+  const focusId = normalizeTracePersonId(focusQuery);
+
+  const plannedKey = [
+    "edge",
+    day,
+    senderId,
+    focusId,
+    e.id
+  ].join("||");
+
+  if (
+    dailyGraphMode === "file" &&
+    !dailyGraphFilePlannedEdgeKeys.has(plannedKey)
+  ) {
+    console.log("DRAW NODE EXPANSION SKIP NON-PLANNED EDGE", {
+      day,
+      from: senderId,
+      to: focusId,
+      eventId: e.id,
+      time: e.date,
+      plannedKey
+    });
+
+    return;
+  }
+
+  const isAutoFileChainEdge =
+    dailyGraphMode === "file" &&
+    isPlannedFileTemporalEdge(
+      day,
+      senderId,
+      focusId,
+      e.id
+    );
+
+  const isSelectedTrace =
+    isExpandedTraceNode(
+      sender,
+      day,
+      outerP.x,
+      outerP.y,
+      outerWindow,
+      e.date
+    ) || isAutoFileChainEdge;
+
+  drawTinyArrow(
+    g,
+    outerP.x,
+    outerP.y,
+    innerP.x,
+    innerP.y,
+    isSelectedTrace
+      ? TRACE_ACTIVE_COLOR
+      : TRACE_INACTIVE_COLOR,
+    isSelectedTrace
+      ? TRACE_ACTIVE_OPACITY
+      : TRACE_INACTIVE_OPACITY,
+    isSelectedTrace ? 2.5 : 0.9,
+    isSelectedTrace ? 7 : 4
+  );
+
+  drawClickableUpstreamNode(
+    g,
+    outerP.x,
+    outerP.y,
+    sender,
+    e,
+    focusQuery,
+    angle,
+    depth + 1,
+    outerWindow,
+    center.x,
+    center.y
+  );
+
+  maybeAutoAddTemporalFileExpansion({
+    sender,
+    e,
+    focusQuery,
+    x: outerP.x,
+    y: outerP.y,
+    angle,
+    depth: depth + 1,
+    rootWindow: outerWindow
+  });
+});
+  });
+}
+
+function drawPersonCenterLabel(g, cx, cy, label) {
+  g.append("text")
+    .attr("x", cx)
+    .attr("y", cy)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("font-size", 9)
+    .attr("font-weight", "bold")
+    .attr("fill", "#555")
+    .text((label || "").replace("person:", ""));
+}
+
+function drawDailyActivityNode(
+  g,
+  x,
+  y,
+  e,
+  focusQuery,
+  cx,
+  cy,
+  radius,
+  angle
+) {
+  const dept = getPersonDepartmentFromEvent(e, focusQuery);
+  const isAgent = isAgentEntity(getEntityTypeForFocus(e, focusQuery));
+  const isFileRelated = isEventFileRelated(e);
+  const size = isFileRelated ? 5 : 3;
+  const color = deptColor(dept || "Unknown Department");
+
+  if (isAgent) {
+    node = g.append("rect")
+    .attr("fill", color)
+    .attr("opacity", isFileRelated ? 1 : 0.95)
+    .attr("class","daily-node")
+    .attr("x", x-size)
+    .attr("y", y-size)
+    .attr("width", size*2)
+    .attr("height", size*2)
+    .attr("rx", 1);
+} else {
+  node = g.append("circle")
+    .attr("fill", color)
+    .attr("opacity", isFileRelated ? 1 : 0.95)
+    .attr("class","daily-node")
     .attr("cx", x)
     .attr("cy", y)
-    .attr("r", 1)
-    .attr("fill", deptColor(dept))
-    .attr("opacity", 0.9)
+    .attr("r", size);
+}
+
+  node
     .on("mousemove", function(event) {
-      d3.select(this)
-        .attr("r", 1)
-        .attr("stroke", "#111")
-        .attr("stroke-width", 1);
+      if (isAgent) {
+        d3.select(this)
+        .attr("x", x-size-1)
+        .attr("y", y-size-1)
+        .attr("width", (size+1)*2)
+        .attr("height", (size+1)*2);
+
+} else {d3.select(this).attr("r", size+2);}
+
+      showTimeLabel(g, cx, cy, radius, angle, e);
 
       tooltip
         .style("display", "block")
@@ -2424,10 +3883,15 @@ function drawDailyActivityNode(g, x, y, e, focusQuery) {
         .html(makeEventTimelineTooltip(e, focusQuery));
     })
     .on("mouseleave", function() {
-      d3.select(this)
-        .attr("r", 1)
-        .attr("stroke", "none");
+      if (isAgent) {
+        d3.select(this)
+        .attr("x", x-size)
+        .attr("y", y-size)
+        .attr("width", size*2)
+        .attr("height", size*2);
+} else {d3.select(this).attr("r", size);}
 
+      hideTimeLabel(g);
       tooltip.style("display", "none");
     });
 }
@@ -2435,22 +3899,18 @@ function drawDailyActivityNode(g, x, y, e, focusQuery) {
 function getPersonDepartmentFromEvent(e, query) {
   const q = query.toLowerCase();
 
-  const senderMatch =
+  if (
     (e.sender_id || "").toLowerCase().includes(q) ||
-    (e.sender_name || "").toLowerCase().includes(q);
-
-  if (senderMatch) {
+    (e.sender_name || "").toLowerCase().includes(q)
+  ) {
     return e.sender_department || "Unknown Department";
   }
 
-  const receivers = e.receivers || [];
-
-  for (const r of receivers) {
-    const receiverMatch =
+  for (const r of (e.receivers || [])) {
+    if (
       (r.id || "").toLowerCase().includes(q) ||
-      (r.name || "").toLowerCase().includes(q);
-
-    if (receiverMatch) {
+      (r.name || "").toLowerCase().includes(q)
+    ) {
       return r.department || "Unknown Department";
     }
   }
@@ -2458,54 +3918,225 @@ function getPersonDepartmentFromEvent(e, query) {
   return "Unknown Department";
 }
 
-function drawClickableUpstreamNode(g, x, y, sender, e, focusQuery, angle, depth) {
-  g.append("circle")
-    .attr("class", "daily-upstream-node")
-    .attr("cx", x)
-    .attr("cy", y)
-    .attr("r", 1)
-    .attr("fill", deptColor(sender.department))
-    .attr("opacity", 0.92)
-    .style("cursor", "pointer")
-    .on("click", function() {
-  const day = d3.timeFormat("%m-%d")(e.date);
-  const focusId = (sender.id || sender.name).toLowerCase();
+function drawClickableUpstreamNode(
+  g,
+  x,
+  y,
+  sender,
+  e,
+  focusQuery,
+  angle,
+  depth,
+  rootWindow,
+  cx,
+  cy
+) {
+  const isFileRelated = isEventFileRelated(e);
+  const size = isFileRelated ? 5 : 3;
+  const isAgent = isAgentEntity(sender.type);
+  const senderDept =
+  sender.department ||
+  e.sender_department ||
+  "Unknown Department";
 
-  const key = `${focusId}-${day}-${x.toFixed(1)}-${y.toFixed(1)}`;
+  const color = deptColor(senderDept);
+  let node;
+  if (isAgent) {
 
-  const sameClicked = dailyGraphExpansions.some(exp => exp.key === key);
+node = g.append("rect")
 
-  // 先清掉当前点击层级以及它后面的所有展开
-  // depth=1 点击第一层外圈 -> 清掉所有 depth>=1
-  // depth=2 点击第二层外圈 -> 保留第一层展开，清掉 depth>=2
-  dailyGraphExpansions = dailyGraphExpansions.filter(exp => {
-    return exp.depth < depth;
+  .attr("class", "daily-upstream-node")
+  .attr("x", x - size)
+  .attr("y", y - size)
+  .attr("width", size * 2)
+  .attr("height", size * 2)
+  .attr("fill", deptColor(sender.department))
+  .attr("rx", 1);
+  
+
+} else {
+
+node = g.append("circle")
+
+  .attr("class", "daily-upstream-node")
+  .attr("cx", x)
+  .attr("cy", y)
+  .attr("r", size)
+  .attr("fill", deptColor(sender.department));
+
+}
+
+  node
+  .attr("fill", color)
+  .attr("opacity", 0.95)
+  .style("cursor", "pointer")
+  .on("click", function() {
+  console.log("OUTER CLICK ENTERED", {
+    sender,
+    e,
+    rootWindow,
+    focusQuery,
+    date: e?.date
   });
 
-  // 如果点的是已经展开的同一个 node，就只收起，不再重新加
-  if (sameClicked) {
-    renderDailyGraphTab();
+  if (!e || !e.date) {
+    console.warn("CLICK RETURN: no event date", { e });
     return;
   }
 
-  dailyGraphExpansions.push({
-    key,
-    personId: focusId,
-    personName: sender.name || sender.id,
+  const day = d3.timeFormat("%m-%d")(e.date);
+
+  const focusId = (sender.id || sender.name || "")
+    .replace(/^Agent\//, "")
+    .toLowerCase();
+
+  if (!focusId) {
+    console.warn("CLICK RETURN: no focusId", { sender });
+    return;
+  }
+
+  if (!rootWindow || !rootWindow.start || !rootWindow.end) {
+    console.warn("CLICK RETURN: no rootWindow", {
+      rootWindow,
+      sender,
+      eventTime: e.date,
+      parentFocus: focusQuery
+    });
+    return;
+  }
+
+  const outerWindow = buildClickedWindowForExpansion(
+    e.date,
+    rootWindow
+  );
+
+  const innerWindow = buildInnerWindowForExpansion(
+    e.date,
+    rootWindow
+  );
+
+  if (
+    !outerWindow ||
+    !outerWindow.start ||
+    !outerWindow.end ||
+    Number.isNaN(new Date(outerWindow.start).getTime()) ||
+    Number.isNaN(new Date(outerWindow.end).getTime())
+  ) {
+    console.warn("CLICK RETURN: invalid outerWindow", {
+      outerWindow,
+      rootWindow,
+      eventTime: e.date
+    });
+    return;
+  }
+
+  if (
+    !innerWindow ||
+    !innerWindow.start ||
+    !innerWindow.end ||
+    Number.isNaN(new Date(innerWindow.start).getTime()) ||
+    Number.isNaN(new Date(innerWindow.end).getTime())
+  ) {
+    console.warn("CLICK RETURN: invalid innerWindow", {
+      innerWindow,
+      rootWindow,
+      eventTime: e.date
+    });
+    return;
+  }
+
+  const clickedTime = e.date.toISOString();
+
+  const key = [
+    focusId,
     day,
-    clickedX: x,
-    clickedY: y,
-    clickedAngle: angle,
-    depth
+    x.toFixed(1),
+    y.toFixed(1),
+    outerWindow.start.toISOString(),
+    clickedTime
+  ].join("||");
+
+  const alreadyExists = dailyGraphExpansions.some(exp =>
+    exp.key === key
+  );
+
+  keepDailyGraphZoom = true;
+
+  if (typeof getCurrentViewCenterInGraphCoords === "function") {
+    savedDailyGraphViewCenter =
+      getCurrentViewCenterInGraphCoords();
+  }
+
+  console.log("CLICKED UPSTREAM NODE", {
+    clickedNodeSender: sender,
+    focusIdForNextLayer: focusId,
+    clickedEventTime: e.date,
+    parentFocus: focusQuery,
+    parentWindow: rootWindow,
+    outerWindow,
+    innerWindow,
+    alreadyExists
   });
+
+  if (!alreadyExists) {
+    dailyGraphExpansions.push({
+      key,
+      personId: focusId,
+      personName: sender.name || sender.id,
+      day,
+      clickedX: x,
+      clickedY: y,
+      clickedAngle: angle,
+      depth,
+      clickedTime,
+
+      // outer node / outer arc 用：
+      // person = clickedTime 往前 hoursBack
+      // file = fileStart → clickedTime
+      windowStart: outerWindow.start.toISOString(),
+      windowEnd: outerWindow.end.toISOString(),
+
+      // inner node / inner disk 用：
+      // person = selected day 内 hoursBack 范围
+      // file = file date range 完整范围
+      innerWindowStart: innerWindow.start.toISOString(),
+      innerWindowEnd: innerWindow.end.toISOString()
+    });
+
+    console.log(
+      "EXPANSIONS AFTER PUSH",
+      dailyGraphExpansions.length,
+      dailyGraphExpansions
+    );
+  }
 
   renderDailyGraphTab();
 })
     .on("mousemove", function(event) {
-      d3.select(this)
-        .attr("r", 1)
-        .attr("stroke", "#111")
-        .attr("stroke-width", 1);
+      if (isAgent) {
+
+d3.select(this)
+
+  .attr("x", x - size - 1)
+
+  .attr("y", y - size - 1)
+
+  .attr("width", (size + 1) * 2)
+
+  .attr("height", (size + 1) * 2);
+
+} else {
+
+d3.select(this)
+
+  .attr("r", size + 2);
+
+}
+
+      showTimeLabel(g, cx, cy, DAILY_OUTER_RADIUS, angle, e);
+
+      const files = extractFileNames(e);
+      const fileHtml = files.length ? `<b>File:</b> ${files.join(", ")}<br>` : "";
 
       tooltip
         .style("display", "block")
@@ -2515,88 +4146,163 @@ function drawClickableUpstreamNode(g, x, y, sender, e, focusQuery, angle, depth)
           <b>Click to expand upstream sender</b><br>
           <b>Sender:</b> ${sender.name || sender.id}<br>
           <b>Department:</b> ${sender.department || "Unknown"}<br>
+          ${fileHtml}
           <b>Event:</b> ${e.action}<br>
-          <b>Time:</b> ${e.time}
+          <b>Time:</b> ${e.time || e.time_bin || ""}
         `);
     })
     .on("mouseleave", function() {
-      d3.select(this)
-        .attr("r", 1)
-        .attr("stroke", "none");
-
+      d3.select(this).attr("r", size);
+      hideTimeLabel(g);
       tooltip.style("display", "none");
     });
 }
 
 function getExternalSendersForFocus(e, focusQuery) {
+  const q = normalizeEntityId(focusQuery);
 
-  const q = focusQuery.toLowerCase();
-
-  const focusIsReceiver =
-
-    (e.receivers || []).some(r =>
-
-      (r.id || "").toLowerCase().includes(q) ||
-
-      (r.name || "").toLowerCase().includes(q)
-
-    );
-
-  if (!focusIsReceiver) return [];
+  const focusIsReceiver = (e.receivers || []).some(r =>
+    normalizeEntityId(r.id).includes(q) ||
+    (r.name || "").toLowerCase().includes(q)
+  );
 
   const senderIsFocus =
-
-    (e.sender_id || "").toLowerCase().includes(q) ||
-
+    normalizeEntityId(e.sender_id).includes(q) ||
     (e.sender_name || "").toLowerCase().includes(q);
 
-  // self event or selected person is sender: no upstream outer node
+  // 只画“发给当前 focus 的外部 sender”
+  if (focusIsReceiver && !senderIsFocus) {
+    return [{
+      id: e.sender_id,
+      name: e.sender_name,
+      type: e.sender_type,
+      department: e.sender_department
+    }];
+  }
 
-  if (senderIsFocus) return [];
-
-  return [{
-
-    id: e.sender_id,
-
-    name: e.sender_name,
-
-    department: e.sender_department
-
-  }];
-
+  return [];
 }
 
 function hourToAngle(hour) {
-  // 12-hour clock layout:
-  // 12 at top, 3 at right, 6 at bottom, 9 at left
-  const h12 = hour % 12;
-  return -Math.PI / 2 + (h12 / 12) * Math.PI * 2;
+  return -Math.PI / 2 + (hour / 24) * Math.PI * 2;
 }
 
 function dateToDayAngle(date) {
-
   const hour = date.getHours();
-
   const minute = date.getMinutes();
-
   const second = date.getSeconds();
 
   const t = hour + minute / 60 + second / 3600;
 
   return hourToAngle(t);
-
 }
 
 function polar(cx, cy, r, angle) {
-
   return {
-
     x: cx + r * Math.cos(angle),
-
     y: cy + r * Math.sin(angle)
-
   };
+}
 
+function normalizeAngle(a) {
+  const twoPi = Math.PI * 2;
+  return ((a % twoPi) + twoPi) % twoPi;
+}
+
+function makeArcPath(cx, cy, r, startAngle, endAngle) {
+  const twoPi = Math.PI * 2;
+
+  let start = normalizeAngle(startAngle);
+  let end = normalizeAngle(endAngle);
+
+  if (end < start) end += twoPi;
+
+  const largeArc = end - start > Math.PI ? 1 : 0;
+
+  const p1 = polar(cx, cy, r, start);
+  const p2 = polar(cx, cy, r, end);
+
+  return `
+    M ${p1.x} ${p1.y}
+    A ${r} ${r} 0 ${largeArc} 1 ${p2.x} ${p2.y}
+  `;
+}
+
+function getActivityArcAngles(events) {
+  const pad = 0.14; // 单点时的小弧长度，可调大/小
+
+  if (!events || !events.length) return null;
+
+  const angles = events
+    .map(e => normalizeAngle(dateToDayAngle(e.date)))
+    .sort((a, b) => a - b);
+
+  if (angles.length === 1) {
+    return {
+      start: angles[0] - pad,
+      end: angles[0] + pad
+    };
+  }
+
+  // 找最大空档，然后画它的反面：也就是覆盖所有节点的连续弧
+  let maxGap = -1;
+  let gapStartIndex = 0;
+
+  for (let i = 0; i < angles.length; i++) {
+    const a1 = angles[i];
+    const a2 = angles[(i + 1) % angles.length] + (i === angles.length - 1 ? Math.PI * 2 : 0);
+    const gap = a2 - a1;
+
+    if (gap > maxGap) {
+      maxGap = gap;
+      gapStartIndex = i;
+    }
+  }
+
+  const start = angles[(gapStartIndex + 1) % angles.length];
+  let end = angles[gapStartIndex];
+
+  if (end < start) end += Math.PI * 2;
+
+  return { start, end };
+}
+
+function drawActivityArc(g, cx, cy, r, events, color = "#eeeeee") {
+  const arc = getActivityArcAngles(events);
+  if (!arc) return;
+
+  g.append("path")
+    .attr("d", makeArcPath(cx, cy, r, arc.start, arc.end))
+    .attr("fill", "none")
+    .attr("stroke", color)
+    .attr("stroke-width", 1.4)
+    .attr("stroke-linecap", "round")
+    .attr("opacity", 0.9);
+}
+
+function drawOuterActivityArc(g, cx, cy, r, outerEvents, color = "#eeeeee") {
+  const arc = getActivityArcAngles(outerEvents);
+  if (!arc) return;
+
+  const OUTER_ARC_PADDING = Math.PI / 8; // 22.5度，想更大就改成 Math.PI / 6
+
+  g.append("path")
+    .attr(
+      "d",
+      makeArcPath(
+        cx,
+        cy,
+        r,
+        arc.start - OUTER_ARC_PADDING,
+        arc.end + OUTER_ARC_PADDING
+      )
+    )
+    .attr("fill", "none")
+    .attr("stroke", color)
+    .attr("stroke-width", 1.1)
+    .attr("stroke-linecap", "round")
+    .attr("opacity", 0.75)
+    .attr("pointer-events", "none");
 }
 
 function centerFromPointOnCircle(px, py, r, angle) {
@@ -2606,62 +4312,83 @@ function centerFromPointOnCircle(px, py, r, angle) {
   };
 }
 
-function drawTinyArrow(g, x1, y1, x2, y2, color) {
+function showTimeLabel(g, cx, cy, radius, angle, e) {
+  g.selectAll(".hover-time-label").remove();
 
+  const p = polar(cx, cy, radius + 18, angle);
+  const timeText = d3.timeFormat("%H:%M")(e.date);
+
+  g.append("text")
+    .attr("class", "hover-time-label")
+    .attr("x", p.x)
+    .attr("y", p.y)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("font-size", 10)
+    .attr("font-weight", "bold")
+    .attr("fill", "#111")
+    .attr("pointer-events", "none")
+    .text(timeText);
+}
+
+function hideTimeLabel(g) {
+  g.selectAll(".hover-time-label").remove();
+}
+
+function drawPersonDisk(g, cx, cy, radius, focusQuery, events) {
+  const dept = getPersonDepartmentFromEvents(events, focusQuery);
+
+  g.append("circle")
+    .attr("cx", cx)
+    .attr("cy", cy)
+    .attr("r", radius)
+    .attr("fill", deptColor(dept))
+    .attr("opacity", 0.2)
+    .attr("pointer-events", "none");
+}
+
+function getPersonDepartmentFromEvents(events, focusQuery) {
+  for (const e of events) {
+    const dept = getPersonDepartmentFromEvent(e, focusQuery);
+    if (dept && dept !== "Unknown Department") return dept;
+  }
+  return "Unknown Department";
+}
+
+function drawTinyArrow(g, x1, y1, x2, y2, color, opacity = 0.75, width = 1, arrowSize = 4) {
   const dx = x2 - x1;
-
   const dy = y2 - y1;
-
   const len = Math.sqrt(dx * dx + dy * dy);
 
   if (len === 0) return;
 
   const ux = dx / len;
-
   const uy = dy / len;
 
   const endX = x2 - ux * 4;
-
   const endY = y2 - uy * 4;
 
   g.append("line")
-
     .attr("x1", x1)
-
     .attr("y1", y1)
-
     .attr("x2", endX)
-
     .attr("y2", endY)
-
     .attr("stroke", color)
-
-    .attr("stroke-width", 0.9)
-
-    .attr("opacity", 0.55);
-
-  const arrowSize = 4;
+    .attr("stroke-width", width)
+    .attr("opacity", opacity)
+    .attr("pointer-events", "none"); 
 
   const leftX = endX - ux * arrowSize - uy * arrowSize * 0.6;
-
   const leftY = endY - uy * arrowSize + ux * arrowSize * 0.6;
-
   const rightX = endX - ux * arrowSize + uy * arrowSize * 0.6;
-
   const rightY = endY - uy * arrowSize - ux * arrowSize * 0.6;
 
   g.append("path")
-
     .attr("d", `M ${endX} ${endY} L ${leftX} ${leftY} L ${rightX} ${rightY} Z`)
-
     .attr("fill", color)
-
-    .attr("opacity", 0.65);
-
+    .attr("opacity", opacity)
+    .attr("pointer-events", "none");
 }
-
 </script>
-
 </body>
-
 </html>

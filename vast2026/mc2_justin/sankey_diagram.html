@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>MC2 — Department/Person → Action Sankey Diagram</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+<style>
+  :root {
+    --bg: #101319;
+    --panel: #171b24;
+    --text: #e7e9ee;
+    --muted: #9aa3b2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header { padding: 20px 28px 8px; }
+  h1 { font-size: 20px; margin: 0 0 4px; font-weight: 600; }
+  .subtitle { color: var(--muted); font-size: 13px; line-height: 1.5; max-width: 860px; }
+  #layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 8px 28px 28px;
+    flex-wrap: wrap;
+  }
+  #chart-wrap {
+    position: relative;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 12px;
+    width: 100%;
+    max-width: 980px;
+  }
+  #chart-wrap svg { display: block; width: 100%; height: auto; }
+  #status { color: var(--muted); font-size: 13px; padding: 40px; text-align: center; }
+  #status.error { color: #e66767; }
+  #sidebar {
+    width: 300px;
+    flex: 0 0 300px;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-sizing: border-box;
+  }
+  #sidebar h2 {
+    font-size: 14px;
+    margin: 0 0 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .legend-item:hover { background: rgba(255,255,255,0.05); }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .legend-item .legend-toggle { margin-left: auto; color: var(--muted); font-size: 11px; }
+  .legend-item.expanded {
+    background: rgba(255,255,255,0.08);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+  }
+  #detail {
+    margin-top: 16px;
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.5;
+    min-height: 90px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 12px;
+    width: 100%;
+    overflow: hidden;
+  }
+  #detail b { color: var(--text); }
+  #detail-title { color: var(--text); font-size: 13px; margin-bottom: 8px; }
+  #detail-hint { color: var(--muted); }
+  #detail table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  #detail th {
+    text-align: right;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 3px 0 5px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  #detail th:first-child, #detail td:first-child { text-align: left; }
+  #detail td {
+    padding: 4px 0;
+    text-align: right;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  #detail td:first-child { position: relative; }
+  #detail .bar {
+    position: absolute;
+    left: 0; bottom: 0;
+    height: 3px;
+    background: currentColor;
+    opacity: 0.45;
+    border-radius: 2px;
+  }
+  #detail .dot {
+    width: 9px; height: 9px; border-radius: 2px;
+    display: inline-block; margin-right: 6px; vertical-align: middle;
+  }
+  .sankey-node, .sankey-link, .node-label { cursor: pointer; }
+  .node-label { font-size: 10.5px; fill: var(--text); transition: opacity 150ms ease; }
+  .node-label.dept-label { font-weight: 700; }
+  .node-label.action-label { font-size: 10px; fill: var(--muted); }
+  .sankey-node, .sankey-link { transition: opacity 150ms ease; }
+  .sankey-link { fill: none; }
+  #tooltip {
+    position: fixed;
+    top: 0; left: 0;
+    pointer-events: none;
+    background: #20242f;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    opacity: 0;
+    transform: translate(-9999px, -9999px);
+    transition: opacity 100ms ease;
+    z-index: 10;
+    max-width: 260px;
+  }
+  footer { padding: 0 28px 28px; color: var(--muted); font-size: 11.5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>MC2 — Department/Person → Action Sankey Diagram</h1>
+  <div class="subtitle">
+    Left: departments, expandable into people (click a department node, its label, or its legend entry).
+    Right: the 20 distinct action types people/agents performed in the log (messaging, file access, room
+    entry, delegation, social posts, ...). Link width is the number of events of that type. Hover a node or
+    link for details, click to pin; click empty space to clear the pin.
+  </div>
+</header>
+
+<div id="layout">
+  <div id="chart-wrap"><div id="status">Loading MC2 action data…</div></div>
+  <div id="sidebar">
+    <h2>Departments</h2>
+    <div id="legend"></div>
+    <div id="detail"><span id="detail-hint">Hover a node or link for details. Click to pin/expand.</span></div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<footer id="meta-footer"></footer>
+
+<script>
+// ---- Layout (SVG uses viewBox, so these are logical units, not screen pixels) ----
+const width = 960, height = 720;
+const margin = { top: 10, right: 170, bottom: 10, left: 170 };
+const nodeWidth = 14;
+
+const DEPT_COLORS = ["#66c2a6", "#fc8e62", "#8da1cc", "#a7d855", "#e78bc4", "#ffda2f"];
+const ACTION_COLOR = "#4a5568";
+
+let departments = [], people = [], actions = [], personActionMatrix = [];
+let peopleByDept = {};
+let color;
+
+let expandedDepts = new Set();
+let pinned = null;
+let leftNodesCache = [], rightNodesCache = [];
+let graph = null;          // current sankey() output: {nodes, links}
+let renderGeneration = 0;
+
+const TRANSITION_MS = 550;
+
+const svg = d3.select("#chart-wrap")
+  .append("svg")
+  .attr("viewBox", [0, 0, width, height])
+  .attr("font-family", "inherit")
+  .style("display", "none");
+
+const linkLayer = svg.append("g").attr("fill", "none");
+const nodeLayer = svg.append("g");
+const labelLayer = svg.append("g");
+
+const tooltip = d3.select("#tooltip");
+function showTooltip(html, event) {
+  tooltip.html(html).style("opacity", 1)
+    .style("transform", `translate(${event.clientX + 14}px, ${event.clientY + 10}px)`);
+}
+function hideTooltip() {
+  tooltip.style("opacity", 0).style("transform", "translate(-9999px, -9999px)");
+}
+
+// ---------------------------------------------------------------------------
+// Data loading
+// ---------------------------------------------------------------------------
+async function init() {
+  let data;
+  try {
+    const res = await fetch("mc2_actions.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    data = await res.json();
+  } catch (err) {
+    document.getElementById("status").className = "error";
+    document.getElementById("status").innerHTML =
+      `Could not load <code>mc2_actions.json</code> (${err.message}).<br/><br/>` +
+      `Browsers block <code>fetch()</code> of local files opened via <code>file://</code>. ` +
+      `Serve this folder instead, e.g.:<br/><br/><code>python3 -m http.server</code><br/><br/>` +
+      `then open <code>http://localhost:8000/sankey_diagram.html</code>.`;
+    return;
+  }
+
+  departments = data.departments;
+  people = data.people;
+  actions = data.actions;
+  personActionMatrix = data.person_action_matrix;
+
+  peopleByDept = {};
+  people.forEach((p, i) => { (peopleByDept[p.department] ??= []).push(i); });
+
+  color = d3.scaleOrdinal().domain(departments.map(d => d.id)).range(DEPT_COLORS);
+  rightNodesCache = actions.map(a => ({
+    id: "a:" + a.id, kind: "action", actionId: a.id, label: a.label, side: "right",
+  }));
+
+  document.getElementById("status").remove();
+  svg.style("display", null);
+
+  document.getElementById("meta-footer").textContent =
+    `Source: MC2 data.json — ${data.meta.total_events} events → ${data.meta.resolved_counts} resolved ` +
+    `person-action counts across ${people.length} people, ${departments.length} departments and ` +
+    `${actions.length} action types (4 duplicate-log action types dropped; see build_action_matrix.py). ` +
+    `Data fetched at runtime, not embedded in this page.`;
+
+  buildLegend();
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// Visible left-node set: one node per collapsed department, or one node per
+// person for every expanded department. Mirrors chord_diagram.html.
+// ---------------------------------------------------------------------------
+function buildVisibleLeftNodes() {
+  const list = [];
+  for (const dept of departments) {
+    if (expandedDepts.has(dept.id)) {
+      for (const idx of peopleByDept[dept.id] || []) {
+        list.push({
+          id: "p:" + idx, kind: "person", deptId: dept.id, personIndex: idx,
+          label: people[idx].label, title: people[idx].title, side: "left",
+        });
+      }
+    } else {
+      list.push({
+        id: "d:" + dept.id, kind: "dept", deptId: dept.id,
+        memberIndices: peopleByDept[dept.id] || [], label: dept.label, side: "left",
+      });
+    }
+  }
+  return list;
+}
+
+function memberIndices(node) {
+  return node.kind === "person" ? [node.personIndex] : node.memberIndices;
+}
+
+function buildLinks(leftNodes) {
+  const links = [];
+  leftNodes.forEach(node => {
+    const members = memberIndices(node);
+    actions.forEach((a, ai) => {
+      let sum = 0;
+      for (const p of members) sum += personActionMatrix[p][ai];
+      if (sum > 0) links.push({ source: node.id, target: "a:" + a.id, value: sum, deptId: node.deptId, actionId: a.id });
+    });
+  });
+  return links;
+}
+
+function toggleExpand(deptId) {
+  if (expandedDepts.has(deptId)) expandedDepts.delete(deptId);
+  else expandedDepts.add(deptId);
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// Selection state (mirrors chord_diagram.html): `pinned` persists a highlight
+// through a click on a link or a person node; hover always previews on top
+// and reverts to `pinned` on mouseleave. Clicking a department always
+// expands/collapses instead of pinning.
+// ---------------------------------------------------------------------------
+function sameSelection(a, b) {
+  if (!a || !b) return false;
+  if (a.kind !== b.kind) return false;
+  if (a.kind === "link") return a.id === b.id;
+  return a.nodeId === b.nodeId;
+}
+function togglePin(sel) {
+  pinned = sameSelection(pinned, sel) ? null : sel;
+  applyHighlight(pinned);
+}
+function focusDept(deptId) {
+  applyHighlight({ kind: "node", nodeId: "d:" + deptId, deptId, isDept: true, title: departments.find(d => d.id === deptId).label });
+}
+function focusNode(node) {
+  if (node.kind === "dept") { focusDept(node.deptId); return; }
+  applyHighlight({ kind: "node", nodeId: node.id, deptId: node.kind === "action" ? null : node.deptId, isAction: node.kind === "action", title: node.label });
+}
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest(".sankey-link, .sankey-node, .node-label, .legend-item")) return;
+  pinned = null;
+  applyHighlight(null);
+});
+
+// ---------------------------------------------------------------------------
+// Animation helpers (mirror chord_diagram.html's boundsByDept/boundsFor, but
+// for a department's y-range instead of its angular range).
+// ---------------------------------------------------------------------------
+function yBoundsByDept(nodesArr) {
+  const map = new Map();
+  nodesArr.forEach(n => {
+    if (n.side !== "left") return;
+    const cur = map.get(n.deptId);
+    if (!cur) map.set(n.deptId, { y0: n.y0, y1: n.y1, x0: n.x0, x1: n.x1 });
+    else { cur.y0 = Math.min(cur.y0, n.y0); cur.y1 = Math.max(cur.y1, n.y1); }
+  });
+  return map;
+}
+function yBoundsFor(deptId, map, fallback) {
+  return map.get(deptId) || fallback;
+}
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+function render() {
+  const myGeneration = ++renderGeneration;
+  const prevNodes = graph ? graph.nodes : null;
+  const prevBounds = prevNodes ? yBoundsByDept(prevNodes) : new Map();
+
+  // Hide old links immediately; they rarely have a meaningful 1:1 counterpart
+  // after an expand/collapse, so morphing them looks chaotic. New links are
+  // drawn once the nodes settle (same approach as chord_diagram.html).
+  linkLayer.selectAll("path.sankey-link")
+    .transition().duration(200).ease(d3.easeCubicOut)
+    .style("opacity", 0)
+    .remove();
+
+  leftNodesCache = buildVisibleLeftNodes();
+  const links = buildLinks(leftNodesCache);
+  pinned = null;
+
+  const sankeyGen = d3.sankey()
+    .nodeId(d => d.id)
+    .nodeWidth(nodeWidth)
+    .nodePadding(leftNodesCache.length > 30 ? 3 : 10)
+    .nodeAlign(n => n.side === "left" ? 0 : 1)
+    // Without this, d3-sankey reorders nodes within each column to minimize
+    // link crossings, which reshuffles people vertically on every
+    // expand/collapse. `null` keeps the exact input order instead, which
+    // buildVisibleLeftNodes() already keeps grouped by department.
+    .nodeSort(null)
+    .extent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]]);
+
+  const nodesInput = [...leftNodesCache, ...rightNodesCache].map(d => Object.assign({}, d));
+  const linksInput = links.map(d => Object.assign({}, d));
+  graph = sankeyGen({ nodes: nodesInput, links: linksInput });
+
+
+  const newBounds = yBoundsByDept(graph.nodes);
+  const t = d3.transition().duration(TRANSITION_MS).ease(d3.easeCubicInOut);
+
+  // ---- Nodes ----
+  const nodeSel = nodeLayer.selectAll("rect.sankey-node")
+    .data(graph.nodes, d => d.id)
+    .join(
+      enter => enter.append("rect")
+        .attr("class", d => "sankey-node" + (d.kind === "dept" ? " dept-node" : ""))
+        .attr("fill", d => d.kind === "action" ? ACTION_COLOR : color(d.deptId))
+        .style("opacity", 0)
+        .each(function (d) {
+          const fallback = { x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y0 };
+          this._current = d.side === "left" ? yBoundsFor(d.deptId, prevBounds, fallback) : { x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y1 };
+        })
+        .attr("x", function (d) { return this._current.x0; })
+        .attr("y", function (d) { return this._current.y0; })
+        .attr("width", function (d) { return this._current.x1 - this._current.x0; })
+        .attr("height", function (d) { return Math.max(0, this._current.y1 - this._current.y0); }),
+      update => update,
+      exit => exit.transition(t)
+        .style("opacity", 0)
+        .tween("bounds", function (d) {
+          const target = yBoundsFor(d.deptId, newBounds, { x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y0 });
+          const i = d3.interpolate(this._current, target);
+          const rect = this;
+          return function (tt) {
+            const b = i(tt);
+            rect.setAttribute("x", b.x0);
+            rect.setAttribute("y", b.y0);
+            rect.setAttribute("width", Math.max(0, b.x1 - b.x0));
+            rect.setAttribute("height", Math.max(0, b.y1 - b.y0));
+          };
+        })
+        .remove()
+    )
+    .on("mouseenter", (event, d) => focusNode(d))
+    .on("mousemove", (event, d) => {
+      const total = d.side === "left"
+        ? d.sourceLinks.reduce((s, l) => s + l.value, 0)
+        : d.targetLinks.reduce((s, l) => s + l.value, 0);
+      const extra = d.kind === "dept" ? `<br/>${d.memberIndices.length} people` : (d.title ? `<br/>${d.title}` : "");
+      showTooltip(`<b>${d.label}</b>${extra}<br/>${total} event${total === 1 ? "" : "s"}`, event);
+    })
+    .on("mouseleave", () => { hideTooltip(); applyHighlight(pinned); })
+    .on("click", (event, d) => {
+      if (d.kind === "dept") toggleExpand(d.deptId);
+      else togglePin({ kind: "node", nodeId: d.id, deptId: d.kind === "action" ? null : d.deptId, isAction: d.kind === "action", title: d.label });
+    });
+
+  // A single combined tween (rather than separate x/y/width/height attrTweens)
+  // avoids relying on D3's tween-registration order to keep those four
+  // attributes consistent with each other on every frame.
+  const nodeTransition = nodeSel.transition(t)
+    .style("opacity", 1)
+    .attr("fill", d => d.kind === "action" ? ACTION_COLOR : color(d.deptId))
+    .tween("bounds", function (d) {
+      // Interpolate a plain {x0,x1,y0,y1} snapshot, never the sankey datum
+      // itself -- it carries sourceLinks/targetLinks that circle back to
+      // source/target nodes, which would make a generic object interpolator
+      // recurse forever.
+      const i = d3.interpolate(this._current, { x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y1 });
+      const rect = this;
+      return function (tt) {
+        const b = i(tt);
+        rect._current = b;
+        rect.setAttribute("x", b.x0);
+        rect.setAttribute("y", b.y0);
+        rect.setAttribute("width", Math.max(0, b.x1 - b.x0));
+        rect.setAttribute("height", Math.max(0, b.y1 - b.y0));
+      };
+    });
+
+  // ---- Labels ----
+  function labelX(d) { return d.side === "left" ? d.x0 - 8 : d.x1 + 8; }
+  function labelAnchor(d) { return d.side === "left" ? "end" : "start"; }
+
+  const labelSel = labelLayer.selectAll("text.node-label")
+    .data(graph.nodes, d => d.id)
+    .join(
+      enter => enter.append("text")
+        .attr("class", d => "node-label" + (d.kind === "dept" ? " dept-label" : "") + (d.kind === "action" ? " action-label" : ""))
+        .attr("dy", "0.32em")
+        .attr("text-anchor", labelAnchor)
+        .style("opacity", 0)
+        .each(function (d) {
+          const fallback = { x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y0 };
+          this._current = d.side === "left" ? yBoundsFor(d.deptId, prevBounds, fallback) : { x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y1 };
+        })
+        .attr("x", labelX)
+        .attr("y", function (d) { return (this._current.y0 + this._current.y1) / 2; }),
+      update => update,
+      exit => exit.transition(t)
+        .style("opacity", 0)
+        .tween("pos", function (d) {
+          const target = yBoundsFor(d.deptId, newBounds, { x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y0 });
+          const i = d3.interpolate(this._current, target);
+          const text = this;
+          return function (tt) {
+            const b = i(tt);
+            text.setAttribute("y", (b.y0 + b.y1) / 2);
+          };
+        })
+        .remove()
+    )
+    .attr("x", labelX)
+    .text(d => d.kind === "dept" ? `${d.label} +` : d.label)
+    .on("mouseenter", (event, d) => focusNode(d))
+    .on("mouseleave", () => applyHighlight(pinned))
+    .on("click", (event, d) => { if (d.kind === "dept") toggleExpand(d.deptId); });
+
+  const labelTransition = labelSel.transition(t)
+    .style("opacity", 1)
+    .tween("pos", function (d) {
+      // Same circular-reference hazard as the node tween above: interpolate
+      // a plain bounds snapshot, not the sankey datum.
+      const i = d3.interpolate(this._current, { x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y1 });
+      const text = this;
+      return function (tt) {
+        const b = i(tt);
+        text._current = b;
+        text.setAttribute("y", (b.y0 + b.y1) / 2);
+      };
+    });
+
+  updateLegendExpandedClasses();
+  renderDetail(null);
+
+  Promise.all([nodeTransition.end().catch(() => {}), labelTransition.end().catch(() => {})])
+    .then(() => { if (myGeneration === renderGeneration) drawLinks(); });
+}
+
+function drawLinks() {
+  const linkGen = d3.sankeyLinkHorizontal();
+
+  linkLayer.selectAll("path.sankey-link")
+    .data(graph.links, d => d.source.id + ">" + d.target.id)
+    .join(
+      enter => enter.append("path")
+        .attr("class", "sankey-link")
+        .attr("d", linkGen)
+        .attr("stroke", d => color.domain().includes(d.deptId) ? color(d.deptId) : ACTION_COLOR)
+        .attr("stroke-width", d => Math.max(1, d.width))
+        .attr("stroke-opacity", 0)
+        .call(e => e.transition().duration(280).ease(d3.easeCubicOut)
+          .attr("stroke-opacity", d => linkOpacity(pinned, d)))
+    )
+    .on("mouseenter", (event, d) => applyHighlight({ kind: "link", id: d.source.id + ">" + d.target.id, source: d.source, target: d.target, value: d.value }))
+    .on("mousemove", (event, d) => {
+      showTooltip(`<b>${d.source.label}</b> → <b>${d.target.label}</b><br/>${d.value} event${d.value === 1 ? "" : "s"}`, event);
+    })
+    .on("mouseleave", () => { hideTooltip(); applyHighlight(pinned); })
+    .on("click", (event, d) => togglePin({ kind: "link", id: d.source.id + ">" + d.target.id, source: d.source, target: d.target, value: d.value }));
+}
+
+// ---------------------------------------------------------------------------
+// Highlighting + sidebar detail
+// ---------------------------------------------------------------------------
+function linkOpacity(sel, d) {
+  if (!sel) return 0.45;
+  if (sel.kind === "link") return d.source.id === sel.source.id && d.target.id === sel.target.id ? 0.85 : 0.05;
+  return (d.source.id === sel.nodeId || d.target.id === sel.nodeId) ? 0.85 : 0.05;
+}
+function nodeOpacity(sel, d) {
+  if (!sel) return 1;
+  if (sel.kind === "link") return (d.id === sel.source.id || d.id === sel.target.id) ? 1 : 0.35;
+  return d.id === sel.nodeId ? 1 : 0.35;
+}
+
+function applyHighlight(sel) {
+  linkLayer.selectAll("path.sankey-link").attr("stroke-opacity", d => linkOpacity(sel, d));
+  nodeLayer.selectAll("rect.sankey-node").style("opacity", d => nodeOpacity(sel, d));
+  labelLayer.selectAll("text.node-label").style("opacity", d => nodeOpacity(sel, d));
+  renderDetail(sel);
+}
+
+function colorDotFor(kind, deptId) {
+  return `<span class="dot" style="background:${kind === "action" ? ACTION_COLOR : color(deptId)}"></span>`;
+}
+
+function renderDetail(sel) {
+  const detail = document.getElementById("detail");
+  if (!sel) {
+    detail.innerHTML = `<span id="detail-hint">Hover a node or link for details. Click to pin/expand.</span>`;
+    return;
+  }
+
+  if (sel.kind === "link") {
+    const s = sel.source, tg = sel.target;
+    detail.innerHTML = `
+      <div id="detail-title">${colorDotFor(s.kind, s.deptId)}<b>${s.label}</b> → ${colorDotFor("action")}<b>${tg.label}</b></div>
+      <div>${sel.value} event${sel.value === 1 ? "" : "s"}</div>`;
+    return;
+  }
+
+  const node = graph.nodes.find(n => n.id === sel.nodeId);
+  if (!node) { detail.innerHTML = ""; return; }
+
+  const isAction = node.kind === "action";
+  const rows = (isAction ? node.targetLinks : node.sourceLinks)
+    .slice()
+    .sort((a, b) => b.value - a.value);
+  const total = rows.reduce((s, l) => s + l.value, 0);
+  const max = rows.length ? rows[0].value : 1;
+
+  const rowsHtml = rows.map(l => {
+    const other = isAction ? l.source : l.target;
+    const dot = colorDotFor(isAction ? other.kind : "action", other.deptId);
+    const pct = Math.round((l.value / max) * 100);
+    const barColor = isAction ? color(other.deptId) : ACTION_COLOR;
+    return `<tr><td style="color:${barColor}">
+        <div class="bar" style="width:${pct}%"></div>
+        <span style="position:relative;color:var(--text)">${dot}${other.label}</span>
+      </td><td>${l.value}</td></tr>`;
+  }).join("");
+
+  detail.innerHTML = `
+    <div id="detail-title">${colorDotFor(node.kind, node.deptId)}<b>${node.label}</b> — ${total} event${total === 1 ? "" : "s"}</div>
+    <table>
+      <thead><tr><th>${isAction ? "Department / Person" : "Action"}</th><th>Count</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+}
+
+// ---------------------------------------------------------------------------
+// Legend (department-level; click expands/collapses, same as chord_diagram.html)
+// ---------------------------------------------------------------------------
+function buildLegend() {
+  const legend = d3.select("#legend");
+  departments.forEach(dept => {
+    const item = legend.append("div")
+      .attr("class", "legend-item")
+      .attr("data-dept", dept.id)
+      .on("mouseenter", () => focusDept(dept.id))
+      .on("mouseleave", () => applyHighlight(pinned))
+      .on("click", () => toggleExpand(dept.id));
+    item.append("div").attr("class", "legend-swatch").style("background", color(dept.id));
+    item.append("div").text(dept.label);
+    item.append("div").attr("class", "legend-toggle").text("+");
+  });
+}
+
+function updateLegendExpandedClasses() {
+  d3.selectAll(".legend-item").each(function (_, i, nodesSel) {
+    const el = d3.select(nodesSel[i]);
+    const deptId = el.attr("data-dept");
+    const isExpanded = expandedDepts.has(deptId);
+    el.classed("expanded", isExpanded);
+    el.select(".legend-toggle").text(isExpanded ? "−" : "+");
+  });
+}
+
+init();
+</script>
+</body>
+</html>

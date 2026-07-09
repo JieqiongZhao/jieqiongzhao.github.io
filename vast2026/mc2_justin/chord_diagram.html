@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>MC2 — Department &amp; Person Communication Chord Diagram</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root {
+    --bg: #101319;
+    --panel: #171b24;
+    --text: #e7e9ee;
+    --muted: #9aa3b2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 20px 28px 8px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px;
+    font-weight: 600;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 820px;
+  }
+  #layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 8px 28px 28px;
+    flex-wrap: wrap;
+  }
+  #chart-wrap {
+    position: relative;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 12px;
+    width: 100%;
+    max-width: 820px;
+  }
+  #chart-wrap svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  #status {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 40px;
+    text-align: center;
+  }
+  #status.error { color: #e66767; }
+  #sidebar {
+    width: 300px;
+    flex: 0 0 300px;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-sizing: border-box;
+  }
+  #sidebar h2 {
+    font-size: 14px;
+    margin: 0 0 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .legend-item:hover { background: rgba(255,255,255,0.05); }
+  .legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex: none;
+  }
+  .legend-item .legend-toggle {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .legend-item.expanded {
+    background: rgba(255,255,255,0.08);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+  }
+  #detail {
+    margin-top: 16px;
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.5;
+    min-height: 90px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 12px;
+    width: 100%;
+    overflow: hidden;
+  }
+  #detail b { color: var(--text); }
+  #detail-title { color: var(--text); font-size: 13px; margin-bottom: 8px; }
+  #detail-hint { color: var(--muted); }
+  #detail-internal { margin-top: 8px; color: var(--muted); }
+  #detail table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  #detail th {
+    text-align: right;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 3px 0 5px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  #detail th:first-child, #detail td:first-child { text-align: left; }
+  #detail td {
+    padding: 4px 0;
+    text-align: right;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #detail .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .group-arc, .ribbon, .group-label { cursor: pointer; }
+  .group-label { font-size: 10.5px; fill: var(--text); transition: opacity 150ms ease; }
+  .group-label.dept-label { font-weight: 700; }
+  .ribbon, .group-arc { transition: opacity 150ms ease; }
+  #tooltip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    background: #20242f;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    opacity: 0;
+    transform: translate(-9999px, -9999px);
+    transition: opacity 100ms ease;
+    z-index: 10;
+    max-width: 260px;
+  }
+  footer {
+    padding: 0 28px 28px;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>MC2 — Department &amp; Person Communication Chord Diagram</h1>
+  <div class="subtitle">
+    Each ribbon is a directed flow of messages (arrowhead points to the recipient). Departments start
+    collapsed into one arc each — click a department's arc, its label, or its legend entry to expand it
+    into its people; connections between the <i>other</i>, still-collapsed departments are hidden while
+    anything is expanded so the view stays focused. Click a ribbon or a person arc to pin its highlight;
+    click empty space to clear the pin.
+  </div>
+</header>
+
+<div id="layout">
+  <div id="chart-wrap"><div id="status">Loading MC2 connection data…</div></div>
+  <div id="sidebar">
+    <h2>Departments</h2>
+    <div id="legend"></div>
+    <div id="detail"><span id="detail-hint">Hover an arc, band, or ribbon for details. Click to pin/expand.</span></div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<footer id="meta-footer"></footer>
+
+<script>
+// ---- Layout (SVG uses viewBox, so these are logical units, not screen pixels) ----
+const width = 720, height = 720;
+const outerRadius = Math.min(width, height) * 0.5 - 90;
+const innerRadius = outerRadius - 18;
+const labelRadius = outerRadius + 8;
+
+const DEPT_COLORS = ["#66c2a6", "#fc8e62", "#8da1cc", "#a7d855", "#e78bc4", "#ffda2f"];
+
+let departments = [], people = [], personMatrix = [];
+let peopleByDept = {};
+let color;
+
+let expandedDepts = new Set();
+let pinned = null;
+let nodes = [];          // current visible nodes: {kind:'dept'|'person', deptId, personIndex?, memberIndices?, label}
+let currentMatrix = [];  // aggregated matrix over `nodes`
+let chords;
+let renderGeneration = 0; // bumped each render(); guards the deferred ribbon draw against rapid re-clicks
+
+const svg = d3.select("#chart-wrap")
+  .append("svg")
+  .attr("viewBox", [-width / 2, -height / 2, width, height])
+  .attr("font-family", "inherit")
+  .style("display", "none");
+
+const ribbonLayer = svg.append("g").attr("fill-opacity", 0.75);
+const groupLayer = svg.append("g");
+
+const tooltip = d3.select("#tooltip");
+function showTooltip(html, event) {
+  tooltip.html(html).style("opacity", 1)
+    .style("transform", `translate(${event.clientX + 14}px, ${event.clientY + 10}px)`);
+}
+function hideTooltip() {
+  tooltip.style("opacity", 0).style("transform", "translate(-9999px, -9999px)");
+}
+
+// ---------------------------------------------------------------------------
+// Data loading
+// ---------------------------------------------------------------------------
+async function init() {
+  let data;
+  try {
+    const res = await fetch("mc2_connections.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    data = await res.json();
+  } catch (err) {
+    document.getElementById("status").className = "error";
+    document.getElementById("status").innerHTML =
+      `Could not load <code>mc2_connections.json</code> (${err.message}).<br/><br/>` +
+      `Browsers block <code>fetch()</code> of local files opened via <code>file://</code>. ` +
+      `Serve this folder instead, e.g.:<br/><br/><code>python3 -m http.server</code><br/><br/>` +
+      `then open <code>http://localhost:8000/chord_diagram.html</code>.`;
+    return;
+  }
+
+  departments = data.departments;
+  people = data.people;
+  personMatrix = data.person_matrix;
+
+  peopleByDept = {};
+  people.forEach((p, i) => {
+    (peopleByDept[p.department] ??= []).push(i);
+  });
+
+  color = d3.scaleOrdinal().domain(departments.map(d => d.id)).range(DEPT_COLORS);
+
+  document.getElementById("status").remove();
+  svg.style("display", null);
+
+  document.getElementById("meta-footer").textContent =
+    `Source: MC2 data.json — ${data.meta.total_sent_events} "sent" events → ${data.meta.resolved_edges} ` +
+    `directed person-to-person edges across ${people.length} people in ${departments.length} departments ` +
+    `(see build_org_matrix.py). Data fetched at runtime, not embedded in this page.`;
+
+  buildLegend();
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// Visible node set: one node per collapsed department, or one node per person
+// for every expanded department.
+// ---------------------------------------------------------------------------
+function buildVisibleNodes() {
+  const list = [];
+  for (const dept of departments) {
+    if (expandedDepts.has(dept.id)) {
+      for (const idx of peopleByDept[dept.id] || []) {
+        list.push({ kind: "person", deptId: dept.id, personIndex: idx, label: people[idx].label, title: people[idx].title });
+      }
+    } else {
+      list.push({ kind: "dept", deptId: dept.id, memberIndices: peopleByDept[dept.id] || [], label: dept.label });
+    }
+  }
+  return list;
+}
+
+function memberIndices(node) {
+  return node.kind === "person" ? [node.personIndex] : node.memberIndices;
+}
+
+// Aggregate personMatrix into the current node set. Once any department is
+// expanded, edges between two still-collapsed departments are dropped so the
+// view stays focused on the expanded department's traffic.
+function buildVisibleMatrix(nodeList) {
+  const n = nodeList.length;
+  const anyExpanded = expandedDepts.size > 0;
+  const m = Array.from({ length: n }, () => new Array(n).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue;
+      const a = nodeList[i], b = nodeList[j];
+      if (anyExpanded && a.kind === "dept" && b.kind === "dept") continue;
+      let sum = 0;
+      const aMembers = memberIndices(a), bMembers = memberIndices(b);
+      for (const p of aMembers) {
+        const row = personMatrix[p];
+        for (const q of bMembers) sum += row[q];
+      }
+      m[i][j] = sum;
+    }
+  }
+  return m;
+}
+
+function indicesForDept(deptId) {
+  const idxs = [];
+  nodes.forEach((n, i) => { if (n.deptId === deptId) idxs.push(i); });
+  return idxs;
+}
+
+// Messages exchanged among a set of node indices themselves (e.g. intra-department
+// chatter once a department is expanded, or a collapsed department's hidden internal volume).
+function internalVolume(indices) {
+  const members = indices.flatMap(i => memberIndices(nodes[i]));
+  let sum = 0;
+  for (const p of members) for (const q of members) if (p !== q) sum += personMatrix[p][q];
+  return sum;
+}
+
+function toggleExpand(deptId) {
+  if (expandedDepts.has(deptId)) expandedDepts.delete(deptId);
+  else expandedDepts.add(deptId);
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// Animation helpers: a node's identity survives a render as long as its kind +
+// id stays the same (e.g. a person who was already visible stays the same
+// element; a department that collapses/expands does not, so its arc
+// enters/exits instead of tweening in place).
+// ---------------------------------------------------------------------------
+const TRANSITION_MS = 650;
+
+function nodeKey(n) {
+  return n.kind === "person" ? "p:" + n.personIndex : "d:" + n.deptId;
+}
+
+// The angular range a department currently occupies: its own arc when
+// collapsed, or the union of its people's arcs when expanded. Used purely as
+// an animation anchor for entering/exiting elements, not drawn on screen.
+function boundsByDept(chordGroups) {
+  const map = new Map();
+  chordGroups.forEach(g => {
+    const cur = map.get(g.deptId);
+    if (!cur) map.set(g.deptId, { startAngle: g.startAngle, endAngle: g.endAngle });
+    else {
+      cur.startAngle = Math.min(cur.startAngle, g.startAngle);
+      cur.endAngle = Math.max(cur.endAngle, g.endAngle);
+    }
+  });
+  return map;
+}
+
+function boundsFor(deptId, boundsMap, fallback) {
+  return boundsMap.get(deptId) || fallback;
+}
+
+// ---------------------------------------------------------------------------
+// Selection state: `pinned` persists a highlight through a click on a ribbon
+// or a person arc; hover always previews on top and reverts to `pinned` on
+// mouseleave. Clicking a department (band / arc / legend) always expands or
+// collapses instead of pinning.
+// ---------------------------------------------------------------------------
+function sameSelection(a, b) {
+  if (!a || !b) return false;
+  if (a.kind !== b.kind) return false;
+  if (a.kind === "edge") return a.source === b.source && a.target === b.target;
+  return a.indices.length === 1 && b.indices.length === 1 && a.indices[0] === b.indices[0];
+}
+function togglePin(sel) {
+  pinned = sameSelection(pinned, sel) ? null : sel;
+  applyHighlight(pinned);
+}
+function focusDept(deptId) {
+  const dept = departments.find(d => d.id === deptId);
+  applyHighlight({ kind: "focus", indices: indicesForDept(deptId), title: dept.label, isDept: true, deptId });
+}
+function focusPerson(nodeIndex) {
+  applyHighlight({ kind: "focus", indices: [nodeIndex], title: nodes[nodeIndex].label, isDept: false });
+}
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest(".ribbon, .group-arc, .group-label, .legend-item")) return;
+  pinned = null;
+  applyHighlight(null);
+});
+
+// ---------------------------------------------------------------------------
+// Render: rebuild the node set + matrix + chord layout from scratch. Called on
+// load and every time a department is expanded/collapsed.
+// ---------------------------------------------------------------------------
+function render() {
+  const myGeneration = ++renderGeneration;
+  const prevChords = chords;
+  const prevBounds = prevChords ? boundsByDept(prevChords.groups) : new Map();
+
+  // Hide the old ribbons immediately rather than trying to morph them — with
+  // this many possible edges, most ribbons don't have a meaningful "same
+  // edge" counterpart after an expand/collapse, so animating them in place
+  // just looks like chaos. The new ribbons are drawn once the arcs settle.
+  ribbonLayer.selectAll("path.ribbon")
+    .transition().duration(220).ease(d3.easeCubicOut)
+    .style("opacity", 0)
+    .remove();
+
+  nodes = buildVisibleNodes();
+  currentMatrix = buildVisibleMatrix(nodes);
+  pinned = null; // node indices are about to be rebuilt, any pin is now stale
+
+  const chordGen = d3.chordDirected()
+    .padAngle(nodes.length > 25 ? 0.015 : 0.05)
+    .sortSubgroups(d3.descending)
+    .sortChords(d3.descending);
+  chords = chordGen(currentMatrix);
+
+  // Decorate every group/chord with stable identity fields so keyed joins can
+  // match elements across renders (D3 needs the key to be self-contained,
+  // since `nodes` itself gets reassigned again on the *next* render).
+  chords.groups.forEach(g => {
+    const n = nodes[g.index];
+    Object.assign(g, { nodeKey: nodeKey(n), deptId: n.deptId, kind: n.kind, label: n.label, personIndex: n.personIndex });
+  });
+  chords.forEach(c => {
+    const s = nodes[c.source.index], tg = nodes[c.target.index];
+    c.sourceKey = nodeKey(s);
+    c.targetKey = nodeKey(tg);
+    c.key = c.sourceKey + ">" + c.targetKey;
+    c.sourceDeptId = s.deptId;
+    c.targetDeptId = tg.deptId;
+  });
+
+  const newBounds = boundsByDept(chords.groups);
+
+  const arcGen = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
+  const t = d3.transition().duration(TRANSITION_MS).ease(d3.easeCubicInOut);
+
+  // ---- Group arcs (person or collapsed-department) ----
+  const groupArcs = groupLayer.selectAll("path.group-arc")
+    .data(chords.groups, d => d.nodeKey)
+    .join(
+      enter => enter.append("path")
+        .attr("class", "group-arc")
+        .attr("fill", d => color(d.deptId))
+        .attr("stroke", d => d3.rgb(color(d.deptId)).darker(0.8))
+        .style("opacity", 0)
+        .each(function (d) { this._current = boundsFor(d.deptId, prevBounds, d); })
+        .attr("d", function (d) { return arcGen(this._current); }),
+      update => update,
+      exit => exit.transition(t)
+        .style("opacity", 0)
+        .attrTween("d", function (d) {
+          const target = boundsFor(d.deptId, newBounds, d);
+          const i = d3.interpolate(this._current || d, target);
+          return tt => arcGen(i(tt));
+        })
+        .remove()
+    )
+    .on("mouseenter", (event, d) => d.kind === "person" ? focusPerson(d.index) : focusDept(d.deptId))
+    .on("mousemove", (event, d) => {
+      const out = currentMatrix[d.index].reduce((a, b) => a + b, 0);
+      const inn = currentMatrix.reduce((s, row) => s + row[d.index], 0);
+      const extra = d.kind === "dept" ? `<br/>${nodes[d.index].memberIndices.length} people` : (nodes[d.index].title ? `<br/>${nodes[d.index].title}` : "");
+      showTooltip(`<b>${d.label}</b>${extra}<br/>Sent: ${out} · Received: ${inn}`, event);
+    })
+    .on("mouseleave", () => { hideTooltip(); applyHighlight(pinned); })
+    .on("click", (event, d) => {
+      d.kind === "dept" ? toggleExpand(d.deptId) : togglePin({ kind: "focus", indices: [d.index], title: d.label, isDept: false });
+    });
+
+  const arcTransition = groupArcs.transition(t)
+    .style("opacity", 1)
+    .attr("fill", d => color(d.deptId))
+    .attr("stroke", d => d3.rgb(color(d.deptId)).darker(0.8))
+    .attrTween("d", function (d) {
+      const i = d3.interpolate(this._current || d, d);
+      this._current = d;
+      return tt => arcGen(i(tt));
+    });
+
+  // ---- Labels: one per node, all in a single ring. Person labels are plain
+  // names; collapsed-department labels get a "+" hint since clicking them expands. ----
+  function labelTransform(d) {
+    const angle = (d.startAngle + d.endAngle) / 2;
+    return `rotate(${angle * 180 / Math.PI - 90}) translate(${labelRadius}) ${angle > Math.PI ? "rotate(180)" : ""}`;
+  }
+
+  const groupLabels = groupLayer.selectAll("text.group-label")
+    .data(chords.groups, d => d.nodeKey)
+    .join(
+      enter => enter.append("text")
+        .attr("class", d => "group-label" + (d.kind === "dept" ? " dept-label" : ""))
+        .attr("dy", "0.32em")
+        .style("opacity", 0)
+        .each(function (d) { this._current = boundsFor(d.deptId, prevBounds, d); })
+        .attr("transform", function (d) { return labelTransform(this._current); }),
+      update => update,
+      exit => exit.transition(t)
+        .style("opacity", 0)
+        .attrTween("transform", function (d) {
+          const target = boundsFor(d.deptId, newBounds, d);
+          const i = d3.interpolate(this._current || d, target);
+          return tt => labelTransform(i(tt));
+        })
+        .remove()
+    )
+    .attr("text-anchor", d => ((d.startAngle + d.endAngle) / 2) > Math.PI ? "end" : "start")
+    .text(d => d.kind === "dept" ? `${d.label} +` : d.label)
+    .on("mouseenter", (event, d) => d.kind === "person" ? focusPerson(d.index) : focusDept(d.deptId))
+    .on("mouseleave", () => applyHighlight(pinned))
+    .on("click", (event, d) => { if (d.kind === "dept") toggleExpand(d.deptId); });
+
+  const labelTransition = groupLabels.transition(t)
+    .style("opacity", 1)
+    .attrTween("transform", function (d) {
+      const i = d3.interpolate(this._current || d, d);
+      this._current = d;
+      return tt => labelTransform(i(tt));
+    });
+
+  updateLegendExpandedClasses();
+  renderDetail(null);
+
+  // Draw the new ribbons only after the arcs/labels have settled into their
+  // new positions. If another render starts in the meantime (rapid clicking),
+  // `myGeneration` no longer matches and this stale continuation bails out.
+  Promise.all([arcTransition.end().catch(() => {}), labelTransition.end().catch(() => {})])
+    .then(() => { if (myGeneration === renderGeneration) drawRibbons(); });
+}
+
+function drawRibbons() {
+  const ribbonGen = d3.ribbonArrow().radius(innerRadius - 1).padAngle(1 / innerRadius);
+
+  ribbonLayer.selectAll("path.ribbon")
+    .data(chords, d => d.key)
+    .join(
+      enter => enter.append("path")
+        .attr("class", "ribbon")
+        .attr("d", ribbonGen)
+        .attr("fill", d => color(d.sourceDeptId))
+        .attr("stroke", d => d3.rgb(color(d.sourceDeptId)).darker(0.6))
+        .attr("stroke-width", 0.4)
+        .style("opacity", 0)
+        .call(e => e.transition().duration(300).ease(d3.easeCubicOut)
+          .style("opacity", d => ribbonOpacity(pinned, d)))
+    )
+    .on("mouseenter", (event, d) => applyHighlight({ kind: "edge", source: d.source.index, target: d.target.index }))
+    .on("mousemove", (event, d) => {
+      const from = nodes[d.source.index].label, to = nodes[d.target.index].label;
+      showTooltip(`<b>${from}</b> → <b>${to}</b><br/>${d.source.value} message${d.source.value === 1 ? "" : "s"}`, event);
+    })
+    .on("mouseleave", () => { hideTooltip(); applyHighlight(pinned); })
+    .on("click", (event, d) => togglePin({ kind: "edge", source: d.source.index, target: d.target.index }));
+}
+
+// ---------------------------------------------------------------------------
+// Highlighting + sidebar detail
+// ---------------------------------------------------------------------------
+// Pure opacity rules, shared by applyHighlight (instant, for live hover/pin
+// feedback) and drawRibbons (which fades a freshly-drawn ribbon straight to
+// its correct target instead of fading to 1 and then getting snapped by a
+// separate highlight pass).
+function ribbonOpacity(sel, d) {
+  if (!sel) return 1;
+  if (sel.kind === "edge") return (d.source.index === sel.source && d.target.index === sel.target) ? 1 : 0.08;
+  const set = new Set(sel.indices);
+  return (set.has(d.source.index) || set.has(d.target.index)) ? 1 : 0.08;
+}
+function groupOpacity(sel, d) {
+  if (!sel) return 1;
+  if (sel.kind === "edge") return (d.index === sel.source || d.index === sel.target) ? 1 : 0.35;
+  return new Set(sel.indices).has(d.index) ? 1 : 0.35;
+}
+
+function applyHighlight(sel) {
+  ribbonLayer.selectAll("path.ribbon").style("opacity", d => ribbonOpacity(sel, d));
+  groupLayer.selectAll("path.group-arc").style("opacity", d => groupOpacity(sel, d));
+  groupLayer.selectAll("text.group-label").style("opacity", d => groupOpacity(sel, d));
+  renderDetail(sel);
+}
+
+function colorDot(node) {
+  return `<span class="dot" style="background:${color(node.deptId)}"></span>`;
+}
+
+function renderDetail(sel) {
+  const detail = document.getElementById("detail");
+  if (!sel) {
+    detail.innerHTML = `<span id="detail-hint">Hover an arc, band, or ribbon for details. Click to pin/expand.</span>`;
+    return;
+  }
+
+  if (sel.kind === "edge") {
+    const { source, target } = sel;
+    const a = nodes[source], b = nodes[target];
+    detail.innerHTML = `
+      <div id="detail-title">${colorDot(a)}<b>${a.label}</b> ⇄ ${colorDot(b)}<b>${b.label}</b></div>
+      <table>
+        <thead><tr><th>Node</th><th>Sent</th><th>Recv</th></tr></thead>
+        <tbody>
+          <tr><td>${colorDot(a)}${a.label}</td><td>${currentMatrix[source][target]}</td><td>${currentMatrix[target][source]}</td></tr>
+          <tr><td>${colorDot(b)}${b.label}</td><td>${currentMatrix[target][source]}</td><td>${currentMatrix[source][target]}</td></tr>
+        </tbody>
+      </table>`;
+    return;
+  }
+
+  const focusIdxs = sel.indices;
+  let rows = "", totalOut = 0, totalIn = 0;
+  nodes.forEach((n, j) => {
+    if (focusIdxs.includes(j)) return;
+    let sent = 0, recv = 0;
+    focusIdxs.forEach(i => { sent += currentMatrix[i][j]; recv += currentMatrix[j][i]; });
+    totalOut += sent; totalIn += recv;
+    if (sent || recv) rows += `<tr><td>${colorDot(n)}${n.label}</td><td>${sent}</td><td>${recv}</td></tr>`;
+  });
+
+  let internalRow = "";
+  if (focusIdxs.length > 1 || (sel.isDept && nodes[focusIdxs[0]].kind === "dept")) {
+    const iv = internalVolume(focusIdxs);
+    if (iv) internalRow = `<div id="detail-internal">Internal messages within ${sel.title}: <b>${iv}</b></div>`;
+  }
+
+  detail.innerHTML = `
+    <div id="detail-title">${colorDot(nodes[focusIdxs[0]])}<b>${sel.title}</b> — sent ${totalOut}, received ${totalIn}</div>
+    <table>
+      <thead><tr><th>Node</th><th>Sent</th><th>Recv</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${internalRow}`;
+}
+
+// ---------------------------------------------------------------------------
+// Legend (department-level; click expands/collapses, same as the band)
+// ---------------------------------------------------------------------------
+function buildLegend() {
+  const legend = d3.select("#legend");
+  departments.forEach(dept => {
+    const item = legend.append("div")
+      .attr("class", "legend-item")
+      .attr("data-dept", dept.id)
+      .on("mouseenter", () => focusDept(dept.id))
+      .on("mouseleave", () => applyHighlight(pinned))
+      .on("click", () => toggleExpand(dept.id));
+    item.append("div").attr("class", "legend-swatch").style("background", color(dept.id));
+    item.append("div").text(dept.label);
+    item.append("div").attr("class", "legend-toggle").text("+");
+  });
+}
+
+function updateLegendExpandedClasses() {
+  d3.selectAll(".legend-item").each(function (_, i, nodesSel) {
+    const el = d3.select(nodesSel[i]);
+    const deptId = el.attr("data-dept");
+    const isExpanded = expandedDepts.has(deptId);
+    el.classed("expanded", isExpanded);
+    el.select(".legend-toggle").text(isExpanded ? "−" : "+");
+  });
+}
+
+init();
+</script>
+</body>
+</html>

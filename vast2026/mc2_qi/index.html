@@ -40,7 +40,7 @@ svg {
   left: 0;
   top: 0;
   z-index: 2;
-  pointer-events: none;
+  pointer-events: all;
 }
 
 .event-dot,
@@ -181,6 +181,7 @@ select, input {
     </label>
 
     <button id="traceBtn">Trace</button>
+    <button id="clearDailyTraceBtn">Clear traces</button>
   </div>
 </div>
 
@@ -199,13 +200,24 @@ const svg = d3.select("#svg");
 const tooltip = d3.select("#tooltip");
 
 const DAILY_INNER_RADIUS = 30;
-const DAILY_OUTER_RADIUS = 95;
+const DAILY_OUTER_RADIUS = 120;
 const DAILY_LAYOUT_PADDING = 120;
 const DAILY_TITLE_SAFE_TOP = 90;
 const TRACE_ACTIVE_COLOR = "#c04fb3";
 const TRACE_INACTIVE_COLOR = "#eeeeee";
 const TRACE_ACTIVE_OPACITY = 0.75;
 const TRACE_INACTIVE_OPACITY = 0.75;
+const FILE_FIELD_PATHS = [
+  "details.target",
+  "details.file",
+  "details.file_saved",
+  "details.args.path",
+  "details.question",
+  "details.response",
+  "details.topic",
+  "details.advice",
+  "details.content_source",
+];
 
 let width, height;
 
@@ -219,6 +231,12 @@ let currentData = [];
 let visibleData = [];
 
 let dailyGraphFocusStack = [];
+let dailyGraphFileFocusByDay = new Map();
+let dailyGraphFileChainsByDay = new Map();
+let dailyGraphFileRootPeopleByDay = new Map();
+let dailyGraphFilePlannedEdgeKeys = new Set();
+let dailyGraphFileAutoExpandedKeys = new Set();
+
 let dailyGraphExpansions = [];
 let dailyGraphLastRootKey = "";
 let dailyGraphRootQuery = "";
@@ -227,6 +245,13 @@ let dailyGraphBaseEvents = [];
 let dailyGraphFilteredEvents = [];
 let dailyGraphMode = "person"; // "person" or "file"
 let dailyGraphFileQuery = "";
+let dailyGraphConcreteFileWindow = null;
+let zoomLayer = null;
+let svgZoom = null;
+let dailyGraphZoomTransform = d3.zoomIdentity;
+let keepDailyGraphZoom = false;
+let keepDailyGraphView = false;
+let savedDailyGraphViewCenter = null;
 
 let xScale, yScale, yMap;
 let colorScale;
@@ -273,6 +298,611 @@ enter_room:       "#757575",
 unknown:          "#d0d0d0"
 };
 
+function getValuesByPath(obj, path) {
+  const parts = path.split(".");
+
+  function step(current, idx) {
+    if (current == null) return [];
+
+    if (idx >= parts.length) {
+      return [current];
+    }
+
+    const part = parts[idx];
+
+    if (part.endsWith("[]")) {
+      const key = part.slice(0, -2);
+      const arr = current[key];
+
+      if (!Array.isArray(arr)) return [];
+
+      return arr.flatMap(item =>
+        step(item, idx + 1)
+      );
+    }
+
+    return step(current[part], idx + 1);
+  }
+
+  return step(obj, 0);
+}
+
+
+function getDailyGraphDayKey(e) {
+  if (!e || !e.date) return "";
+  return d3.timeFormat("%m-%d")(e.date);
+}
+
+function normalizeTracePersonId(id) {
+  return (id || "")
+    .replace(/^Agent\//, "")
+    .toLowerCase()
+    .trim();
+}
+
+function getEventTimeMs(e) {
+  if (!e || !e.date) return NaN;
+
+  const t = e.date instanceof Date
+    ? e.date
+    : new Date(e.date);
+
+  return t.getTime();
+}
+
+function getPeopleIdsFromEvent(e) {
+  const ids = [];
+
+  if (e.sender_id) {
+    const senderId = normalizeTracePersonId(e.sender_id);
+    if (senderId) ids.push(senderId);
+  }
+
+  (e.receivers || []).forEach(r => {
+    const rid = normalizeTracePersonId(r.id);
+    if (rid) ids.push(rid);
+  });
+
+  return Array.from(new Set(ids));
+}
+
+function eventHasPersonId(e, personId) {
+  const q = normalizeTracePersonId(personId);
+  if (!q) return false;
+
+  return getPeopleIdsFromEvent(e).includes(q);
+}
+
+function getExternalSenderIdsForFocus(e, focusPersonId) {
+  return getExternalSendersForFocus(e, focusPersonId)
+    .map(s => normalizeTracePersonId(s.id || s.name))
+    .filter(Boolean);
+}
+
+function buildFileOccurrenceRecords(fileEvents) {
+  const startRecords = [];
+  const edgeRecords = [];
+
+  fileEvents.forEach(e => {
+    const day = getDailyGraphDayKey(e);
+    const timeMs = getEventTimeMs(e);
+
+    if (!day || Number.isNaN(timeMs)) return;
+
+    const people = getPeopleIdsFromEvent(e);
+
+    people.forEach(focusId => {
+      // 这个 person 自己的 inner circle 上有 file-related event
+      startRecords.push({
+        day,
+        focusId,
+        event: e,
+        eventId: e.id,
+        timeMs,
+        role: "inner",
+        key: ["start", day, focusId, e.id, "inner"].join("||")
+      });
+
+      const upstreamIds = getExternalSenderIdsForFocus(e, focusId);
+
+      upstreamIds.forEach(upstreamId => {
+        // 这个 focus graph 的 outer circle 上有 file-related upstream node
+        edgeRecords.push({
+          day,
+          focusId,
+          upstreamId,
+          event: e,
+          eventId: e.id,
+          timeMs,
+          key: ["edge", day, upstreamId, focusId, e.id].join("||")
+        });
+
+        startRecords.push({
+          day,
+          focusId,
+          upstreamId,
+          event: e,
+          eventId: e.id,
+          timeMs,
+          role: "outer",
+          key: ["start", day, focusId, upstreamId, e.id, "outer"].join("||")
+        });
+      });
+    });
+  });
+
+  return {
+    startRecords,
+    edgeRecords
+  };
+}
+
+function findNearestFileUpstreamEdges({
+  personId,
+  currentTimeMs,
+  day,
+  edgeRecords,
+  usedEdgeKeys,
+  chainPeople
+}) {
+  const q = normalizeTracePersonId(personId);
+  if (!q || Number.isNaN(currentTimeMs)) return [];
+
+  return edgeRecords
+    .filter(edge => {
+      if (edge.day !== day) return false;
+
+      // 当前 person 必须是这个 edge 的 focus
+      // 也就是我们正在找这个 person 的 outer upstream
+      if (edge.focusId !== q) return false;
+
+      if (usedEdgeKeys.has(edge.key)) return false;
+
+      // 避免 person cycle
+      if (chainPeople.has(edge.upstreamId)) return false;
+
+      // upstream 按因果，默认只找当前时间之前或等于当前时间的 event
+      if (edge.timeMs > currentTimeMs) return false;
+
+      return true;
+    })
+    .map(edge => ({
+      edge,
+      timeDiff: Math.abs(currentTimeMs - edge.timeMs)
+    }))
+    .sort((a, b) => {
+      if (a.timeDiff !== b.timeDiff) {
+        return a.timeDiff - b.timeDiff;
+      }
+
+      // 同样近时，时间更晚的更接近当前 node
+      return b.edge.timeMs - a.edge.timeMs;
+    });
+}
+
+function expandFileUpstreamFromEvent({
+  rootPersonId,
+  startEvent,
+  day,
+  edgeRecords,
+  usedEdgeKeys,
+  chainPeople,
+  chainEdges,
+  maxDepth = 8
+}) {
+  const rootId = normalizeTracePersonId(rootPersonId);
+  if (!rootId || !startEvent) return;
+
+  const startTimeMs = getEventTimeMs(startEvent);
+  if (Number.isNaN(startTimeMs)) return;
+
+  function expand(currentPersonId, currentTimeMs, depth) {
+    const currentId = normalizeTracePersonId(currentPersonId);
+    if (!currentId) return;
+    if (depth >= maxDepth) return;
+
+    const candidates = findNearestFileUpstreamEdges({
+      personId: currentId,
+      currentTimeMs,
+      day,
+      edgeRecords,
+      usedEdgeKeys,
+      chainPeople
+    });
+
+    candidates.forEach(({ edge, timeDiff }) => {
+      if (usedEdgeKeys.has(edge.key)) return;
+      if (chainPeople.has(edge.upstreamId)) return;
+
+      usedEdgeKeys.add(edge.key);
+
+      chainEdges.push({
+        day,
+        from: edge.upstreamId,
+        to: edge.focusId,
+        event: edge.event,
+        eventId: edge.eventId,
+        eventTimeMs: edge.timeMs,
+        timeDiff,
+        depth: depth + 1,
+        key: edge.key
+      });
+
+      chainPeople.add(edge.upstreamId);
+      chainPeople.add(edge.focusId);
+
+      // 继续往更上游找
+      expand(
+        edge.upstreamId,
+        edge.timeMs,
+        depth + 1
+      );
+    });
+  }
+
+  chainPeople.add(rootId);
+
+  expand(rootId, startTimeMs, 0);
+}
+
+function buildFileTemporalChainsByDay(fileEvents) {
+  const {
+    startRecords,
+    edgeRecords
+  } = buildFileOccurrenceRecords(fileEvents);
+
+  const startByDay = d3.group(startRecords, d => d.day);
+  const edgeByDay = d3.group(edgeRecords, d => d.day);
+  const fileEventsByDay = d3.group(
+    fileEvents.slice().sort((a, b) => a.date - b.date),
+    e => getDailyGraphDayKey(e)
+  );
+
+  const chainsByDay = new Map();
+
+  fileEventsByDay.forEach((dayFileEvents, day) => {
+    if (!day) return;
+
+    const dayStartsRaw = startByDay.get(day) || [];
+    const dayEdges = edgeByDay.get(day) || [];
+
+    const dayStarts = dayStartsRaw
+      .slice()
+      .sort((a, b) => a.timeMs - b.timeMs);
+
+    const coveredPeople = new Set();
+    const usedStartKeys = new Set();
+    const usedEdgeKeys = new Set();
+
+    const chains = [];
+
+    // 关键：root candidates 用原来的 getPeopleForFile 找
+    const people = getPeopleForFile(
+      dailyGraphFileQuery,
+      dayFileEvents
+    );
+
+    const rootCandidates = people
+      .map(p => {
+        const id = (p.id || "")
+          .replace(/^Agent\//, "")
+          .toLowerCase()
+          .trim();
+
+        const relatedStarts = dayStarts.filter(s =>
+          s.focusId === id
+        );
+
+        const firstTime = relatedStarts.length
+          ? d3.min(relatedStarts, s => s.timeMs)
+          : Infinity;
+
+        return {
+          personId: id,
+          firstTime,
+          count: relatedStarts.length
+        };
+      })
+      .filter(d => d.personId && Number.isFinite(d.firstTime))
+      .sort((a, b) => {
+        if (a.firstTime !== b.firstTime) {
+          return a.firstTime - b.firstTime;
+        }
+
+        return b.count - a.count;
+      });
+
+    rootCandidates.forEach(candidate => {
+      const rootPersonId = candidate.personId;
+
+      if (coveredPeople.has(rootPersonId)) return;
+
+      const rootStarts = dayStarts.filter(s =>
+        s.focusId === rootPersonId &&
+        !usedStartKeys.has(s.key)
+      );
+
+      if (!rootStarts.length) return;
+
+      const chainPeople = new Set([rootPersonId]);
+      const chainEdges = [];
+
+      rootStarts
+        .sort((a, b) => a.timeMs - b.timeMs)
+        .forEach(start => {
+          usedStartKeys.add(start.key);
+
+          expandFileUpstreamFromEvent({
+            rootPersonId,
+            startEvent: start.event,
+            day,
+            edgeRecords: dayEdges,
+            usedEdgeKeys,
+            chainPeople,
+            chainEdges
+          });
+        });
+
+      const chain = {
+        day,
+        rootPersonId,
+        starts: rootStarts,
+        edges: chainEdges,
+        people: chainPeople
+      };
+
+      chains.push(chain);
+
+      chainPeople.forEach(id => {
+        coveredPeople.add(id);
+      });
+
+      dayStarts.forEach(s => {
+        if (coveredPeople.has(s.focusId)) {
+          usedStartKeys.add(s.key);
+        }
+      });
+    });
+
+    chainsByDay.set(day, chains);
+  });
+
+  return chainsByDay;
+}
+
+function isPlannedFileTemporalEdge(day, fromId, toId, eventId) {
+  const key = [
+    "edge",
+    day,
+    normalizeTracePersonId(fromId),
+    normalizeTracePersonId(toId),
+    eventId
+  ].join("||");
+
+  return dailyGraphFilePlannedEdgeKeys.has(key);
+}
+
+function maybeAutoAddTemporalFileExpansion({
+  sender,
+  e,
+  focusQuery,
+  x,
+  y,
+  angle,
+  depth,
+  rootWindow
+}) {
+  if (dailyGraphMode !== "file") return;
+  if (!sender || !e || !e.date || !rootWindow) return;
+
+  const day = getDailyGraphDayKey(e);
+
+  const senderId = normalizeTracePersonId(
+    sender.id || sender.name
+  );
+
+  const focusId = normalizeTracePersonId(focusQuery);
+
+  if (!day || !senderId || !focusId) return;
+
+  // 关键：只自动展开 temporal chain planner 里已经决定要画的 edge
+  if (
+    !isPlannedFileTemporalEdge(
+      day,
+      senderId,
+      focusId,
+      e.id
+    )
+  ) {
+    return;
+  }
+
+  const autoKey = [
+    "auto-temporal-file",
+    day,
+    senderId,
+    focusId,
+    e.id
+  ].join("||");
+
+  if (dailyGraphFileAutoExpandedKeys.has(autoKey)) {
+    return;
+  }
+
+  dailyGraphFileAutoExpandedKeys.add(autoKey);
+
+  const outerWindow = buildClickedWindowForExpansion(
+    e.date,
+    rootWindow
+  );
+
+  const innerWindow = buildInnerWindowForExpansion(
+    e.date,
+    rootWindow
+  );
+
+  if (
+    !outerWindow ||
+    !outerWindow.start ||
+    !outerWindow.end ||
+    !innerWindow ||
+    !innerWindow.start ||
+    !innerWindow.end
+  ) {
+    console.warn("AUTO EXPANSION SKIP: invalid window", {
+      day,
+      senderId,
+      focusId,
+      eventId: e.id,
+      outerWindow,
+      innerWindow,
+      rootWindow
+    });
+    return;
+  }
+
+  const clickedTime = e.date instanceof Date
+    ? e.date.toISOString()
+    : new Date(e.date).toISOString();
+
+  const expKey = [
+    senderId,
+    day,
+    x.toFixed(1),
+    y.toFixed(1),
+    rootWindow.start.toISOString(),
+    clickedTime
+  ].join("||");
+
+  const alreadyExists = dailyGraphExpansions.some(exp =>
+    exp.key === expKey
+  );
+
+  if (alreadyExists) {
+    return;
+  }
+
+  dailyGraphExpansions.push({
+    key: expKey,
+    autoFileChain: true,
+
+    personId: senderId,
+    personName: sender.name || sender.id || senderId,
+    day,
+
+    clickedX: x,
+    clickedY: y,
+    clickedAngle: angle,
+    depth: depth + 1,
+    clickedTime,
+
+    // outer circle 用的 window
+    windowStart: outerWindow.start.toISOString(),
+    windowEnd: outerWindow.end.toISOString(),
+
+    // inner circle 用的 window
+    innerWindowStart: innerWindow.start.toISOString(),
+    innerWindowEnd: innerWindow.end.toISOString(),
+
+    // debug 信息
+    parentFocus: focusId,
+    eventId: e.id
+  });
+
+  console.log("AUTO TEMPORAL FILE EXPANSION ADDED", {
+    day,
+    from: senderId,
+    to: focusId,
+    eventId: e.id,
+    eventTime: e.date,
+    expKey
+  });
+}
+
+function normalizeTracePersonId(id) {
+  return (id || "")
+    .replace(/^Agent\//, "")
+    .toLowerCase()
+    .trim();
+}
+
+function getPeopleIdsFromEvent(e) {
+  const ids = [];
+
+  if (e.sender_id) {
+    const senderId = normalizeTracePersonId(e.sender_id);
+    if (senderId) ids.push(senderId);
+  }
+
+  (e.receivers || []).forEach(r => {
+    const rid = normalizeTracePersonId(r.id);
+    if (rid) ids.push(rid);
+  });
+
+  return Array.from(new Set(ids));
+}
+
+function buildFileFocusByDay(fileEvents) {
+  const map = new Map();
+
+  const fileEventsByDay = d3.group(
+    fileEvents,
+    e => getDailyGraphDayKey(e)
+  );
+
+  fileEventsByDay.forEach((eventsOfDay, day) => {
+    if (!day) return;
+
+    const people = getPeopleForFile(
+      dailyGraphFileQuery,
+      eventsOfDay
+    );
+
+    const peopleSet = new Set();
+
+    people.forEach(p => {
+      const id = (p.id || "")
+        .replace(/^Agent\//, "")
+        .toLowerCase()
+        .trim();
+
+      if (id) {
+        peopleSet.add(id);
+      }
+    });
+
+    map.set(day, peopleSet);
+  });
+
+  return map;
+}
+
+function eventTouchesFileFocusPeopleOnSameDay(e) {
+  const day = getDailyGraphDayKey(e);
+  if (!day) return false;
+
+  const peopleSet = dailyGraphFileFocusByDay.get(day);
+
+  if (!peopleSet || !peopleSet.size) {
+    return false;
+  }
+
+  return Array.from(peopleSet).some(personId =>
+    isPersonSender(e, personId) ||
+    isPersonReceiver(e, personId)
+  );
+}
+
+function getAllFileFocusPeople() {
+  const all = new Set();
+
+  dailyGraphFileFocusByDay.forEach(peopleSet => {
+    peopleSet.forEach(id => all.add(id));
+  });
+
+  return Array.from(all);
+}
+
 function actionColor(action) {
   return actionColorMap[action] || actionColorMap.unknown;
 }
@@ -307,13 +937,67 @@ function resize() {
   }
 }
 
+function setupDailyGraphZoom() {
+  svgZoom = d3.zoom()
+    .scaleExtent([0.15, 8])
+    .on("zoom", event => {
+      dailyGraphZoomTransform = event.transform;
+
+      if (zoomLayer) {
+        zoomLayer.attr("transform", dailyGraphZoomTransform);
+      }
+    });
+
+  svg.call(svgZoom);
+}
+
+function getCurrentViewCenterInGraphCoords() {
+  const container = document.getElementById("container");
+
+  const screenCenterX = container.clientWidth / 2;
+  const screenCenterY = container.clientHeight / 2;
+
+  const t = dailyGraphZoomTransform || d3.zoomIdentity;
+
+  return {
+    x: (screenCenterX - t.x) / t.k,
+    y: (screenCenterY - t.y) / t.k,
+    k: t.k
+  };
+}
+
+function restoreViewCenterInGraphCoords(center) {
+  if (!center || !svgZoom || !svg) return;
+
+  const container = document.getElementById("container");
+
+  const screenCenterX = container.clientWidth / 2;
+  const screenCenterY = container.clientHeight / 2;
+
+  const k = center.k || dailyGraphZoomTransform.k || 1;
+
+  const t = d3.zoomIdentity
+    .translate(
+      screenCenterX - center.x * k,
+      screenCenterY - center.y * k
+    )
+    .scale(k);
+
+  dailyGraphZoomTransform = t;
+
+  svg.call(svgZoom.transform, t);
+}
+
 window.addEventListener("resize", resize);
 
 Promise.all([
-  d3.json("./level1_department_pairs.json"),
-  d3.json("./level2_receiver_sets.json"),
-  d3.json("./events_for_trace.json")
-]).then(([l1, l2, events]) => {
+  d3.json("level1_department_pairs.json"),
+  d3.json("level2_receiver_sets.json"),
+  d3.json("events_for_trace_part1.json"),
+  d3.json("events_for_trace_part2.json"),
+  d3.json("events_for_trace_part3.json")
+]).then(([l1, l2, events1, events2, events3]) => {
+  const events = [...events1, ...events2, ...events3];
   level1Data = l1.map(d => ({
     ...d,
     date: parseTime(d.first_time || d.time_bin)
@@ -429,6 +1113,18 @@ dailyGraphLastRootKey = "";
 
 renderDailyGraphTab();
 
+});
+
+d3.select("#clearDailyTraceBtn").on("click", () => {
+  dailyGraphExpansions = [];
+
+  keepDailyGraphZoom = true;
+
+  if (typeof getCurrentViewCenterInGraphCoords === "function") {
+    savedDailyGraphViewCenter = getCurrentViewCenterInGraphCoords();
+  }
+
+  renderDailyGraphTab();
 });
 
   d3.select("#fileStartDateFilter").on("change", rerenderCurrentTab);
@@ -564,22 +1260,53 @@ function getFileDateWindow() {
   const startValue = d3.select("#fileStartDateFilter").property("value");
   const endValue = d3.select("#fileEndDateFilter").property("value");
 
-  const start = startValue
-    ? new Date(`${startValue}T00:00:00`)
-    : null;
+  if (!startValue && !endValue) {
+    return {
+      start: null,
+      end: null
+    };
+  }
 
-  const end = endValue
-    ? new Date(`${endValue}T23:59:59`)
-    : null;
+  const startDate = startValue || endValue;
+  const endDate = endValue || startValue;
 
-  return { start, end };
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T23:59:59`);
+
+  return {
+    start,
+    end
+  };
 }
 
 function eventPassesFileDateWindow(e) {
-  const { start, end } = getFileDateWindow();
+  if (!e || !e.date) return false;
 
-  if (start && e.date < start) return false;
-  if (end && e.date > end) return false;
+  const fileWindow = getFileDateWindow();
+
+  if (!fileWindow.start || !fileWindow.end) {
+    return true;
+  }
+
+  const t = e.date instanceof Date
+    ? e.date
+    : new Date(e.date);
+
+  if (Number.isNaN(t.getTime())) return false;
+
+  return t >= fileWindow.start && t <= fileWindow.end;
+}
+
+function isMatchedFileEventInRange(e, fileQuery) {
+  if (!e || !e.date) return false;
+
+  if (!eventPassesFileDateWindow(e)) {
+    return false;
+  }
+
+  if (!isFileEvent(e, fileQuery)) {
+    return false;
+  }
 
   return true;
 }
@@ -602,8 +1329,11 @@ function isAgentEntity(type) {
 
 function isEventFileRelated(e) {
   if (dailyGraphMode !== "file") return false;
-  if (!dailyGraphFileQuery) return false;
-  return isFileEvent(e, dailyGraphFileQuery);
+
+  return (
+    eventPassesFileDateWindow(e) &&
+    isFileEvent(e, dailyGraphFileQuery)
+  );
 }
 
 function getEntityTypeForFocus(e, focusQuery) {
@@ -881,8 +1611,17 @@ function looksLikeFileName(s) {
 }
 
 function extractFileNames(e) {
-  const strings = collectStringsDeep(e);
-  const files = strings.filter(looksLikeFileName);
+  const files = [];
+
+  FILE_FIELD_PATHS.forEach(path => {
+    const values = getValuesByPath(e, path);
+
+    values.forEach(value => {
+      if (typeof value === "string" && looksLikeFileName(value)) {
+        files.push(value.trim());
+      }
+    });
+  });
 
   return Array.from(new Set(files));
 }
@@ -913,58 +1652,50 @@ return false;
 }
 
 function isFileEvent(e, query) {
+  if (!query) return false;
 
-return containsFileKeyword(
-  e.details,
-  query
-);
+  const q = query.toLowerCase().trim();
+  if (!q) return false;
+
+  const files = extractFileNames(e);
+
+  return files.some(file =>
+    file.toLowerCase().includes(q)
+  );
 }
 
-function getPeopleForFile(fileQuery, events) {
-  const people = new Map();
+function getPeopleForFile(fileQuery, fileEvents) {
+  const peopleMap = new Map();
 
-  events.forEach(e => {
-    if (!isFileEvent(e, fileQuery)) return;
-
-    // 1. 从 parties 里抽 person
-    (e.parties || []).forEach(p => {
-      if (!p || !p.includes("person:")) return;
-
-      const id = p.replace(/^Agent\//, "");
-
-      people.set(id.toLowerCase(), {
-        id,
-        name: id.replace("person:", "").replace(/_/g, " "),
-        department: "Unknown Department"
-      });
-    });
-
-    // 2. 从 sender_id 里抽 person
-    if (e.sender_id && e.sender_id.includes("person:")) {
-      const id = e.sender_id;
-
-      people.set(id.toLowerCase(), {
-        id,
-        name: e.sender_name || id.replace("person:", "").replace(/_/g, " "),
-        department: e.sender_department || "Unknown Department"
-      });
+  fileEvents.forEach(e => {
+    if (e.sender_id) {
+      peopleMap.set(
+        (e.sender_id || "").replace(/^Agent\//, "").toLowerCase(),
+        {
+          id: e.sender_id,
+          name: e.sender_name || e.sender_id,
+          type: e.sender_type,
+          department: e.sender_department
+        }
+      );
     }
 
-    // 3. 从 receivers 里抽 person
     (e.receivers || []).forEach(r => {
-      if (!r || !r.id || !r.id.includes("person:")) return;
-
-      const id = r.id;
-
-      people.set(id.toLowerCase(), {
-        id,
-        name: r.name || id.replace("person:", "").replace(/_/g, " "),
-        department: r.department || "Unknown Department"
-      });
+      if (r.id) {
+        peopleMap.set(
+          (r.id || "").replace(/^Agent\//, "").toLowerCase(),
+          {
+            id: r.id,
+            name: r.name || r.id,
+            type: r.type,
+            department: r.department
+          }
+        );
+      }
     });
   });
 
-  return Array.from(people.values());
+  return Array.from(peopleMap.values());
 }
 
 function drawSelectedPersonTailsOnSegment(x, y, w, h, d) {
@@ -981,10 +1712,14 @@ function getTraceArrowColor(isSelectedTrace) {
   return isSelectedTrace ? "#c04fb3" : "#b8b8b8";
 }
 
-function isExpandedTraceNode(sender, day, x, y, rootWindow) {
-  if (!rootWindow) return false;
+function isExpandedTraceNode(sender, day, x, y, rootWindow, eventDate) {
+  if (!rootWindow || !eventDate) return false;
 
-  const focusId = (sender.id || sender.name || "").toLowerCase();
+  const focusId = (sender.id || sender.name || "")
+    .replace(/^Agent\//, "")
+    .toLowerCase();
+
+  const clickedTime = eventDate.toISOString();
 
   const key = [
     focusId,
@@ -992,7 +1727,7 @@ function isExpandedTraceNode(sender, day, x, y, rootWindow) {
     x.toFixed(1),
     y.toFixed(1),
     rootWindow.start.toISOString(),
-    rootWindow.end.toISOString()
+    clickedTime
   ].join("||");
 
   return dailyGraphExpansions.some(exp => exp.key === key);
@@ -1100,27 +1835,35 @@ function makeTooltip(d) {
 
 /* ---------- Person matching ---------- */
 
-function isPersonSender(d, query) {
-  const q = query.toLowerCase();
+function normalizeEntityId(id) {
+  return (id || "")
+    .replace(/^Agent\//, "")
+    .toLowerCase();
+}
+
+function isPersonSender(e, q) {
+  const target = normalizeEntityId(q);
+  const senderId = normalizeEntityId(e.sender_id);
+  const senderName = (e.sender_name || "").toLowerCase();
 
   return (
-    (d.sender_id || "").toLowerCase().includes(q) ||
-    (d.sender_name || "").toLowerCase().includes(q)
+    senderId.includes(target) ||
+    senderName.includes(target)
   );
 }
 
-function isPersonReceiver(d, query) {
-  const q = query.toLowerCase();
+function isPersonReceiver(e, q) {
+  const target = normalizeEntityId(q);
 
-  return (
-    (d.receiver_ids || []).some(id =>
-      id.toLowerCase().includes(q)
-    ) ||
-    (d.receivers || []).some(r =>
-      (r.id || "").toLowerCase().includes(q) ||
-      (r.name || "").toLowerCase().includes(q)
-    )
-  );
+  return (e.receivers || []).some(r => {
+    const rid = normalizeEntityId(r.id);
+    const rname = (r.name || "").toLowerCase();
+
+    return (
+      rid.includes(target) ||
+      rname.includes(target)
+    );
+  });
 }
 
 /* ---------- Overview person trace ---------- */
@@ -1486,61 +2229,165 @@ function buildAnchorWindowsForRoot(events, rootQuery, traceDate, hoursBack) {
 
   const rootDayEvents = events
     .filter(e => {
+      if (!e.date) return false;
       if (e.date < dayStart || e.date > dayEnd) return false;
       return isPersonSender(e, q) || isPersonReceiver(e, q);
     })
     .sort((a, b) => a.date - b.date);
 
-  return rootDayEvents.map(e => {
+  if (!rootDayEvents.length) return [];
+
+  const rawStart = new Date(
+    dayEnd.getTime() - hoursBack * 60 * 60 * 1000
+  );
+
+  const start = rawStart < dayStart ? dayStart : rawStart;
+
+  return [{
+    anchorEventId: "day-window",
+    anchorDate: dayEnd,
+    start,
+    end: dayEnd
+  }];
+}
+
+function buildClickedWindowForExpansion(clickedDate, parentWindow) {
+  const clickedTime = clickedDate instanceof Date
+    ? clickedDate
+    : new Date(clickedDate);
+
+  if (Number.isNaN(clickedTime.getTime())) {
+    return parentWindow;
+  }
+
+  if (dailyGraphMode === "person") {
+    const traceDate = d3.select("#traceDateFilter").property("value");
+    const hoursBack =
+      +d3.select("#hoursBackFilter").property("value") || 24;
+
+    if (!traceDate) return parentWindow;
+
+    const dayStart = new Date(`${traceDate}T00:00:00`);
+    const dayEnd = new Date(`${traceDate}T23:59:59`);
+
     const rawStart = new Date(
-      e.date.getTime() - hoursBack * 60 * 60 * 1000
+      dayEnd.getTime() - hoursBack * 60 * 60 * 1000
+    );
+
+    const baseStart = rawStart < dayStart ? dayStart : rawStart;
+
+    return {
+      // 关键：outer 的 start 和 inner 一样
+      start: baseStart,
+
+      // 关键：outer 的 end 才是 clickedTime
+      end: clickedTime
+    };
+  }
+
+  if (dailyGraphMode === "file") {
+    const fileWindow = getFileDateWindow();
+
+    return {
+      start: fileWindow.start || parentWindow.start,
+      end: clickedTime
+    };
+  }
+
+  return parentWindow;
+}
+
+function buildInnerWindowForExpansion(clickedDate, parentWindow) {
+  if (dailyGraphMode === "person") {
+    const traceDate = d3.select("#traceDateFilter").property("value");
+    const hoursBack =
+      +d3.select("#hoursBackFilter").property("value") || 24;
+
+    if (!traceDate) return parentWindow;
+
+    const dayStart = new Date(`${traceDate}T00:00:00`);
+    const dayEnd = new Date(`${traceDate}T23:59:59`);
+
+    const rawStart = new Date(
+      dayEnd.getTime() - hoursBack * 60 * 60 * 1000
     );
 
     return {
-      anchorEventId: e.id,
-      anchorDate: e.date,
-
-      // 关键：最多只能回溯到当天 00:00
       start: rawStart < dayStart ? dayStart : rawStart,
-
-      end: e.date
+      end: dayEnd
     };
-  });
+  }
+
+  if (dailyGraphMode === "file") {
+    const fileWindow = getFileDateWindow();
+
+    return {
+      start: fileWindow.start || parentWindow.start,
+      end: fileWindow.end || parentWindow.end
+    };
+  }
+
+  return parentWindow;
 }
 
-function eventInAnyAnchorWindow(e, windows) {
-  return windows.some(w => e.date >= w.start && e.date <= w.end);
-}
+function toDateObj(d) {
+  if (!d) return null;
 
-function getAnchorWindowForEvent(e) {
-  return dailyGraphAnchorWindows.find(w => w.anchorEventId === e.id) || null;
+  const t = d instanceof Date ? d : new Date(d);
+
+  if (Number.isNaN(t.getTime())) return null;
+
+  return t;
 }
 
 function eventInWindow(e, windowObj) {
-  if (!windowObj) return false;
-  return e.date >= windowObj.start && e.date <= windowObj.end;
+  if (!e || !e.date || !windowObj) return false;
+
+  const t = toDateObj(e.date);
+  const start = toDateObj(windowObj.start);
+  const end = toDateObj(windowObj.end);
+
+  if (!t || !start || !end) return false;
+
+  return t >= start && t <= end;
+}
+
+function eventInAnyAnchorWindow(e, windows) {
+  return (windows || []).some(w => eventInWindow(e, w));
+}
+
+function getAnchorWindowForEvent(e) {
+  if (!e || !e.date) return null;
+
+  return (dailyGraphAnchorWindows || []).find(w =>
+    eventInWindow(e, w)
+  ) || null;
 }
 
 function getEventsForPersonWithinOneRootWindow(personQuery, windowObj, events) {
+  const q = personQuery.toLowerCase();
 
-const q = personQuery.toLowerCase();
+  return events.filter(e => {
+    if (!e || !e.date) return false;
 
-return events.filter(e => {
+    const isTargetPerson =
+      isPersonSender(e, q) ||
+      isPersonReceiver(e, q);
 
-  if (
-    dailyGraphMode === "person" &&
-    !eventInWindow(e, windowObj)
-  ) {
+    if (!isTargetPerson) return false;
+
+    if (dailyGraphMode === "person") {
+      if (!windowObj) return false;
+      return eventInWindow(e, windowObj);
+    }
+
+    if (dailyGraphMode === "file") {
+      if (!windowObj) return false;
+      return eventInWindow(e, windowObj);
+    }
+
     return false;
-  }
-
-  return (
-    isPersonSender(e, q) ||
-    isPersonReceiver(e, q)
-  );
-
-});
-
+  });
 }
 
 function getEventsForPersonWithinRootWindows(personQuery) {
@@ -1551,6 +2398,7 @@ function getEventsForPersonWithinRootWindows(personQuery) {
     return isPersonSender(e, q) || isPersonReceiver(e, q);
   });
 }
+
 
 /* ---------- Daily graph rendering ---------- */
 
@@ -1616,59 +2464,99 @@ function renderDailyGraphTab() {
     dailyGraphFileQuery = fileQuery;
     dailyGraphRootQuery = fileQuery;
 
-    const fileEvents = dailyGraphBaseEvents.filter(e =>
-      isFileEvent(e, fileQuery) &&
-      eventPassesFileDateWindow(e)
-    );
+// 1. fileEvents: 只包含 file name/path match keyword 的 events
+const fileEvents = dailyGraphBaseEvents
+  .filter(e =>
+    eventPassesFileDateWindow(e) &&
+    isFileEvent(e, fileQuery)
+  )
+  .sort((a, b) => a.date - b.date);
 
-    if (!fileEvents.length) {
-      drawDailyMessage("No file-related events in this date range.");
-      return;
-    }
+if (!fileEvents.length) {
+  drawDailyMessage("No file-related events in this date range.");
+  return;
+}
 
-    const people = getPeopleForFile(fileQuery, fileEvents);
+// 2. same-day file-related people
+dailyGraphFileFocusByDay = buildFileFocusByDay(fileEvents);
 
-    dailyGraphFocusStack = people
-      .map(p => (p.id || "").replace(/^Agent\//, "").toLowerCase())
-      .filter(Boolean);
+// 3. contextEvents: 只保留这些人在 file match 那一天的 activity
+const contextEvents = dailyGraphBaseEvents
+  .filter(e =>
+    eventPassesFileDateWindow(e) &&
+    eventTouchesFileFocusPeopleOnSameDay(e)
+  )
+  .sort((a, b) => a.date - b.date);
 
-    if (!dailyGraphFocusStack.length) {
-      drawDailyMessage("Found file events, but no related people.");
-      return;
-    }
+console.log("FILE CONTEXT EVENTS SAME DAY ONLY", {
+  contextEvents: contextEvents.length,
+  samples: contextEvents.slice(0, 20).map(e => ({
+    id: e.id,
+    day: getDailyGraphDayKey(e),
+    time: e.date,
+    action: e.action,
+    sender: e.sender_id,
+    receivers: (e.receivers || []).map(r => r.id),
+    files: extractFileNames(e)
+  }))
+});
 
-    filteredEvents = dailyGraphBaseEvents
-      .filter(e =>
-        eventPassesFileDateWindow(e) &&
-        dailyGraphFocusStack.some(personId =>
-          isPersonSender(e, personId) ||
-          isPersonReceiver(e, personId)
-        )
-      )
-      .sort((a, b) => a.date - b.date);
+if (!contextEvents.length) {
+  drawDailyMessage("Found related people, but no activity events in this date range.");
+  return;
+}
 
-    if (!filteredEvents.length) {
-      drawDailyMessage("Found related people, but no activity events in this date range.");
-      return;
-    }
+// 4. temporal chains
+dailyGraphFileChainsByDay = buildFileTemporalChainsByDay(fileEvents);
 
-    dailyGraphAnchorWindows = [];
+dailyGraphFileRootPeopleByDay = new Map();
+dailyGraphFilePlannedEdgeKeys = new Set();
 
-    const fileWindow = getConcreteFileWindow(filteredEvents);
+dailyGraphFileChainsByDay.forEach((chains, day) => {
+  dailyGraphFileRootPeopleByDay.set(
+    day,
+    new Set(chains.map(c => c.rootPersonId))
+  );
 
-    rootKey = [
-      "file",
-      fileQuery,
-      fileWindow.start.toISOString(),
-      fileWindow.end.toISOString()
-    ].join("||");
+  chains.forEach(chain => {
+    (chain.edges || []).forEach(edge => {
+      dailyGraphFilePlannedEdgeKeys.add(edge.key);
+    });
+  });
+});
+
+dailyGraphFocusStack = Array.from(
+  new Set(
+    Array.from(dailyGraphFileRootPeopleByDay.values())
+      .flatMap(set => Array.from(set))
+  )
+);
+
+if (!dailyGraphFocusStack.length) {
+  drawDailyMessage("Found file events, but no root people.");
+  return;
+}
+
+// 5. 真正传给画图的数据
+filteredEvents = contextEvents;
+
+dailyGraphAnchorWindows = [];
+
+dailyGraphConcreteFileWindow = getConcreteFileWindow(filteredEvents);
+const fileWindow = dailyGraphConcreteFileWindow;
+
+rootKey = [
+  "file",
+  fileQuery,
+  fileWindow.start.toISOString(),
+  fileWindow.end.toISOString()
+].join("||");
   }
 
   dailyGraphFilteredEvents = filteredEvents;
 
   if (rootKey !== dailyGraphLastRootKey) {
     dailyGraphLastRootKey = rootKey;
-    dailyGraphExpansions = [];
   }
 
   const container = document.getElementById("container");
@@ -1683,11 +2571,21 @@ function renderDailyGraphTab() {
   setupCanvasSvg(height);
   clearCanvasAndSvg(height);
 
-  const g = drawExpandableDailyGraph(filteredEvents, dailyGraphFocusStack);
-  autoFitDailyGraph(g);
+  dailyGraphExpansions = dailyGraphExpansions.filter(exp =>
+  !exp.autoFileChain
+);
+
+dailyGraphFileAutoExpandedKeys = new Set();
+
+  const g = drawExpandableDailyGraph(
+    filteredEvents,
+    dailyGraphFocusStack
+  );
 
   container.scrollTop = oldScrollTop;
   container.scrollLeft = oldScrollLeft;
+
+  console.log("expansions", dailyGraphExpansions.length);
 }
 
 function drawDailyMessage(message) {
@@ -1706,8 +2604,13 @@ function drawDailyMessage(message) {
 }
 
 function drawExpandableDailyGraph(events, focusStack) {
-  const g = svg.append("g")
-    .attr("class", "expandable-daily-graph");
+  setupDailyGraphZoom();
+
+  zoomLayer = svg.append("g")
+  .attr("class", "daily-graph-zoom-layer");
+
+const g = zoomLayer.append("g")
+  .attr("class", "daily-graph-content");
 
   const eventsByDay = d3.group(events, d => d3.timeFormat("%m-%d")(d.date));
   const days = Array.from(eventsByDay.keys()).sort();
@@ -1718,18 +2621,23 @@ function drawExpandableDailyGraph(events, focusStack) {
       .attr("y", 50)
       .attr("font-size", 14)
       .attr("fill", "#111")
-      .text("No events match the root-person hour windows.");
+      .text("No events match the selected filters.");
     return g;
   }
 
-  const dayX = d3.scalePoint()
-    .domain(days)
-    .range([margin.left, width - margin.right])
-    .padding(0.7);
-
   const innerRadius = DAILY_INNER_RADIUS;
   const outerRadius = DAILY_OUTER_RADIUS;
-  const rowGap = 160;
+
+  const graphDiameter = outerRadius * 2;
+
+  // 控制同一天 column 之间的距离
+  const colGap = graphDiameter + 160;
+
+  // 控制同一天内不同 person 之间的距离
+  const rowGap = graphDiameter + 120;
+
+  const startX = margin.left + outerRadius + 80;
+  const startY = 160 + outerRadius;
 
   g.append("text")
     .attr("x", margin.left)
@@ -1744,14 +2652,27 @@ function drawExpandableDailyGraph(events, focusStack) {
     .attr("y", 54)
     .attr("font-size", 11)
     .attr("fill", "#555")
-    .text("All layers are filtered by the root person's activity-time windows.");
+    .text(
+      dailyGraphMode === "file"
+        ? "File-related people are shown with expandable upstream interactions."
+        : "All layers are filtered by the root person's activity-time windows."
+    );
 
-  focusStack.forEach((rootQuery, i) => {
-    const centerY = height * 0.5 + i * rowGap;
+  days.forEach((day, dayIndex) => {
+    const cx = startX + dayIndex * colGap;
 
-    days.forEach(day => {
+    g.append("text")
+      .attr("x", cx)
+      .attr("y", startY - outerRadius - 35)
+      .attr("text-anchor", "middle")
+      .attr("font-size", 12)
+      .attr("font-weight", "bold")
+      .attr("fill", "#111")
+      .text(day);
+
+    focusStack.forEach((rootQuery, personIndex) => {
+      const cy = startY + personIndex * rowGap;
       const dayEvents = eventsByDay.get(day).sort((a, b) => a.date - b.date);
-      const cx = dayX(day);
 
       drawRootDailyLayer(
         g,
@@ -1759,18 +2680,93 @@ function drawExpandableDailyGraph(events, focusStack) {
         rootQuery,
         day,
         cx,
-        centerY,
+        cy,
         innerRadius,
         outerRadius
       );
     });
   });
 
-  dailyGraphExpansions.forEach(exp => {
-    drawNodeExpansion(g, exp);
-  });
+  for (let i = 0; i < dailyGraphExpansions.length; i++) {
+  drawNodeExpansion(g, dailyGraphExpansions[i]);
+}
+  
+  g.selectAll(".daily-node, .daily-upstream-node").raise();
+
+  const contentW =
+    startX + days.length * colGap + margin.right + 200;
+
+  const contentH =
+    startY + focusStack.length * rowGap + margin.bottom + 220;
+
+  setDailyGraphCanvasSize(contentW, contentH);
+
+  if (keepDailyGraphZoom && savedDailyGraphViewCenter) {
+  restoreViewCenterInGraphCoords(savedDailyGraphViewCenter);
+  keepDailyGraphZoom = false;
+  savedDailyGraphViewCenter = null;
+} else {
+  fitDailyGraphToView(zoomLayer);
+}
 
   return g;
+}
+
+function setDailyGraphCanvasSize(contentW, contentH) {
+  const container = document.getElementById("container");
+
+  width = Math.max(container.clientWidth, contentW);
+  height = Math.max(container.clientHeight, contentH);
+
+  setupCanvasSvg(height);
+
+  svg
+    .attr("width", width)
+    .attr("height", height);
+
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+  svg.style.width = width + "px";
+  svg.style.height = height + "px";
+}
+
+function fitDailyGraphToView(g) {
+  if (keepDailyGraphZoom && savedDailyGraphViewCenter) {
+    restoreViewCenterInGraphCoords(savedDailyGraphViewCenter);
+    keepDailyGraphZoom = false;
+    savedDailyGraphViewCenter = null;
+    return;
+  }
+
+  if (!g || !svgZoom || !svg) return;
+
+  const node = g.node();
+  if (!node) return;
+
+  const bbox = node.getBBox();
+
+  if (!bbox.width || !bbox.height) return;
+
+  const container = document.getElementById("container");
+
+  const padding = 80;
+
+  const scale = Math.min(
+    (container.clientWidth - padding * 2) / bbox.width,
+    (container.clientHeight - padding * 2) / bbox.height,
+    1.2
+  );
+
+  const x = container.clientWidth / 2 - scale * (bbox.x + bbox.width / 2);
+  const y = container.clientHeight / 2 - scale * (bbox.y + bbox.height / 2);
+
+  const t = d3.zoomIdentity
+    .translate(x, y)
+    .scale(scale);
+
+  dailyGraphZoomTransform = t;
+
+  svg.call(svgZoom.transform, t);
 }
 
 function autoFitDailyGraph(g) {
@@ -1832,7 +2828,18 @@ function drawRootDailyLayer(
   innerRadius,
   outerRadius
 ) {
-  const focusEvents = dayEvents.filter(e => {
+  if (dailyGraphMode === "file") {
+  const roots = dailyGraphFileRootPeopleByDay.get(day);
+
+  if (
+    !roots ||
+    !roots.has(normalizeTracePersonId(focusQuery))
+  ) {
+    return;
+  }
+}
+
+const focusEvents = dayEvents.filter(e => {
   if (
     dailyGraphMode === "person" &&
     !eventInAnyAnchorWindow(e, dailyGraphAnchorWindows)
@@ -1847,6 +2854,12 @@ function drawRootDailyLayer(
     return false;
   }
 
+  if (dailyGraphMode === "file") {
+    return getPeopleIdsFromEvent(e).includes(
+      normalizeTracePersonId(focusQuery)
+    );
+  }
+
   return isPersonSender(e, focusQuery) || isPersonReceiver(e, focusQuery);
 });
 
@@ -1856,45 +2869,143 @@ function drawRootDailyLayer(
     getExternalSendersForFocus(e, focusQuery).length > 0
   );
 
-  g.append("text")
-  .attr("x", cx)
-  .attr("y", cy)
-  .attr("text-anchor", "middle")
-  .attr("dominant-baseline", "middle")
-  .attr("font-size", 7)      // 原来 10~11 改小
-  .attr("fill", "#666")
-  .attr("pointer-events", "none")
-  .text(
-    focusQuery
-      .replace("person:", "")
-      .replace(/_/g, " ")
-  );
+  const diskColor = drawPersonDisk(
+  g,
+  cx,
+  cy,
+  innerRadius,
+  focusQuery,
+  focusEvents
+);
+
+drawOuterActivityArc(
+  g,
+  cx,
+  cy,
+  outerRadius,
+  outerEventsForArc,
+  diskColor
+);
 
   g.append("text")
     .attr("x", cx)
-    .attr("y", cy - outerRadius - 28)
+    .attr("y", cy)
     .attr("text-anchor", "middle")
-    .attr("font-size", 11)
-    .attr("fill", "#111")
-    .text(day);
+    .attr("dominant-baseline", "middle")
+    .attr("font-size", 9)
+    .attr("fill", "#555")
+    .attr("pointer-events", "none")
+    .text(
+      focusQuery
+        .replace("person:", "")
+        .replace(/_/g, " ")
+    );
 
-  drawActivityArc(g, cx, cy, innerRadius, focusEvents, "#eeeeee");
-  drawOuterActivityArc(g, cx, cy, outerRadius, outerEventsForArc, "#eeeeee");
+  const fileRootWindow =
+    dailyGraphMode === "file"
+      ? dailyGraphConcreteFileWindow
+      : null;
 
   focusEvents.forEach(e => {
     const angle = dateToDayAngle(e.date);
-    const innerP = polar(cx, cy, innerRadius, angle);
 
-    drawDailyActivityNode(g, innerP.x, innerP.y, e, focusQuery);
+    const innerP = polar(
+      cx,
+      cy,
+      innerRadius,
+      angle
+    );
+
+    drawDailyActivityNode(
+      g,
+      innerP.x,
+      innerP.y,
+      e,
+      focusQuery,
+      cx,
+      cy,
+      innerRadius,
+      angle
+    );
 
     const rootWindow =
-  dailyGraphMode === "person"
-    ? getAnchorWindowForEvent(e)
-    : getFileDateWindow();
-    const upstreamSenders = getExternalSendersForFocus(e, focusQuery);
+      dailyGraphMode === "person"
+        ? getAnchorWindowForEvent(e)
+        : fileRootWindow;
+
+    if (!rootWindow) {
+      console.warn("SKIP ROOT NODE: no rootWindow", {
+        mode: dailyGraphMode,
+        eventId: e.id,
+        time: e.date,
+        focusQuery
+      });
+      return;
+    }
+
+    const upstreamSenders =
+      getExternalSendersForFocus(e, focusQuery);
+
+    if (upstreamSenders.length > 10) {
+      console.log(
+        "Huge sender list",
+        day,
+        e.id,
+        upstreamSenders.length,
+        e
+      );
+    }
 
     upstreamSenders.forEach(sender => {
-      const outerP = polar(cx, cy, outerRadius, angle);
+      const outerP = polar(
+        cx,
+        cy,
+        outerRadius,
+        angle
+      );
+
+      const depth = 1;
+
+      const senderId = normalizeTracePersonId(
+  sender.id || sender.name
+);
+
+const focusId = normalizeTracePersonId(focusQuery);
+
+const isAutoFileChainEdge =
+  dailyGraphMode === "file" &&
+  isPlannedFileTemporalEdge(
+    day,
+    senderId,
+    focusId,
+    e.id
+  );
+
+const isSelectedTrace =
+  isExpandedTraceNode(
+    sender,
+    day,
+    outerP.x,
+    outerP.y,
+    rootWindow,
+    e.date
+  ) || isAutoFileChainEdge;
+
+drawTinyArrow(
+  g,
+  outerP.x,
+  outerP.y,
+  innerP.x,
+  innerP.y,
+  isSelectedTrace
+    ? TRACE_ACTIVE_COLOR
+    : TRACE_INACTIVE_COLOR,
+  isSelectedTrace
+    ? TRACE_ACTIVE_OPACITY
+    : TRACE_INACTIVE_OPACITY,
+  isSelectedTrace ? 2.5 : 0.9,
+  isSelectedTrace ? 7 : 4
+);
 
       drawClickableUpstreamNode(
         g,
@@ -1904,18 +3015,239 @@ function drawRootDailyLayer(
         e,
         focusQuery,
         angle,
-        1,
-        rootWindow
+        depth,
+        rootWindow,
+        cx,
+        cy
       );
 
-      const dayLabel = d3.timeFormat("%m-%d")(e.date);
-const isSelectedTrace = isExpandedTraceNode(
+      maybeAutoAddTemporalFileExpansion({
   sender,
-  dayLabel,
-  outerP.x,
-  outerP.y,
+  e,
+  focusQuery,
+  x: outerP.x,
+  y: outerP.y,
+  angle,
+  depth,
   rootWindow
+});
+
+    });
+  });
+}
+
+function drawNodeExpansion(g, exp) {
+  console.log("DRAW NODE EXPANSION START", {
+    exp,
+    mode: dailyGraphMode
+  });
+
+  const focusQuery = exp.personId;
+  const day = exp.day;
+  const depth = exp.depth || 1;
+
+  // outer window:
+  // person = clickedTime 往前 hoursBack
+  // file = fileStart → clickedTime
+  const outerWindow = {
+    start: new Date(exp.windowStart),
+    end: new Date(exp.windowEnd)
+  };
+
+  // inner window:
+  // person = selected day 内 hoursBack 范围
+  // file = file date range 完整范围
+  const innerWindow = {
+    start: exp.innerWindowStart
+      ? new Date(exp.innerWindowStart)
+      : outerWindow.start,
+    end: exp.innerWindowEnd
+      ? new Date(exp.innerWindowEnd)
+      : outerWindow.end
+  };
+
+  if (
+    Number.isNaN(outerWindow.start.getTime()) ||
+    Number.isNaN(outerWindow.end.getTime()) ||
+    Number.isNaN(innerWindow.start.getTime()) ||
+    Number.isNaN(innerWindow.end.getTime())
+  ) {
+    console.warn("DRAW NODE EXPANSION RETURN: invalid windows", {
+      exp,
+      outerWindow,
+      innerWindow
+    });
+    return;
+  }
+
+  const sourceEvents =
+  dailyGraphMode === "person"
+    ? dailyGraphBaseEvents
+    : dailyGraphBaseEvents.filter(e =>
+        eventPassesFileDateWindow(e)
+      );
+      
+  const innerEvents = getEventsForPersonWithinOneRootWindow(
+    focusQuery,
+    innerWindow,
+    sourceEvents
+  );
+
+  const outerEvents = getEventsForPersonWithinOneRootWindow(
+    focusQuery,
+    outerWindow,
+    sourceEvents
+  );
+
+  const dayInnerEvents = innerEvents.filter(e =>
+    d3.timeFormat("%m-%d")(e.date) === day
+  );
+
+  const dayOuterEvents = outerEvents.filter(e =>
+    d3.timeFormat("%m-%d")(e.date) === day
+  );
+
+  console.log("DRAW NODE EXPANSION DATA", {
+    mode: dailyGraphMode,
+    focusQuery,
+    day,
+    outerWindow,
+    innerWindow,
+    sourceEventsCount: sourceEvents.length,
+    innerEventsCount: innerEvents.length,
+    outerEventsCount: outerEvents.length,
+    dayInnerEventsCount: dayInnerEvents.length,
+    dayOuterEventsCount: dayOuterEvents.length,
+    sampleInner: dayInnerEvents.slice(0, 5).map(e => ({
+      time: e.date,
+      action: e.action,
+      sender: e.sender_id,
+      receivers: (e.receivers || []).map(r => r.id)
+    })),
+    sampleOuter: dayOuterEvents.slice(0, 5).map(e => ({
+      time: e.date,
+      action: e.action,
+      sender: e.sender_id,
+      receivers: (e.receivers || []).map(r => r.id)
+    }))
+  });
+
+  // inner 为空就不画这个 expanded graph
+  if (!dayInnerEvents.length) return;
+
+  const outerEventsForArc = dayOuterEvents.filter(e =>
+    getExternalSendersForFocus(e, focusQuery).length > 0
+  );
+
+  const innerRadius = DAILY_INNER_RADIUS;
+  const outerRadius = DAILY_OUTER_RADIUS;
+
+  const center = {
+    x: exp.clickedX,
+    y: exp.clickedY
+  };
+
+  const diskColor = drawPersonDisk(
+  g,
+  center.x,
+  center.y,
+  innerRadius,
+  focusQuery,
+  dayInnerEvents
 );
+
+drawOuterActivityArc(
+  g,
+  center.x,
+  center.y,
+  outerRadius,
+  outerEventsForArc,
+  diskColor
+);
+
+  g.append("text")
+    .attr("x", center.x)
+    .attr("y", center.y)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("font-size", 9)
+    .attr("fill", "#555")
+    .attr("pointer-events", "none")
+    .text(
+      (exp.personName || focusQuery)
+        .replace("person:", "")
+        .replace(/_/g, " ")
+    );
+
+  // inner node：只按 innerWindow 过滤，不受 clickedTime 影响
+  dayInnerEvents.forEach(e => {
+    const angle = dateToDayAngle(e.date);
+    const innerP = polar(
+      center.x,
+      center.y,
+      innerRadius,
+      angle
+    );
+
+    drawDailyActivityNode(
+      g,
+      innerP.x,
+      innerP.y,
+      e,
+      focusQuery,
+      center.x,
+      center.y,
+      innerRadius,
+      angle
+    );
+  });
+
+  // outer node + arrow：按 outerWindow 过滤，会受 clickedTime 影响
+  dayOuterEvents.forEach(e => {
+    const angle = dateToDayAngle(e.date);
+
+    const innerP = polar(
+      center.x,
+      center.y,
+      innerRadius,
+      angle
+    );
+
+    const outerP = polar(
+      center.x,
+      center.y,
+      outerRadius,
+      angle
+    );
+
+    const upstreamSenders =
+      getExternalSendersForFocus(e, focusQuery);
+
+    upstreamSenders.forEach(sender => {
+      const senderId = normalizeTracePersonId(
+  sender.id || sender.name
+);
+
+const focusId = normalizeTracePersonId(focusQuery);
+
+const isAutoFileChainEdge =
+  dailyGraphMode === "file" &&
+  isPlannedFileTemporalEdge(
+    day,
+    senderId,
+    focusId,
+    e.id
+  );
+
+const isSelectedTrace =
+  isExpandedTraceNode(
+    sender,
+    day,
+    outerP.x,
+    outerP.y,
+    outerWindow,
+    e.date
+  ) || isAutoFileChainEdge;
 
 drawTinyArrow(
   g,
@@ -1923,80 +3255,15 @@ drawTinyArrow(
   outerP.y,
   innerP.x,
   innerP.y,
-  isSelectedTrace ? TRACE_ACTIVE_COLOR : TRACE_INACTIVE_COLOR,
-  isSelectedTrace ? TRACE_ACTIVE_OPACITY : TRACE_INACTIVE_OPACITY
+  isSelectedTrace
+    ? TRACE_ACTIVE_COLOR
+    : TRACE_INACTIVE_COLOR,
+  isSelectedTrace
+    ? TRACE_ACTIVE_OPACITY
+    : TRACE_INACTIVE_OPACITY,
+  isSelectedTrace ? 2.5 : 0.9,
+  isSelectedTrace ? 7 : 4
 );
-    });
-  });
-}
-
-function drawNodeExpansion(g, exp) {
-  const focusQuery = exp.personId;
-  const day = exp.day;
-  const depth = exp.depth || 1;
-
-  const rootWindow =
-    dailyGraphMode === "person"
-      ? {
-          start: new Date(exp.windowStart),
-          end: new Date(exp.windowEnd)
-        }
-      : getConcreteFileWindow(dailyGraphFilteredEvents);
-
-  const sourceEvents =
-    dailyGraphMode === "person"
-      ? dailyGraphBaseEvents
-      : dailyGraphBaseEvents.filter(eventPassesFileDateWindow);
-
-  const focusEvents = getEventsForPersonWithinOneRootWindow(
-    focusQuery,
-    rootWindow,
-    sourceEvents
-  );
-
-  const dayEvents = focusEvents.filter(e =>
-    d3.timeFormat("%m-%d")(e.date) === day
-  );
-
-  if (!dayEvents.length) return;
-
-  const innerRadius = DAILY_INNER_RADIUS;
-  const outerRadius = DAILY_OUTER_RADIUS;
-
-  const center = centerFromPointOnCircle(
-    exp.clickedX,
-    exp.clickedY,
-    innerRadius,
-    exp.clickedAngle
-  );
-
-  const outerEventsForArc = dayEvents.filter(e =>
-    getExternalSendersForFocus(e, focusQuery).length > 0
-  );
-
-  drawActivityArc(g, center.x, center.y, innerRadius, dayEvents, "#eeeeee");
-  drawOuterActivityArc(g, center.x, center.y, outerRadius, outerEventsForArc, "#eeeeee");
-
-  g.append("text")
-    .attr("x", center.x)
-    .attr("y", center.y)
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .attr("font-size", 7)
-    .attr("fill", "#666")
-    .attr("pointer-events", "none")
-    .text((exp.personName || focusQuery).replace("person:", "").replace(/_/g, " "));
-
-  dayEvents.forEach(e => {
-    const angle = dateToDayAngle(e.date);
-    const innerP = polar(center.x, center.y, innerRadius, angle);
-
-    drawDailyActivityNode(g, innerP.x, innerP.y, e, focusQuery);
-
-    const upstreamSenders = getExternalSendersForFocus(e, focusQuery);
-
-    upstreamSenders.forEach(sender => {
-      const outerP = polar(center.x, center.y, outerRadius, angle);
 
       drawClickableUpstreamNode(
         g,
@@ -2007,27 +3274,21 @@ function drawNodeExpansion(g, exp) {
         focusQuery,
         angle,
         depth + 1,
-        rootWindow
+        outerWindow,
+        center.x,
+        center.y
       );
 
-      const dayLabel = d3.timeFormat("%m-%d")(e.date);
-      const isSelectedTrace = isExpandedTraceNode(
-        sender,
-        dayLabel,
-        outerP.x,
-        outerP.y,
-        rootWindow
-      );
-
-      drawTinyArrow(
-        g,
-        outerP.x,
-        outerP.y,
-        innerP.x,
-        innerP.y,
-        isSelectedTrace ? TRACE_ACTIVE_COLOR : TRACE_INACTIVE_COLOR,
-        isSelectedTrace ? TRACE_ACTIVE_OPACITY : TRACE_INACTIVE_OPACITY
-      );
+      maybeAutoAddTemporalFileExpansion({
+  sender,
+  e,
+  focusQuery,
+  x: outerP.x,
+  y: outerP.y,
+  angle,
+  depth,
+  rootWindow: outerWindow
+});
     });
   });
 }
@@ -2044,28 +3305,63 @@ function drawPersonCenterLabel(g, cx, cy, label) {
     .text((label || "").replace("person:", ""));
 }
 
-function drawDailyActivityNode(g, x, y, e, focusQuery) {
-  const dept = getPersonDepartmentFromEvent(e, focusQuery);
+function drawDailyActivityNode(
+  g,
+  x,
+  y,
+  e,
+  focusQuery,
+  cx,
+  cy,
+  radius,
+  angle
+) {
   const isAgent = isAgentEntity(getEntityTypeForFocus(e, focusQuery));
   const isFileRelated = isEventFileRelated(e);
   const size = isFileRelated ? 5 : 3;
 
-  const node = isAgent
-    ? g.append("path")
-        .attr("class", "daily-node")
-        .attr("d", d3.symbol().type(d3.symbolTriangle).size(size * size * 5))
-        .attr("transform", `translate(${x}, ${y})`)
-    : g.append("circle")
-        .attr("class", "daily-node")
-        .attr("cx", x)
-        .attr("cy", y)
-        .attr("r", size);
+  const color = getDailyEventColor(e);
+
+  let node;
+
+  if (isAgent) {
+    node = g.append("rect")
+      .attr("class", "daily-node")
+      .attr("x", x - size)
+      .attr("y", y - size)
+      .attr("width", size * 2)
+      .attr("height", size * 2)
+      .attr("rx", 1)
+      .attr("fill", "none")
+      .attr("stroke", color)
+      .attr("stroke-width", 1)
+      .attr("opacity", isFileRelated ? 1 : 0.95);
+  } else {
+    node = g.append("circle")
+      .attr("class", "daily-node")
+      .attr("cx", x)
+      .attr("cy", y)
+      .attr("r", size)
+      .attr("fill", "none")
+      .attr("stroke", color)
+      .attr("stroke-width", 1)
+      .attr("opacity", isFileRelated ? 1 : 0.95);
+  }
 
   node
-    .attr("fill", actionColor(e.action))
-    .attr("opacity", isFileRelated ? 1 : 0.9)
     .on("mousemove", function(event) {
-      if (!isAgent) d3.select(this).attr("r", size + 2);
+      if (isAgent) {
+        d3.select(this)
+          .attr("x", x - size - 1)
+          .attr("y", y - size - 1)
+          .attr("width", (size + 1) * 2)
+          .attr("height", (size + 1) * 2);
+      } else {
+        d3.select(this)
+          .attr("r", size + 2);
+      }
+
+      showTimeLabel(g, cx, cy, radius, angle, e);
 
       tooltip
         .style("display", "block")
@@ -2074,8 +3370,18 @@ function drawDailyActivityNode(g, x, y, e, focusQuery) {
         .html(makeEventTimelineTooltip(e, focusQuery));
     })
     .on("mouseleave", function() {
-      if (!isAgent) d3.select(this).attr("r", size);
+      if (isAgent) {
+        d3.select(this)
+          .attr("x", x - size)
+          .attr("y", y - size)
+          .attr("width", size * 2)
+          .attr("height", size * 2);
+      } else {
+        d3.select(this)
+          .attr("r", size);
+      }
 
+      hideTimeLabel(g);
       tooltip.style("display", "none");
     });
 }
@@ -2111,69 +3417,220 @@ function drawClickableUpstreamNode(
   focusQuery,
   angle,
   depth,
-  rootWindow
+  rootWindow,
+  cx,
+  cy
 ) {
-  const isAgent = isAgentEntity(sender.type);
   const isFileRelated = isEventFileRelated(e);
   const size = isFileRelated ? 5 : 3;
+  const isAgent = isAgentEntity(sender.type);
+  const senderDept =
+  sender.department ||
+  e.sender_department ||
+  "Unknown Department";
 
-  const node = isAgent
-    ? g.append("path")
-        .attr("class", "daily-upstream-node")
-        .attr("d", d3.symbol().type(d3.symbolTriangle).size(size * size * 5))
-        .attr("transform", `translate(${x}, ${y})`)
-    : g.append("circle")
-        .attr("class", "daily-upstream-node")
-        .attr("cx", x)
-        .attr("cy", y)
-        .attr("r", size);
+  const color = deptColor(senderDept);
+  let node;
+  if (isAgent) {
+
+node = g.append("rect")
+
+  .attr("class", "daily-upstream-node")
+  .attr("x", x - size)
+  .attr("y", y - size)
+  .attr("width", size * 2)
+  .attr("height", size * 2)
+  .attr("fill", "none")
+  .attr("stroke", getDailyEventColor(e))
+  .attr("stroke-width", 1)
+  .attr("rx", 1);
+  
+
+} else {
+
+node = g.append("circle")
+
+  .attr("class", "daily-upstream-node")
+  .attr("cx", x)
+  .attr("cy", y)
+  .attr("r", size)
+  .attr("fill", "none")
+  .attr("stroke", getDailyEventColor(e))
+  .attr("stroke-width", 1)
+
+}
 
   node
-    .attr("fill", deptColor(sender.department))
-    .attr("opacity", 0.92)
-    .style("cursor", "pointer")
-    .on("click", function() {
-      const day = d3.timeFormat("%m-%d")(e.date);
-      const focusId = (sender.id || sender.name || "").replace(/^Agent\//, "").toLowerCase();
+  node
+  .attr("fill", "none")
+  .attr("stroke", getDailyEventColor(e))
+  .attr("stroke-width", 1)
+  .attr("opacity", 0.95)
+  .style("cursor", "pointer")
+  .on("click", function() {
+  console.log("OUTER CLICK ENTERED", {
+    sender,
+    e,
+    rootWindow,
+    focusQuery,
+    date: e?.date
+  });
 
-      if (!focusId || !rootWindow) return;
+  if (!e || !e.date) {
+    console.warn("CLICK RETURN: no event date", { e });
+    return;
+  }
 
-      const key = [
-        focusId,
-        day,
-        x.toFixed(1),
-        y.toFixed(1),
-        rootWindow.start.toISOString(),
-        rootWindow.end.toISOString()
-      ].join("||");
+  const day = d3.timeFormat("%m-%d")(e.date);
 
-      const sameClicked = dailyGraphExpansions.some(exp => exp.key === key);
+  const focusId = (sender.id || sender.name || "")
+    .replace(/^Agent\//, "")
+    .toLowerCase();
 
-      dailyGraphExpansions = dailyGraphExpansions.filter(exp => exp.depth < depth);
+  if (!focusId) {
+    console.warn("CLICK RETURN: no focusId", { sender });
+    return;
+  }
 
-      if (sameClicked) {
-        renderDailyGraphTab();
-        return;
-      }
+  if (!rootWindow || !rootWindow.start || !rootWindow.end) {
+    console.warn("CLICK RETURN: no rootWindow", {
+      rootWindow,
+      sender,
+      eventTime: e.date,
+      parentFocus: focusQuery
+    });
+    return;
+  }
 
-      dailyGraphExpansions.push({
-        key,
-        personId: focusId,
-        personName: sender.name || sender.id,
-        day,
-        clickedX: x,
-        clickedY: y,
-        clickedAngle: angle,
-        depth,
-        windowStart: rootWindow.start.toISOString(),
-        windowEnd: rootWindow.end.toISOString()
-      });
+  const outerWindow = buildClickedWindowForExpansion(
+    e.date,
+    rootWindow
+  );
 
-      renderDailyGraphTab();
-    })
+  const innerWindow = buildInnerWindowForExpansion(
+    e.date,
+    rootWindow
+  );
+
+  if (
+    !outerWindow ||
+    !outerWindow.start ||
+    !outerWindow.end ||
+    Number.isNaN(new Date(outerWindow.start).getTime()) ||
+    Number.isNaN(new Date(outerWindow.end).getTime())
+  ) {
+    console.warn("CLICK RETURN: invalid outerWindow", {
+      outerWindow,
+      rootWindow,
+      eventTime: e.date
+    });
+    return;
+  }
+
+  if (
+    !innerWindow ||
+    !innerWindow.start ||
+    !innerWindow.end ||
+    Number.isNaN(new Date(innerWindow.start).getTime()) ||
+    Number.isNaN(new Date(innerWindow.end).getTime())
+  ) {
+    console.warn("CLICK RETURN: invalid innerWindow", {
+      innerWindow,
+      rootWindow,
+      eventTime: e.date
+    });
+    return;
+  }
+
+  const clickedTime = e.date.toISOString();
+
+  const key = [
+    focusId,
+    day,
+    x.toFixed(1),
+    y.toFixed(1),
+    outerWindow.start.toISOString(),
+    clickedTime
+  ].join("||");
+
+  const alreadyExists = dailyGraphExpansions.some(exp =>
+    exp.key === key
+  );
+
+  keepDailyGraphZoom = true;
+
+  if (typeof getCurrentViewCenterInGraphCoords === "function") {
+    savedDailyGraphViewCenter =
+      getCurrentViewCenterInGraphCoords();
+  }
+
+  console.log("CLICKED UPSTREAM NODE", {
+    clickedNodeSender: sender,
+    focusIdForNextLayer: focusId,
+    clickedEventTime: e.date,
+    parentFocus: focusQuery,
+    parentWindow: rootWindow,
+    outerWindow,
+    innerWindow,
+    alreadyExists
+  });
+
+  if (!alreadyExists) {
+    dailyGraphExpansions.push({
+      key,
+      personId: focusId,
+      personName: sender.name || sender.id,
+      day,
+      clickedX: x,
+      clickedY: y,
+      clickedAngle: angle,
+      depth,
+      clickedTime,
+
+      // outer node / outer arc 用：
+      // person = clickedTime 往前 hoursBack
+      // file = fileStart → clickedTime
+      windowStart: outerWindow.start.toISOString(),
+      windowEnd: outerWindow.end.toISOString(),
+
+      // inner node / inner disk 用：
+      // person = selected day 内 hoursBack 范围
+      // file = file date range 完整范围
+      innerWindowStart: innerWindow.start.toISOString(),
+      innerWindowEnd: innerWindow.end.toISOString()
+    });
+
+    console.log(
+      "EXPANSIONS AFTER PUSH",
+      dailyGraphExpansions.length,
+      dailyGraphExpansions
+    );
+  }
+
+  renderDailyGraphTab();
+})
     .on("mousemove", function(event) {
+      if (isAgent) {
 
-      if (!isAgent) d3.select(this).attr("r", size + 2);
+d3.select(this)
+
+  .attr("x", x - size - 1)
+
+  .attr("y", y - size - 1)
+
+  .attr("width", (size + 1) * 2)
+
+  .attr("height", (size + 1) * 2);
+
+} else {
+
+d3.select(this)
+
+  .attr("r", size + 2);
+
+}
+
+      showTimeLabel(g, cx, cy, DAILY_OUTER_RADIUS, angle, e);
 
       const files = extractFileNames(e);
       const fileHtml = files.length ? `<b>File:</b> ${files.join(", ")}<br>` : "";
@@ -2192,41 +3649,49 @@ function drawClickableUpstreamNode(
         `);
     })
     .on("mouseleave", function() {
+  if (isAgent) {
+    d3.select(this)
+      .attr("x", x - size)
+      .attr("y", y - size)
+      .attr("width", size * 2)
+      .attr("height", size * 2);
+  } else {
+    d3.select(this)
+      .attr("r", size);
+  }
 
-      if (!isAgent) d3.select(this).attr("r", size);
-
-      tooltip.style("display", "none");
-    });
+  hideTimeLabel(g);
+  tooltip.style("display", "none");
+});
 }
 
 function getExternalSendersForFocus(e, focusQuery) {
-  const q = focusQuery.toLowerCase();
+  const q = normalizeEntityId(focusQuery);
 
-  const focusIsReceiver =
-    (e.receivers || []).some(r =>
-      (r.id || "").toLowerCase().includes(q) ||
-      (r.name || "").toLowerCase().includes(q)
-    );
-
-  if (!focusIsReceiver) return [];
+  const focusIsReceiver = (e.receivers || []).some(r =>
+    normalizeEntityId(r.id).includes(q) ||
+    (r.name || "").toLowerCase().includes(q)
+  );
 
   const senderIsFocus =
-    (e.sender_id || "").toLowerCase().includes(q) ||
+    normalizeEntityId(e.sender_id).includes(q) ||
     (e.sender_name || "").toLowerCase().includes(q);
 
-  if (senderIsFocus) return [];
+  // 只画“发给当前 focus 的外部 sender”
+  if (focusIsReceiver && !senderIsFocus) {
+    return [{
+      id: e.sender_id,
+      name: e.sender_name,
+      type: e.sender_type,
+      department: e.sender_department
+    }];
+  }
 
-  return [{
-    id: e.sender_id,
-    name: e.sender_name,
-    type: e.sender_type,
-    department: e.sender_department
-  }];
+  return [];
 }
 
 function hourToAngle(hour) {
-  const h12 = hour % 12;
-  return -Math.PI / 2 + (h12 / 12) * Math.PI * 2;
+  return -Math.PI / 2 + (hour / 24) * Math.PI * 2;
 }
 
 function dateToDayAngle(date) {
@@ -2322,12 +3787,21 @@ function drawActivityArc(g, cx, cy, r, events, color = "#eeeeee") {
     .attr("opacity", 0.9);
 }
 
-function drawOuterActivityArc(g, cx, cy, r, outerEvents, color = "#eeeeee") {
+function drawOuterActivityArc(
+  g,
+  cx,
+  cy,
+  r,
+  outerEvents,
+  color = "#eeeeee",
+  opacity = 0.4
+) {
   const arc = getActivityArcAngles(outerEvents);
   if (!arc) return;
 
-  const OUTER_ARC_PADDING = Math.PI / 8; // 22.5度，想更大就改成 Math.PI / 6
+  const OUTER_ARC_PADDING = Math.PI / 8;
 
+  // 原来的 outer arc：覆盖实际 outer events 的时间范围
   g.append("path")
     .attr(
       "d",
@@ -2343,7 +3817,31 @@ function drawOuterActivityArc(g, cx, cy, r, outerEvents, color = "#eeeeee") {
     .attr("stroke", color)
     .attr("stroke-width", 1.1)
     .attr("stroke-linecap", "round")
-    .attr("opacity", 0.75);
+    .attr("opacity", opacity)
+    .attr("pointer-events", "none");
+
+  // 新增：工作时间 08:00–17:00 加粗 arc
+  const workStartAngle = hourToAngle(8);
+  const workEndAngle = hourToAngle(17);
+
+  g.append("path")
+    .attr(
+      "d",
+      makeArcPath(
+        cx,
+        cy,
+        r,
+        workStartAngle,
+        workEndAngle
+      )
+    )
+    .attr("fill", "none")
+    .attr("stroke", color)
+    .attr("stroke-width", 5)
+    .attr("stroke-linecap", "round")
+    .attr("opacity", opacity)
+    .attr("pointer-events", "none")
+    .attr("class", "daily-workhour-arc");
 }
 
 function centerFromPointOnCircle(px, py, r, angle) {
@@ -2353,7 +3851,68 @@ function centerFromPointOnCircle(px, py, r, angle) {
   };
 }
 
-function drawTinyArrow(g, x1, y1, x2, y2, color, opacity = 0.75) {
+function showTimeLabel(g, cx, cy, radius, angle, e) {
+  g.selectAll(".hover-time-label").remove();
+
+  const p = polar(cx, cy, radius + 18, angle);
+  const timeText = d3.timeFormat("%H:%M")(e.date);
+
+  g.append("text")
+    .attr("class", "hover-time-label")
+    .attr("x", p.x)
+    .attr("y", p.y)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("font-size", 10)
+    .attr("font-weight", "bold")
+    .attr("fill", "#111")
+    .attr("pointer-events", "none")
+    .text(timeText);
+}
+
+function hideTimeLabel(g) {
+  g.selectAll(".hover-time-label").remove();
+}
+
+function drawPersonDisk(g, cx, cy, radius, focusQuery, events) {
+  const dept = getPersonDepartmentFromEvents(events, focusQuery);
+  const color = deptColor(dept);
+
+  g.append("circle")
+    .attr("cx", cx)
+    .attr("cy", cy)
+    .attr("r", radius)
+    .attr("fill", color)
+    .attr("opacity", 0.2)
+    .attr("pointer-events", "none");
+
+  return color;
+}
+
+function getDailyEventType(e) {
+  return (
+    e?.action ||
+    e?.short_name ||
+    e?.type ||
+    e?.event_type ||
+    "unknown"
+  );
+}
+
+function getDailyEventColor(e) {
+  const type = getDailyEventType(e);
+  return actionColorMap[type] || eventColor.unknown || "#d0d0d0";
+}
+
+function getPersonDepartmentFromEvents(events, focusQuery) {
+  for (const e of events) {
+    const dept = getPersonDepartmentFromEvent(e, focusQuery);
+    if (dept && dept !== "Unknown Department") return dept;
+  }
+  return "Unknown Department";
+}
+
+function drawTinyArrow(g, x1, y1, x2, y2, color, opacity = 0.75, width = 1, arrowSize = 4) {
   const dx = x2 - x1;
   const dy = y2 - y1;
   const len = Math.sqrt(dx * dx + dy * dy);
@@ -2372,10 +3931,9 @@ function drawTinyArrow(g, x1, y1, x2, y2, color, opacity = 0.75) {
     .attr("x2", endX)
     .attr("y2", endY)
     .attr("stroke", color)
-    .attr("stroke-width", 0.9)
-    .attr("opacity", opacity);
-
-  const arrowSize = 4;
+    .attr("stroke-width", width)
+    .attr("opacity", opacity)
+    .attr("pointer-events", "none"); 
 
   const leftX = endX - ux * arrowSize - uy * arrowSize * 0.6;
   const leftY = endY - uy * arrowSize + ux * arrowSize * 0.6;
@@ -2385,7 +3943,8 @@ function drawTinyArrow(g, x1, y1, x2, y2, color, opacity = 0.75) {
   g.append("path")
     .attr("d", `M ${endX} ${endY} L ${leftX} ${leftY} L ${rightX} ${rightY} Z`)
     .attr("fill", color)
-    .attr("opacity", opacity);
+    .attr("opacity", opacity)
+    .attr("pointer-events", "none");
 }
 </script>
 </body>
