@@ -1,0 +1,1152 @@
+{
+  "details_top_level_fields": [
+    {
+      "field": "virus",
+      "count": 75254
+    },
+    {
+      "field": "target",
+      "count": 69035
+    },
+    {
+      "field": "task",
+      "count": 57636
+    },
+    {
+      "field": "person",
+      "count": 53581
+    },
+    {
+      "field": "action",
+      "count": 52535
+    },
+    {
+      "field": "details",
+      "count": 39378
+    },
+    {
+      "field": "size_hint",
+      "count": 15053
+    },
+    {
+      "field": "combo",
+      "count": 15051
+    },
+    {
+      "field": "source",
+      "count": 15051
+    },
+    {
+      "field": "word_count",
+      "count": 15051
+    },
+    {
+      "field": "subject",
+      "count": 15027
+    },
+    {
+      "field": "from",
+      "count": 14718
+    },
+    {
+      "field": "to",
+      "count": 14718
+    },
+    {
+      "field": "status",
+      "count": 14673
+    },
+    {
+      "field": "room",
+      "count": 7420
+    },
+    {
+      "field": "name",
+      "count": 7420
+    },
+    {
+      "field": "granted",
+      "count": 7420
+    },
+    {
+      "field": "time",
+      "count": 4022
+    },
+    {
+      "field": "topic",
+      "count": 3412
+    },
+    {
+      "field": "advice",
+      "count": 3412
+    },
+    {
+      "field": "contacts",
+      "count": 2972
+    },
+    {
+      "field": "meeting",
+      "count": 2957
+    },
+    {
+      "field": "calendar_emails_sent",
+      "count": 2957
+    },
+    {
+      "field": "a2a",
+      "count": 2957
+    },
+    {
+      "field": "access_type",
+      "count": 2934
+    },
+    {
+      "field": "file",
+      "count": 1504
+    },
+    {
+      "field": "content_length",
+      "count": 1210
+    },
+    {
+      "field": "reply_sent_to",
+      "count": 1159
+    },
+    {
+      "field": "file_saved",
+      "count": 653
+    },
+    {
+      "field": "meeting_proposed_with",
+      "count": 593
+    },
+    {
+      "field": "draft_for_review",
+      "count": 556
+    },
+    {
+      "field": "content",
+      "count": 450
+    },
+    {
+      "field": "question",
+      "count": 410
+    },
+    {
+      "field": "response",
+      "count": 410
+    },
+    {
+      "field": "sent_to",
+      "count": 309
+    },
+    {
+      "field": "target_agent",
+      "count": 235
+    },
+    {
+      "field": "args",
+      "count": 235
+    },
+    {
+      "field": "poster_id",
+      "count": 225
+    },
+    {
+      "field": "timestamp",
+      "count": 225
+    },
+    {
+      "field": "forum",
+      "count": 213
+    },
+    {
+      "field": "spread",
+      "count": 4
+    },
+    {
+      "field": "content_source",
+      "count": 3
+    }
+  ],
+  "details_all_field_paths": [
+    {
+      "field": "details.virus",
+      "count": 75254
+    },
+    {
+      "field": "details.target",
+      "count": 69035
+    },
+    {
+      "field": "details.task",
+      "count": 57636
+    },
+    {
+      "field": "details.person",
+      "count": 53581
+    },
+    {
+      "field": "details.action",
+      "count": 52535
+    },
+    {
+      "field": "details.details",
+      "count": 39378
+    },
+    {
+      "field": "details.size_hint",
+      "count": 15053
+    },
+    {
+      "field": "details.combo",
+      "count": 15051
+    },
+    {
+      "field": "details.combo[]",
+      "count": 15051
+    },
+    {
+      "field": "details.source",
+      "count": 15051
+    },
+    {
+      "field": "details.word_count",
+      "count": 15051
+    },
+    {
+      "field": "details.details.combo",
+      "count": 15050
+    },
+    {
+      "field": "details.details.combo[]",
+      "count": 15050
+    },
+    {
+      "field": "details.subject",
+      "count": 15027
+    },
+    {
+      "field": "details.from",
+      "count": 14718
+    },
+    {
+      "field": "details.to",
+      "count": 14718
+    },
+    {
+      "field": "details.status",
+      "count": 14673
+    },
+    {
+      "field": "details.room",
+      "count": 7420
+    },
+    {
+      "field": "details.name",
+      "count": 7420
+    },
+    {
+      "field": "details.granted",
+      "count": 7420
+    },
+    {
+      "field": "details.details.task",
+      "count": 5371
+    },
+    {
+      "field": "details.time",
+      "count": 4022
+    },
+    {
+      "field": "details.details.topic",
+      "count": 3632
+    },
+    {
+      "field": "details.details.contacts",
+      "count": 3617
+    },
+    {
+      "field": "details.details.contacts[]",
+      "count": 3617
+    },
+    {
+      "field": "details.details.participants",
+      "count": 3574
+    },
+    {
+      "field": "details.details.participants[]",
+      "count": 3574
+    },
+    {
+      "field": "details.details.time",
+      "count": 3574
+    },
+    {
+      "field": "details.details.subject",
+      "count": 3574
+    },
+    {
+      "field": "details.topic",
+      "count": 3412
+    },
+    {
+      "field": "details.advice",
+      "count": 3412
+    },
+    {
+      "field": "details.contacts",
+      "count": 2972
+    },
+    {
+      "field": "details.contacts[]",
+      "count": 2972
+    },
+    {
+      "field": "details.meeting",
+      "count": 2957
+    },
+    {
+      "field": "details.meeting.organizer",
+      "count": 2957
+    },
+    {
+      "field": "details.meeting.participants",
+      "count": 2957
+    },
+    {
+      "field": "details.meeting.participants[]",
+      "count": 2957
+    },
+    {
+      "field": "details.meeting.time",
+      "count": 2957
+    },
+    {
+      "field": "details.calendar_emails_sent",
+      "count": 2957
+    },
+    {
+      "field": "details.calendar_emails_sent[]",
+      "count": 2957
+    },
+    {
+      "field": "details.a2a",
+      "count": 2957
+    },
+    {
+      "field": "details.a2a.from",
+      "count": 2957
+    },
+    {
+      "field": "details.a2a.to",
+      "count": 2957
+    },
+    {
+      "field": "details.a2a.action",
+      "count": 2957
+    },
+    {
+      "field": "details.a2a.timestamp",
+      "count": 2957
+    },
+    {
+      "field": "details.a2a.payload",
+      "count": 2957
+    },
+    {
+      "field": "details.a2a.payload.organizer",
+      "count": 2957
+    },
+    {
+      "field": "details.a2a.payload.participants",
+      "count": 2957
+    },
+    {
+      "field": "details.a2a.payload.participants[]",
+      "count": 2957
+    },
+    {
+      "field": "details.a2a.payload.time",
+      "count": 2957
+    },
+    {
+      "field": "details.access_type",
+      "count": 2934
+    },
+    {
+      "field": "details.details.person",
+      "count": 1754
+    },
+    {
+      "field": "details.details.details",
+      "count": 1754
+    },
+    {
+      "field": "details.file",
+      "count": 1504
+    },
+    {
+      "field": "details.content_length",
+      "count": 1210
+    },
+    {
+      "field": "details.reply_sent_to",
+      "count": 1159
+    },
+    {
+      "field": "details.file_saved",
+      "count": 653
+    },
+    {
+      "field": "details.meeting_proposed_with",
+      "count": 593
+    },
+    {
+      "field": "details.draft_for_review",
+      "count": 556
+    },
+    {
+      "field": "details.draft_for_review.from",
+      "count": 556
+    },
+    {
+      "field": "details.draft_for_review.to",
+      "count": 556
+    },
+    {
+      "field": "details.draft_for_review.subject",
+      "count": 556
+    },
+    {
+      "field": "details.draft_for_review.body",
+      "count": 556
+    },
+    {
+      "field": "details.draft_for_review.formal",
+      "count": 556
+    },
+    {
+      "field": "details.draft_for_review.needs_review",
+      "count": 556
+    },
+    {
+      "field": "details.content",
+      "count": 450
+    },
+    {
+      "field": "details.question",
+      "count": 410
+    },
+    {
+      "field": "details.response",
+      "count": 410
+    },
+    {
+      "field": "details.sent_to",
+      "count": 309
+    },
+    {
+      "field": "details.details.content",
+      "count": 289
+    },
+    {
+      "field": "details.target_agent",
+      "count": 235
+    },
+    {
+      "field": "details.args",
+      "count": 235
+    },
+    {
+      "field": "details.args.path",
+      "count": 235
+    },
+    {
+      "field": "details.poster_id",
+      "count": 225
+    },
+    {
+      "field": "details.timestamp",
+      "count": 225
+    },
+    {
+      "field": "details.forum",
+      "count": 213
+    },
+    {
+      "field": "details.details.forum",
+      "count": 133
+    },
+    {
+      "field": "details.spread",
+      "count": 4
+    },
+    {
+      "field": "details.content_source",
+      "count": 3
+    }
+  ],
+  "fields_by_action": {
+    "sent": [
+      {
+        "field": "details.from",
+        "count": 7407
+      },
+      {
+        "field": "details.to",
+        "count": 7407
+      },
+      {
+        "field": "details.subject",
+        "count": 7407
+      },
+      {
+        "field": "details.status",
+        "count": 7407
+      }
+    ],
+    "propose_meeting": [
+      {
+        "field": "details.person",
+        "count": 2957
+      },
+      {
+        "field": "details.meeting",
+        "count": 2957
+      },
+      {
+        "field": "details.meeting.organizer",
+        "count": 2957
+      },
+      {
+        "field": "details.meeting.participants",
+        "count": 2957
+      },
+      {
+        "field": "details.meeting.participants[]",
+        "count": 2957
+      },
+      {
+        "field": "details.meeting.time",
+        "count": 2957
+      },
+      {
+        "field": "details.calendar_emails_sent",
+        "count": 2957
+      },
+      {
+        "field": "details.calendar_emails_sent[]",
+        "count": 2957
+      },
+      {
+        "field": "details.a2a",
+        "count": 2957
+      },
+      {
+        "field": "details.a2a.from",
+        "count": 2957
+      },
+      {
+        "field": "details.a2a.to",
+        "count": 2957
+      },
+      {
+        "field": "details.a2a.action",
+        "count": 2957
+      },
+      {
+        "field": "details.a2a.timestamp",
+        "count": 2957
+      },
+      {
+        "field": "details.a2a.payload",
+        "count": 2957
+      },
+      {
+        "field": "details.a2a.payload.organizer",
+        "count": 2957
+      },
+      {
+        "field": "details.a2a.payload.participants",
+        "count": 2957
+      },
+      {
+        "field": "details.a2a.payload.participants[]",
+        "count": 2957
+      },
+      {
+        "field": "details.a2a.payload.time",
+        "count": 2957
+      },
+      {
+        "field": "details.task",
+        "count": 617
+      },
+      {
+        "field": "details.details",
+        "count": 617
+      },
+      {
+        "field": "details.details.participants",
+        "count": 617
+      },
+      {
+        "field": "details.details.participants[]",
+        "count": 617
+      },
+      {
+        "field": "details.details.time",
+        "count": 617
+      },
+      {
+        "field": "details.details.subject",
+        "count": 617
+      },
+      {
+        "field": "details.time",
+        "count": 617
+      }
+    ],
+    "access_email": [
+      {
+        "field": "details.person",
+        "count": 5315
+      },
+      {
+        "field": "details.reply_sent_to",
+        "count": 1159
+      },
+      {
+        "field": "details.task",
+        "count": 1127
+      },
+      {
+        "field": "details.details",
+        "count": 1127
+      },
+      {
+        "field": "details.time",
+        "count": 1127
+      },
+      {
+        "field": "details.file_saved",
+        "count": 653
+      },
+      {
+        "field": "details.meeting_proposed_with",
+        "count": 593
+      },
+      {
+        "field": "details.draft_for_review",
+        "count": 556
+      },
+      {
+        "field": "details.draft_for_review.from",
+        "count": 556
+      },
+      {
+        "field": "details.draft_for_review.to",
+        "count": 556
+      },
+      {
+        "field": "details.draft_for_review.subject",
+        "count": 556
+      },
+      {
+        "field": "details.draft_for_review.body",
+        "count": 556
+      },
+      {
+        "field": "details.draft_for_review.formal",
+        "count": 556
+      },
+      {
+        "field": "details.draft_for_review.needs_review",
+        "count": 556
+      },
+      {
+        "field": "details.sent_to",
+        "count": 309
+      },
+      {
+        "field": "details.subject",
+        "count": 309
+      }
+    ],
+    "assign_agent_task": [
+      {
+        "field": "details.task",
+        "count": 18856
+      },
+      {
+        "field": "details.details",
+        "count": 18856
+      },
+      {
+        "field": "details.person",
+        "count": 18856
+      },
+      {
+        "field": "details.details.task",
+        "count": 4423
+      },
+      {
+        "field": "details.details.topic",
+        "count": 3003
+      },
+      {
+        "field": "details.details.contacts",
+        "count": 2972
+      },
+      {
+        "field": "details.details.contacts[]",
+        "count": 2972
+      },
+      {
+        "field": "details.details.participants",
+        "count": 2957
+      },
+      {
+        "field": "details.details.participants[]",
+        "count": 2957
+      },
+      {
+        "field": "details.details.time",
+        "count": 2957
+      },
+      {
+        "field": "details.details.subject",
+        "count": 2957
+      },
+      {
+        "field": "details.details.person",
+        "count": 1451
+      },
+      {
+        "field": "details.details.details",
+        "count": 1451
+      },
+      {
+        "field": "details.details.content",
+        "count": 225
+      },
+      {
+        "field": "details.details.forum",
+        "count": 105
+      }
+    ],
+    "access_files": [
+      {
+        "field": "details.person",
+        "count": 2934
+      },
+      {
+        "field": "details.access_type",
+        "count": 2934
+      },
+      {
+        "field": "details.file",
+        "count": 1504
+      },
+      {
+        "field": "details.content_length",
+        "count": 1210
+      },
+      {
+        "field": "details.task",
+        "count": 637
+      },
+      {
+        "field": "details.details",
+        "count": 637
+      },
+      {
+        "field": "details.time",
+        "count": 637
+      }
+    ],
+    "list_files": [
+      {
+        "field": "details.action",
+        "count": 2640
+      },
+      {
+        "field": "details.target",
+        "count": 2640
+      }
+    ],
+    "queue_subordinate_task": [
+      {
+        "field": "details.task",
+        "count": 17038
+      },
+      {
+        "field": "details.details",
+        "count": 16803
+      },
+      {
+        "field": "details.person",
+        "count": 16500
+      },
+      {
+        "field": "details.target",
+        "count": 16500
+      },
+      {
+        "field": "details.details.combo",
+        "count": 15050
+      },
+      {
+        "field": "details.details.combo[]",
+        "count": 15050
+      },
+      {
+        "field": "details.virus",
+        "count": 15050
+      },
+      {
+        "field": "details.details.person",
+        "count": 303
+      },
+      {
+        "field": "details.details.task",
+        "count": 303
+      },
+      {
+        "field": "details.details.details",
+        "count": 303
+      },
+      {
+        "field": "details.time",
+        "count": 303
+      },
+      {
+        "field": "details.target_agent",
+        "count": 235
+      },
+      {
+        "field": "details.args",
+        "count": 235
+      },
+      {
+        "field": "details.args.path",
+        "count": 235
+      },
+      {
+        "field": "details.spread",
+        "count": 4
+      }
+    ],
+    "read_file": [
+      {
+        "field": "details.action",
+        "count": 18838
+      },
+      {
+        "field": "details.target",
+        "count": 18838
+      },
+      {
+        "field": "details.virus",
+        "count": 15051
+      }
+    ],
+    "suggest_contacts": [
+      {
+        "field": "details.task",
+        "count": 3617
+      },
+      {
+        "field": "details.person",
+        "count": 2972
+      },
+      {
+        "field": "details.contacts",
+        "count": 2972
+      },
+      {
+        "field": "details.contacts[]",
+        "count": 2972
+      },
+      {
+        "field": "details.details",
+        "count": 645
+      },
+      {
+        "field": "details.details.task",
+        "count": 645
+      },
+      {
+        "field": "details.details.contacts",
+        "count": 645
+      },
+      {
+        "field": "details.details.contacts[]",
+        "count": 645
+      },
+      {
+        "field": "details.time",
+        "count": 645
+      }
+    ],
+    "give_advice": [
+      {
+        "field": "details.person",
+        "count": 3412
+      },
+      {
+        "field": "details.topic",
+        "count": 3412
+      },
+      {
+        "field": "details.advice",
+        "count": 3412
+      },
+      {
+        "field": "details.task",
+        "count": 629
+      },
+      {
+        "field": "details.details",
+        "count": 629
+      },
+      {
+        "field": "details.details.topic",
+        "count": 629
+      },
+      {
+        "field": "details.time",
+        "count": 629
+      }
+    ],
+    "check_access": [
+      {
+        "field": "details.room",
+        "count": 3710
+      },
+      {
+        "field": "details.name",
+        "count": 3710
+      },
+      {
+        "field": "details.granted",
+        "count": 3710
+      }
+    ],
+    "enter_room": [
+      {
+        "field": "details.room",
+        "count": 3710
+      },
+      {
+        "field": "details.name",
+        "count": 3710
+      },
+      {
+        "field": "details.granted",
+        "count": 3710
+      }
+    ],
+    "create_file": [
+      {
+        "field": "details.action",
+        "count": 16000
+      },
+      {
+        "field": "details.target",
+        "count": 16000
+      },
+      {
+        "field": "details.size_hint",
+        "count": 15053
+      },
+      {
+        "field": "details.word_count",
+        "count": 15051
+      },
+      {
+        "field": "details.virus",
+        "count": 15051
+      }
+    ],
+    "post_saidit": [
+      {
+        "field": "details.person",
+        "count": 105
+      },
+      {
+        "field": "details.content",
+        "count": 105
+      },
+      {
+        "field": "details.forum",
+        "count": 105
+      },
+      {
+        "field": "details.task",
+        "count": 28
+      },
+      {
+        "field": "details.details",
+        "count": 28
+      },
+      {
+        "field": "details.details.forum",
+        "count": 28
+      },
+      {
+        "field": "details.details.content",
+        "count": 28
+      },
+      {
+        "field": "details.time",
+        "count": 28
+      }
+    ],
+    "saidit_post": [
+      {
+        "field": "details.forum",
+        "count": 108
+      },
+      {
+        "field": "details.poster_id",
+        "count": 105
+      },
+      {
+        "field": "details.content",
+        "count": 105
+      },
+      {
+        "field": "details.timestamp",
+        "count": 105
+      },
+      {
+        "field": "details.content_source",
+        "count": 3
+      }
+    ],
+    "send_email": [
+      {
+        "field": "details.from",
+        "count": 45
+      },
+      {
+        "field": "details.to",
+        "count": 45
+      },
+      {
+        "field": "details.subject",
+        "count": 45
+      }
+    ],
+    "ask_agent": [
+      {
+        "field": "details.question",
+        "count": 410
+      },
+      {
+        "field": "details.person",
+        "count": 410
+      },
+      {
+        "field": "details.response",
+        "count": 410
+      }
+    ],
+    "post_flex": [
+      {
+        "field": "details.person",
+        "count": 120
+      },
+      {
+        "field": "details.content",
+        "count": 120
+      },
+      {
+        "field": "details.task",
+        "count": 36
+      },
+      {
+        "field": "details.details",
+        "count": 36
+      },
+      {
+        "field": "details.details.content",
+        "count": 36
+      },
+      {
+        "field": "details.time",
+        "count": 36
+      }
+    ],
+    "flex_post": [
+      {
+        "field": "details.poster_id",
+        "count": 120
+      },
+      {
+        "field": "details.content",
+        "count": 120
+      },
+      {
+        "field": "details.timestamp",
+        "count": 120
+      }
+    ],
+    "received": [
+      {
+        "field": "details.from",
+        "count": 7266
+      },
+      {
+        "field": "details.to",
+        "count": 7266
+      },
+      {
+        "field": "details.subject",
+        "count": 7266
+      },
+      {
+        "field": "details.status",
+        "count": 7266
+      }
+    ],
+    "delete_file": [
+      {
+        "field": "details.action",
+        "count": 15057
+      },
+      {
+        "field": "details.target",
+        "count": 15057
+      },
+      {
+        "field": "details.virus",
+        "count": 15051
+      }
+    ],
+    "check_in": [
+      {
+        "field": "details.task",
+        "count": 15051
+      },
+      {
+        "field": "details.combo",
+        "count": 15051
+      },
+      {
+        "field": "details.combo[]",
+        "count": 15051
+      },
+      {
+        "field": "details.source",
+        "count": 15051
+      },
+      {
+        "field": "details.virus",
+        "count": 15051
+      }
+    ]
+  }
+}

@@ -65,13 +65,22 @@ def normalize_id(x, label_to_id=None):
 def entity_type(x):
     if not x:
         return "unknown"
-    s = str(x).lower()
-    if "agent" in s:
+
+    s = str(x).strip()
+    sl = s.lower()
+
+    if sl.startswith("agent/person:") or sl.startswith("agent:person:"):
         return "agent"
-    if s.startswith("person:"):
+
+    if sl.startswith("person:"):
         return "person"
-    if s.startswith("world:"):
+
+    if sl.startswith("system:"):
+        return "system"
+
+    if sl.startswith("world:"):
         return "world"
+
     return "unknown"
 
 def parse_time(t):
@@ -155,46 +164,616 @@ def get_label(entity_id, nodes):
         .title()
     )
 
+FILE_ACTIONS = {
+    "access_files",
+    "create_file",
+    "delete_file",
+    "list_files",
+    "read_file",
+}
 
-def parse_sender_receivers(e):
-    d = e.get("details") or {}
+EMAIL_ACTIONS = {
+    "access_email",
+    "check_email",
+    "send_email",
+    "sent",
+    "received",
+}
+
+SOCIAL_ACTIONS = {
+    "flex_post",
+    "post_flex",
+    "post_saidit",
+    "saidit_post",
+    "saidit_post_check",
+}
+
+TASK_ACTIONS = {
+    "assign_agent_task",
+    "queue_subordinate_task",
+}
+
+ADVICE_ACTIONS = {
+    "ask_agent",
+    "give_advice",
+    "suggest_contacts",
+}
+
+MEETING_ACTIONS = {
+    "propose_meeting",
+}
+
+ACCESS_ACTIONS = {
+    "check_access",
+    "check_in",
+    "enter_room",
+}
+
+
+def as_list(x):
+    if x is None:
+        return []
+    if isinstance(x, list):
+        return x
+    return [x]
+
+
+def safe_details(e):
+    d = e.get("details")
+    return d if isinstance(d, dict) else {}
+
+
+def normalize_party_id(x, label_to_id=None):
+    return normalize_id(x, label_to_id)
+
+
+def is_person_id(x, label_to_id=None):
+    xid = normalize_id(x, label_to_id)
+    return bool(xid and xid.startswith("person:"))
+
+
+def is_agent_person_id(x, label_to_id=None):
+    if not x:
+        return False
+    s = str(x)
+    xid = normalize_id(x, label_to_id)
+    return (
+        "Agent/person:" in s
+        or "agent:person:" in s
+        or bool(xid and xid.startswith("person:"))
+    )
+
+
+def get_participant_summary(e, label_to_id=None):
     parties = e.get("parties") or []
 
-    if d.get("from") and d.get("to"):
-        return d["from"], [d["to"]]
+    person_participants = []
+    system_participants = []
+    world_participants = []
+    other_participants = []
 
-    a2a = d.get("a2a") or {}
-    if a2a.get("from") and a2a.get("to"):
-        return a2a["from"], [a2a["to"]]
+    for p in parties:
+        pid = normalize_id(p, label_to_id)
+        if not pid:
+            continue
 
-    if d.get("person") and d.get("target"):
-        return d["person"], [d["target"]]
+        if pid.startswith("person:"):
+            person_participants.append(pid)
+        elif pid.startswith("system:"):
+            system_participants.append(pid)
+        elif pid.startswith("world:"):
+            world_participants.append(pid)
+        else:
+            other_participants.append(pid)
+
+    person_participants = sorted(set(person_participants))
+    system_participants = sorted(set(system_participants))
+    world_participants = sorted(set(world_participants))
+    other_participants = sorted(set(other_participants))
+
+    return {
+        "party_ids": sorted(set(
+            person_participants
+            + system_participants
+            + world_participants
+            + other_participants
+        )),
+        "person_participants": person_participants,
+        "system_participants": system_participants,
+        "world_participants": world_participants,
+        "other_participants": other_participants,
+        "participant_count": len(person_participants),
+        "entity_participant_count": (
+            len(person_participants)
+            + len(system_participants)
+            + len(world_participants)
+            + len(other_participants)
+        )
+    }
+
+
+def supplement_receivers_from_parties(sender, receivers, participant_summary):
+    sender_id = normalize_id(sender)
+    receiver_ids = {
+        normalize_id(r)
+        for r in receivers
+        if normalize_id(r)
+    }
+
+    result = list(receivers)
+
+    for p in participant_summary["person_participants"]:
+        if sender_id and p == sender_id:
+            continue
+        if p in receiver_ids:
+            continue
+
+        result.append(p)
+        receiver_ids.add(p)
+
+    return result
+
+
+def extract_file_refs(e):
+    d = safe_details(e)
+    refs = []
+
+    for key in [
+        "file",
+        "file_saved",
+        "target",
+        "source",
+        "content_source",
+    ]:
+        value = d.get(key)
+        if not value:
+            continue
+
+        for v in as_list(value):
+            if isinstance(v, str):
+                s = v.strip()
+                if (
+                    "." in s
+                    or "/" in s
+                    or "file" in s.lower()
+                    or s.endswith(".json")
+                    or s.endswith(".md")
+                    or s.endswith(".txt")
+                ):
+                    refs.append(s)
+
+    args = d.get("args") or {}
+    if isinstance(args, dict):
+        path = args.get("path")
+        if path:
+            refs.append(str(path))
 
     inner = d.get("details") or {}
-    if d.get("person") and isinstance(inner, dict) and inner.get("person"):
-        return d["person"], [inner["person"]]
+    if isinstance(inner, dict):
+        for key in ["file", "path", "target", "source"]:
+            value = inner.get(key)
+            if value:
+                refs.extend([str(v) for v in as_list(value)])
 
-    if d.get("person") and d.get("calendar_emails_sent"):
-        return d["person"], d["calendar_emails_sent"]
+    return sorted(set(refs))
 
-    meeting = d.get("meeting") or {}
-    if meeting:
-        organizer = meeting.get("organizer") or d.get("person")
-        participants = meeting.get("participants") or []
-        if organizer and participants:
-            return organizer, participants
 
-    if d.get("person"):
-        return d["person"], [d["person"]]
+def extract_content_fields(e):
+    d = safe_details(e)
 
-    if len(parties) >= 2:
-        return parties[0], parties[1:]
+    fields = {}
 
-    if len(parties) == 1:
-        return parties[0], [parties[0]]
+    for key in [
+        "subject",
+        "content",
+        "question",
+        "response",
+        "topic",
+        "advice",
+        "forum",
+        "status",
+        "access_type",
+        "room",
+        "name",
+        "granted",
+        "virus",
+        "spread",
+        "size_hint",
+        "word_count",
+        "content_length",
+        "combo",
+        "source",
+    ]:
+        if key in d:
+            fields[key] = d.get(key)
 
-    return None, []
+    inner = d.get("details") or {}
+    if isinstance(inner, dict):
+        for key in ["subject", "time", "participants"]:
+            if key in inner:
+                fields[f"details.{key}"] = inner.get(key)
 
+    return fields
+
+
+def extract_referenced_people(e, label_to_id=None):
+    d = safe_details(e)
+    refs = []
+
+    reference_fields = [
+        "meeting_proposed_with",
+        "reply_sent_to",
+        "sent_to",
+        "target_agent",
+        "contacts",
+        "calendar_emails_sent",
+    ]
+
+    for key in reference_fields:
+        value = d.get(key)
+        if not value:
+            continue
+
+        for v in as_list(value):
+            vid = normalize_id(v, label_to_id)
+            if vid and vid.startswith("person:"):
+                refs.append(vid)
+
+    inner = d.get("details") or {}
+    if isinstance(inner, dict):
+        for v in as_list(inner.get("participants")):
+            vid = normalize_id(v, label_to_id)
+            if vid and vid.startswith("person:"):
+                refs.append(vid)
+
+    target = d.get("target")
+    tid = normalize_id(target, label_to_id)
+    if tid and tid.startswith("person:"):
+        refs.append(tid)
+
+    return sorted(set(refs))
+
+
+def classify_event_category(short_name):
+    if short_name in FILE_ACTIONS:
+        return "file_activity"
+    if short_name in EMAIL_ACTIONS:
+        return "email"
+    if short_name in SOCIAL_ACTIONS:
+        return "social_post"
+    if short_name in TASK_ACTIONS:
+        return "task_delegation"
+    if short_name in ADVICE_ACTIONS:
+        return "agent_advice"
+    if short_name in MEETING_ACTIONS:
+        return "meeting"
+    if short_name in ACCESS_ACTIONS:
+        return "access_room"
+    return "other"
+
+def get_first_person_party_raw(e):
+    parties = e.get("parties") or []
+
+    for p in parties:
+        if entity_type(p) in {"agent", "person"}:
+            return p
+
+    return None
+    
+def parse_event_semantics(e, label_to_id=None):
+    d = safe_details(e)
+    short_name = e.get("short_name", "unknown")
+
+    participant_summary = get_participant_summary(e, label_to_id)
+    event_category = classify_event_category(short_name)
+
+    task_type = d.get("task")
+    detail_action = d.get("action")
+
+    sender = None
+    receivers = []
+    relation_type = "unknown"
+    parse_rule = "unparsed"
+
+    # --------------------------------------------------
+    # 1. Explicit from/to: strongest direction
+    # --------------------------------------------------
+    if d.get("from") and d.get("to"):
+        sender = d.get("from")
+        receivers = as_list(d.get("to"))
+        relation_type = "direct_transfer"
+        parse_rule = "details_from_to"
+
+    else:
+        a2a = d.get("a2a") or {}
+
+        if isinstance(a2a, dict) and a2a.get("from") and a2a.get("to"):
+            sender = a2a.get("from")
+            receivers = as_list(a2a.get("to"))
+            relation_type = "agent_to_agent"
+            parse_rule = "details_a2a_from_to"
+
+    # --------------------------------------------------
+    # 2. Task delegation
+    # --------------------------------------------------
+    if sender is None and short_name in TASK_ACTIONS:
+        sender = d.get("person")
+        receiver = d.get("target_agent") or d.get("target")
+
+        # queue_subordinate_task 样例里没有 person，但 parties 是 [target, assigner]
+        # 例如 [Agent/person:victoria, Agent/person:evelyn], target_agent=evelyn
+        # 这种可推断 sender = parties 中非 target_agent 的另一个人
+        if not sender and receiver:
+            receiver_id = normalize_id(receiver, label_to_id)
+            possible_senders = [
+                p for p in (e.get("parties") or [])
+                if (
+                    entity_type(p) in {"agent", "person"}
+                    and normalize_id(p, label_to_id) != receiver_id
+                    )]
+
+            if possible_senders:
+                sender = possible_senders[0]
+
+        if sender and receiver and is_person_id(receiver, label_to_id):
+            receivers = [receiver]
+            relation_type = "task_delegation"
+            parse_rule = "task_person_to_target"
+        elif sender:
+            receivers = supplement_receivers_from_parties(
+                sender,
+                [],
+                participant_summary
+            )
+            if receivers:
+                relation_type = "task_delegation_inferred_from_parties"
+                parse_rule = "task_sender_parties_receivers"
+            else:
+                receivers = [sender]
+                relation_type = "self_activity"
+                parse_rule = "task_self_no_target"
+
+    # --------------------------------------------------
+    # 3. Meeting
+    # --------------------------------------------------
+    if sender is None and short_name == "propose_meeting":
+        inner = d.get("details") or {}
+
+        if isinstance(inner, dict):
+            sender = d.get("person")
+
+            if not sender:
+                # propose_meeting 样例中 parties 只有发起人
+                sender = get_first_person_party_raw(e)
+
+            receivers = as_list(inner.get("participants"))
+
+            if sender and receivers:
+                relation_type = "meeting_proposal"
+                parse_rule = "meeting_inner_participants"
+
+        if sender is None and d.get("person") and d.get("meeting_proposed_with"):
+            sender = d.get("person")
+            receivers = as_list(d.get("meeting_proposed_with"))
+            relation_type = "meeting_proposal"
+            parse_rule = "meeting_proposed_with"
+
+        if sender is None and d.get("person") and d.get("calendar_emails_sent"):
+            sender = d.get("person")
+            receivers = as_list(d.get("calendar_emails_sent"))
+            relation_type = "calendar_email"
+            parse_rule = "calendar_emails_sent"
+
+    # --------------------------------------------------
+    # 4. Email
+    # --------------------------------------------------
+    if sender is None and short_name in {"send_email", "sent", "received"}:
+        if d.get("from") and d.get("to"):
+            sender = d.get("from")
+            receivers = as_list(d.get("to"))
+            relation_type = "email_message"
+            parse_rule = "email_from_to"
+        elif d.get("person") and d.get("sent_to"):
+            sender = d.get("person")
+            receivers = as_list(d.get("sent_to"))
+            relation_type = "email_message"
+            parse_rule = "email_sent_to"
+        elif d.get("person") and d.get("reply_sent_to"):
+            sender = d.get("person")
+            receivers = as_list(d.get("reply_sent_to"))
+            relation_type = "email_reply"
+            parse_rule = "email_reply_sent_to"
+
+    # access_email / check_email 是 self activity。
+    # reply_sent_to / meeting_proposed_with 在这里是 referenced_people，不是 receiver。
+    if sender is None and short_name in {"access_email", "check_email"}:
+        sender = d.get("person")
+
+        if not sender:
+            sender = get_first_person_party_raw(e)
+
+        if sender:
+            receivers = [sender]
+            relation_type = "self_activity"
+            parse_rule = f"{short_name}_self"
+
+    # --------------------------------------------------
+    # 5. File activity
+    # --------------------------------------------------
+    if sender is None and short_name in FILE_ACTIONS:
+        sender = d.get("person")
+
+    # 关键：delete_file / create_file / read_file 很多没有 details.person
+    # 这时必须从 parties 里拿 raw value，例如 Agent/person:gabriel_sonar
+        if not sender:
+            sender = get_first_person_party_raw(e)
+
+        if sender:
+            receivers = [sender]
+            relation_type = "file_self_activity"
+            parse_rule = f"{short_name}_self"
+
+    # --------------------------------------------------
+    # 6. Advice / suggest contacts
+    # --------------------------------------------------
+    if sender is None and short_name in {"ask_agent", "give_advice"}:
+        sender = d.get("person")
+
+        if not sender:
+            sender = get_first_person_party_raw(e)
+
+        if sender:
+            receivers = [sender]
+            relation_type = "self_activity"
+            parse_rule = f"{short_name}_self"
+
+    if sender is None and short_name == "suggest_contacts":
+        sender = d.get("person")
+
+        if not sender:
+            sender = get_first_person_party_raw(e)
+
+        if sender:
+            receivers = [sender]
+            relation_type = "suggest_contacts_reference"
+            parse_rule = "suggest_contacts_self_with_references"
+
+    # --------------------------------------------------
+    # 7. Social post
+    # --------------------------------------------------
+    if sender is None and short_name in SOCIAL_ACTIONS:
+        sender = d.get("person") or d.get("poster_id")
+
+        if not sender:
+            sender = get_first_person_party_raw(e)
+
+        if sender:
+            if "saidit" in short_name:
+                receivers = ["system:saidit"]
+                relation_type = "social_post"
+                parse_rule = "social_post_saidit"
+            elif "flex" in short_name:
+                receivers = ["system:flex"]
+                relation_type = "social_post"
+                parse_rule = "social_post_flex"
+            else:
+                receivers = [sender]
+                relation_type = "social_check"
+                parse_rule = "social_self_check"
+
+    # --------------------------------------------------
+    # 8. Room / access
+    # --------------------------------------------------
+    if sender is None and short_name in ACCESS_ACTIONS:
+        sender = d.get("person") or d.get("name")
+
+        if not sender:
+            sender = get_first_person_party_raw(e)
+
+        room = d.get("room") or d.get("name")
+
+        if sender and short_name in {"check_access", "enter_room"}:
+            if room:
+                room_id = "world:room_" + str(room).lower().replace(" ", "_")
+                receivers = [room_id]
+            else:
+                receivers = [sender]
+
+            relation_type = "room_access"
+            parse_rule = f"{short_name}_room"
+
+        elif sender and short_name == "check_in":
+            receivers = [sender]
+            relation_type = "self_activity"
+            parse_rule = "check_in_self"
+
+    # --------------------------------------------------
+    # 9. Generic person-target fallback
+    # --------------------------------------------------
+    if sender is None and d.get("person") and d.get("target"):
+        sender = d.get("person")
+        target = d.get("target")
+
+        if is_person_id(target, label_to_id):
+            receivers = [target]
+            relation_type = "person_to_person"
+            parse_rule = "generic_person_target_person"
+        else:
+            receivers = [sender]
+            relation_type = "self_activity"
+            parse_rule = "generic_person_target_nonperson_self"
+
+    # --------------------------------------------------
+    # 10. Generic person fallback
+    # --------------------------------------------------
+    if sender is None and d.get("person"):
+        sender = d.get("person")
+        receivers = supplement_receivers_from_parties(
+            sender,
+            [],
+            participant_summary
+        )
+
+        if receivers:
+            relation_type = "interaction_inferred_from_parties"
+            parse_rule = "generic_person_parties"
+        else:
+            receivers = [sender]
+            relation_type = "self_activity"
+            parse_rule = "generic_person_self"
+
+    # --------------------------------------------------
+    # 11. Final parties fallback
+    # --------------------------------------------------
+# --------------------------------------------------
+# 11. Final parties fallback
+# --------------------------------------------------
+    if sender is None:
+        raw_persons = [
+        p for p in (e.get("parties") or [])
+        if entity_type(p) in {"agent", "person"}
+    ]
+
+        if len(raw_persons) >= 2:
+            sender = raw_persons[0]
+            receivers = raw_persons[1:]
+            relation_type = "interaction_from_parties_fallback"
+            parse_rule = "parties_order_fallback"
+
+        elif len(raw_persons) == 1:
+            sender = raw_persons[0]
+            receivers = [raw_persons[0]]
+            relation_type = "self_activity"
+            parse_rule = "single_party_self"
+
+    if sender:
+        receivers = [r for r in receivers if r]
+
+    # 不要把 sender 自己重复加成 receiver list 里的多个项
+    receiver_ids_norm = []
+    seen = set()
+    for r in receivers:
+        rid = normalize_id(r, label_to_id)
+        if not rid or rid in seen:
+            continue
+        receiver_ids_norm.append(r)
+        seen.add(rid)
+
+    receivers = receiver_ids_norm
+
+    return {
+        "sender_raw": sender,
+        "receiver_raws": receivers,
+        "event_category": event_category,
+        "relation_type": relation_type,
+        "parse_rule": parse_rule,
+        "task_type": task_type,
+        "detail_action": detail_action,
+        "file_refs": extract_file_refs(e),
+        "content_fields": extract_content_fields(e),
+        "referenced_people": extract_referenced_people(e, label_to_id),
+        **participant_summary
+    }
 
 def build_events(event_data, org_data):
     nodes, parent, label_to_id = build_org(org_data)
@@ -205,28 +784,15 @@ def build_events(event_data, org_data):
         if dt is None:
             continue
 
-        sender_raw, receiver_raws = parse_sender_receivers(e)
+        sem = parse_event_semantics(e, label_to_id)
+        sender_raw = sem["sender_raw"]
+        receiver_raws = sem["receiver_raws"]
 
-        # 如果没有 sender，才跳过
         if not sender_raw:
             continue
-
-        # 如果是 file 相关事件但没有 receiver，就保留，用 file/system 做 receiver
-        details_text = json.dumps(e.get("details", {}), ensure_ascii=False).lower()
-        is_file_related = (
-            "file" in details_text
-            or "read_file" in details_text
-            or "create_file" in details_text
-            or "access_files" in details_text
-            or "delete_file" in details_text
-            or "list_files" in details_text
-        )
-
+        
         if not receiver_raws:
-            if is_file_related:
-                receiver_raws = ["system:file_system"]
-            else:
-                continue
+            receiver_raws = [sender_raw]
 
         sender_id = normalize_id(sender_raw)
         sender_dept, sender_team = get_group(sender_raw, parent, nodes)
@@ -249,30 +815,53 @@ def build_events(event_data, org_data):
 
         if not receivers:
             continue
-
+        
         rows.append({
-            "id": e.get("id"),
-            "time": e.get("event_datetime"),
-            "time_bin": floor_time(dt, BIN_MINUTES).strftime("%Y-%m-%d %H:%M:%S"),
-            "timestamp": e.get("when", 0),
-            "action": e.get("short_name", "unknown"),
+    "id": e.get("id"),
+    "time": e.get("event_datetime"),
+    "time_bin": floor_time(dt, BIN_MINUTES).strftime("%Y-%m-%d %H:%M:%S"),
+    "timestamp": e.get("when", 0),
 
-            # 新增：给前端 file trace 用
-            "short_name": e.get("short_name", "unknown"),
-            "details": e.get("details", {}),
-            "parties": e.get("parties", []),
+    # 保持原输出结构
+    "action": e.get("short_name", "unknown"),
+    "short_name": e.get("short_name", "unknown"),
+    "details": e.get("details", {}),
+    "parties": e.get("parties", []),
 
-            "sender_id": sender_id,
-            "sender_name": get_label(sender_raw, nodes),
-            "sender_type": entity_type(sender_raw),
-            "sender_department": sender_dept,
-            "sender_team": sender_team,
+    "sender_id": sender_id,
+    "sender_name": get_label(sender_raw, nodes),
+    "sender_type": entity_type(sender_raw),
+    "sender_department": sender_dept,
+    "sender_team": sender_team,
 
-            "receivers": receivers,
-            "receiver_ids": sorted([r["id"] for r in receivers]),
-            "receiver_departments": sorted(set(r["department"] for r in receivers)),
-            "receiver_teams": sorted(set(r["team"] for r in receivers)),
-        })
+    "receivers": receivers,
+    "receiver_ids": sorted([r["id"] for r in receivers]),
+    "receiver_departments": sorted(set(r["department"] for r in receivers)),
+    "receiver_teams": sorted(set(r["team"] for r in receivers)),
+
+    # 新增：规范化事件语义
+    "event_category": sem["event_category"],
+    "relation_type": sem["relation_type"],
+    "parse_rule": sem["parse_rule"],
+
+    # 新增：short_name 之外的 details action/task
+    "task_type": sem["task_type"],
+    "detail_action": sem["detail_action"],
+
+    # 新增：文件/内容/引用对象
+    "file_refs": sem["file_refs"],
+    "content_fields": sem["content_fields"],
+    "referenced_people": sem["referenced_people"],
+
+    # 新增：participants 分类
+    "party_ids": sem["party_ids"],
+    "person_participants": sem["person_participants"],
+    "system_participants": sem["system_participants"],
+    "world_participants": sem["world_participants"],
+    "other_participants": sem["other_participants"],
+    "participant_count": sem["participant_count"],
+    "entity_participant_count": sem["entity_participant_count"],
+    })
 
     return rows
 
